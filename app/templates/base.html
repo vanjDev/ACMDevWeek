@@ -22,6 +22,7 @@
       <nav class="nav-links" aria-label="Main navigation">
         <a class="{{ 'active' if active_page == 'home' else '' }}" href="/">Home</a>
         <a class="{{ 'active' if active_page == 'tracker' else '' }}" href="/tracker">Tracker</a>
+        <a class="admin-nav-link {{ 'active' if active_page == 'admin' else '' }}" href="/admin" hidden>Admin</a>
         <a class="{{ 'active' if active_page == 'about' else '' }}" href="/about">About</a>
       </nav>
       <div class="auth-controls">

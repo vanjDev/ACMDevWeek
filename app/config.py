@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./saan.db"
     secret_key: str = "change-me-for-production"
     google_client_id: str = ""
+    admin_emails: str = ""
     walking_speed_kmh: float = 5.0
 
     feu_tech_lat: float = 14.6042
@@ -38,6 +39,10 @@ class Settings(BaseSettings):
                 "longitude": self.feu_manila_lng,
             },
         }
+
+    @property
+    def admin_email_set(self) -> set[str]:
+        return {email.strip().lower() for email in self.admin_emails.split(",") if email.strip()}
 
 
 @lru_cache

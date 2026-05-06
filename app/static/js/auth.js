@@ -107,23 +107,33 @@ function updateAuthUi() {
   const openButton = document.getElementById("openAuth");
   const logoutButton = document.getElementById("logoutAuth");
   const controls = document.querySelector(".auth-controls");
+  const adminLinks = document.querySelectorAll(".admin-nav-link");
   if (!status || !openButton || !logoutButton) return;
 
   if (!SaanAuth.hydrated) {
     status.textContent = "Checking your saves...";
     openButton.hidden = true;
     logoutButton.hidden = true;
+    adminLinks.forEach((link) => {
+      link.hidden = true;
+    });
     controls?.classList.add("is-pending");
   } else if (SaanAuth.user) {
     const firstName = (SaanAuth.user.name || "").trim().split(/\s+/)[0];
     status.textContent = firstName ? `Hi, ${firstName}` : "Signed in";
     openButton.hidden = true;
     logoutButton.hidden = false;
+    adminLinks.forEach((link) => {
+      link.hidden = !SaanAuth.user?.is_admin;
+    });
     controls?.classList.remove("is-pending");
   } else {
     status.textContent = "Saving on this device";
     openButton.hidden = false;
     logoutButton.hidden = true;
+    adminLinks.forEach((link) => {
+      link.hidden = true;
+    });
     controls?.classList.remove("is-pending");
   }
 

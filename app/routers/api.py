@@ -8,6 +8,8 @@ from app.config import get_settings
 from app.database import get_db
 from app.models import FoodSpot, SavedFood, User, UserPreference
 from app.schemas import (
+    AdminFoodSpotPayload,
+    AdminFoodSpotResponse,
     AuthRequest,
     AuthResponse,
     BookmarkPayload,
@@ -22,7 +24,9 @@ from app.schemas import (
 from app.services.auth_service import (
     clear_session_cookie,
     hash_password,
+    is_admin_user,
     normalize_email,
+    require_admin,
     require_user,
     set_session_cookie,
     verify_password,
@@ -35,7 +39,31 @@ router = APIRouter(prefix="/api", tags=["api"])
 
 
 def user_response(user: User) -> UserResponse:
-    return UserResponse(id=user.id, name=user.name, email=user.email)
+    return UserResponse(id=user.id, name=user.name, email=user.email, is_admin=is_admin_user(user))
+
+
+def admin_food_response(food: FoodSpot) -> AdminFoodSpotResponse:
+    return AdminFoodSpotResponse.model_validate(food)
+
+
+def apply_food_payload(food: FoodSpot, payload: AdminFoodSpotPayload) -> FoodSpot:
+    if payload.price_max < payload.price_min:
+        raise HTTPException(status_code=422, detail="Max price must be greater than or equal to min price.")
+
+    food.name = payload.name.strip()
+    food.restaurant = payload.restaurant.strip()
+    food.price_min = payload.price_min
+    food.price_max = payload.price_max
+    food.category = payload.category.strip()
+    food.mood = payload.mood.strip()
+    food.latitude = payload.latitude
+    food.longitude = payload.longitude
+    food.area = payload.area.strip()
+    food.rating = payload.rating
+    food.image_url = payload.image_url.strip() if payload.image_url else None
+    food.description = payload.description.strip()
+    food.is_active = payload.is_active
+    return food
 
 
 @router.get("/config", response_model=PublicConfigResponse)
@@ -152,6 +180,66 @@ def save_user_data(payload: UserDataPayload, user: User = Depends(require_user),
         db.add(preference)
     db.commit()
     return {"data": preference.data}
+
+
+@router.get("/admin/foods", response_model=list[AdminFoodSpotResponse])
+def admin_list_foods(
+    q: str | None = None,
+    include_inactive: bool = True,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    query = db.query(FoodSpot)
+    if not include_inactive:
+        query = query.filter(FoodSpot.is_active.is_(True))
+    if q and q.strip():
+        term = f"%{q.strip()}%"
+        query = query.filter((FoodSpot.name.ilike(term)) | (FoodSpot.restaurant.ilike(term)))
+    rows = query.order_by(FoodSpot.restaurant.asc(), FoodSpot.name.asc()).limit(250).all()
+    return [admin_food_response(row) for row in rows]
+
+
+@router.post("/admin/foods", response_model=AdminFoodSpotResponse)
+def admin_create_food(
+    payload: AdminFoodSpotPayload,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    food = apply_food_payload(FoodSpot(), payload)
+    db.add(food)
+    db.commit()
+    db.refresh(food)
+    return admin_food_response(food)
+
+
+@router.put("/admin/foods/{food_id}", response_model=AdminFoodSpotResponse)
+def admin_update_food(
+    food_id: int,
+    payload: AdminFoodSpotPayload,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    food = db.get(FoodSpot, food_id)
+    if not food:
+        raise HTTPException(status_code=404, detail="Food spot not found.")
+    apply_food_payload(food, payload)
+    db.commit()
+    db.refresh(food)
+    return admin_food_response(food)
+
+
+@router.delete("/admin/foods/{food_id}")
+def admin_disable_food(
+    food_id: int,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    food = db.get(FoodSpot, food_id)
+    if not food:
+        raise HTTPException(status_code=404, detail="Food spot not found.")
+    food.is_active = False
+    db.commit()
+    return {"ok": True}
 
 
 @router.get("/foods")

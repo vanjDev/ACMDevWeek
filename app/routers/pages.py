@@ -1,8 +1,10 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import RedirectResponse
 
 from app.config import get_settings
+from app.models import User
+from app.services.auth_service import require_admin
 
 templates = Jinja2Templates(directory="app/templates")
 router = APIRouter(tags=["pages"])
@@ -38,3 +40,8 @@ def timer():
 @router.get("/about")
 def about(request: Request):
     return templates.TemplateResponse("about.html", context(request, "About", "about"))
+
+
+@router.get("/admin")
+def admin(request: Request, user: User = Depends(require_admin)):
+    return templates.TemplateResponse("admin.html", context(request, "Admin", "admin"))

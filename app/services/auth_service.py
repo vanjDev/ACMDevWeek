@@ -100,6 +100,18 @@ def require_user(user: User | None = Depends(get_optional_user)) -> User:
     return user
 
 
+def is_admin_user(user: User | None) -> bool:
+    if not user:
+        return False
+    return normalize_email(user.email) in get_settings().admin_email_set
+
+
+def require_admin(user: User = Depends(require_user)) -> User:
+    if not is_admin_user(user):
+        raise HTTPException(status_code=403, detail="Admin access required.")
+    return user
+
+
 def verify_google_id_token(credential: str) -> dict[str, object]:
     settings = get_settings()
     if not settings.google_client_id:

@@ -28,6 +28,41 @@ class FoodSpotResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class AdminFoodSpotPayload(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    restaurant: str = Field(..., min_length=1, max_length=120)
+    price_min: int = Field(..., ge=0, le=5000)
+    price_max: int = Field(..., ge=0, le=5000)
+    category: str = Field(..., min_length=1, max_length=80)
+    mood: str = Field(..., min_length=1, max_length=80)
+    latitude: float = Field(..., ge=-90, le=90)
+    longitude: float = Field(..., ge=-180, le=180)
+    area: str = Field(..., min_length=1, max_length=100)
+    rating: float = Field(default=4.0, ge=0, le=5)
+    image_url: str | None = Field(default=None, max_length=500)
+    description: str = Field(..., min_length=1)
+    is_active: bool = True
+
+
+class AdminFoodSpotResponse(BaseModel):
+    id: int
+    name: str
+    restaurant: str
+    price_min: int
+    price_max: int
+    category: str
+    mood: str
+    latitude: float
+    longitude: float
+    area: str
+    rating: float
+    image_url: str | None = None
+    description: str
+    is_active: bool
+
+    model_config = {"from_attributes": True}
+
+
 class TimerRequest(BaseModel):
     departure_time: str = Field(..., examples=["12:00"])
     arrival_time: str = Field(..., examples=["13:00"])
@@ -61,6 +96,7 @@ class UserResponse(BaseModel):
     id: int
     name: str
     email: str
+    is_admin: bool = False
 
     model_config = {"from_attributes": True}
 
