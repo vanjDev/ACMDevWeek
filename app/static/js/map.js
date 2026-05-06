@@ -57,9 +57,22 @@ function areaClass(value = "") {
   return `area-${value.replaceAll("_", "-") || "nearby"}`;
 }
 
+function mapIconForFood(food) {
+  const name = `${food.name || ""} ${food.restaurant || ""}`.toLowerCase();
+  if (food.category === "coffee_drinks" || name.includes("coffee") || name.includes("kopi") || name.includes("milk tea")) return "coffee";
+  if (food.category === "snacks" || name.includes("potato") || name.includes("fries")) return "shopping-bag";
+  return food.category ? "utensils" : "store";
+}
+
 function currentCampusPoint() {
   const campus = MAP_ANCHORS.find((anchor) => anchor.key === window.SaanMapCampus) || MAP_ANCHORS[0];
   return mapAnchorPoint(campus);
+}
+
+function currentStartPoint() {
+  return window.SaanUserLocation
+    ? mapPoint(window.SaanUserLocation.lat, window.SaanUserLocation.lng)
+    : currentCampusPoint();
 }
 
 function renderWalkingRoute(food = null) {
@@ -72,7 +85,7 @@ function renderWalkingRoute(food = null) {
     return;
   }
 
-  const start = currentCampusPoint();
+  const start = currentStartPoint();
   const end = mapPoint(food.latitude, food.longitude);
   const dx = end.x - start.x;
   const dy = end.y - start.y;
@@ -113,6 +126,10 @@ function initSaanMap() {
     </div>
     <div class="map-route" id="mapRoute" hidden></div>
     <div id="mapAnchors"></div>
+    <div id="mapUserMarker" class="map-user-marker" hidden>
+      <i data-lucide="navigation"></i>
+      <span>You</span>
+    </div>
     <div id="mapFoodMarkers"></div>
     <div class="map-legend" aria-hidden="true">
       <span><i class="legend-campus"></i>Campus</span>
@@ -128,17 +145,21 @@ function initSaanMap() {
     const point = mapAnchorPoint(anchor);
     return `
       <button class="map-anchor ${anchor.key}" type="button" style="left:${point.x}%;top:${point.y}%;" title="${anchor.label}">
+        <i data-lucide="${anchor.key === "enb" ? "building-2" : "school"}"></i>
         <span>${anchor.label}</span>
-        <small>${anchor.key === "enb" ? "building" : "start point"}</small>
       </button>
     `;
   }).join("");
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function selectedMapMarkup(food, index) {
   return `
     <span>Selected Shop</span>
     <strong>${index + 1}. ${food.name}</strong>
+    <button class="map-close-button" type="button" data-map-clear aria-label="Clear selected shop" title="Clear selected shop">
+      <i data-lucide="x"></i>
+    </button>
     <p>${formatMapArea(food.area)} - ${food.menu.length} menu items - PHP ${food.price_min}-${food.price_max}</p>
     <div class="map-selected-meta">
       <span>${food.walking_minutes} min walk</span>
@@ -150,6 +171,17 @@ function selectedMapMarkup(food, index) {
   `;
 }
 
+function clearMapSelection() {
+  const selectedPanel = document.getElementById("mapSelected");
+  document.querySelectorAll(".map-food-dot.active").forEach((pin) => pin.classList.remove("active"));
+  document.querySelectorAll(".store-card.map-selected-card").forEach((card) => card.classList.remove("map-selected-card"));
+  if (selectedPanel) {
+    selectedPanel.hidden = true;
+    selectedPanel.innerHTML = "";
+  }
+  renderWalkingRoute(null);
+}
+
 function selectFoodOnMap(foodId, shouldScroll = false) {
   const target = document.querySelector(`[data-store-id="${foodId}"]`);
   const foods = window.SaanMapFoods || [];
@@ -158,11 +190,7 @@ function selectFoodOnMap(foodId, shouldScroll = false) {
   document.querySelectorAll(".map-food-dot.active").forEach((pin) => pin.classList.remove("active"));
   document.querySelectorAll(".store-card.map-selected-card").forEach((card) => card.classList.remove("map-selected-card"));
   if (!foodId || foodIndex < 0) {
-    if (selectedPanel) {
-      selectedPanel.hidden = true;
-      selectedPanel.innerHTML = "";
-    }
-    renderWalkingRoute(null);
+    clearMapSelection();
     return;
   }
 
@@ -186,6 +214,7 @@ function updateMap(foods, campusKey) {
   const markerLayer = document.getElementById("mapFoodMarkers");
   const summary = document.getElementById("mapSummary");
   const selectedPanel = document.getElementById("mapSelected");
+  const userMarker = document.getElementById("mapUserMarker");
   if (!markerLayer || !summary || !selectedPanel) return;
 
   const visibleFoods = foods.slice(0, 24);
@@ -194,9 +223,21 @@ function updateMap(foods, campusKey) {
   document.getElementById("map")?.setAttribute("data-campus", campusKey);
   document.querySelectorAll(".map-anchor").forEach((anchor) => anchor.classList.remove("active-campus"));
   document.querySelector(`.map-anchor.${campusKey}`)?.classList.add("active-campus");
+  if (userMarker) {
+    if (window.SaanUserLocation) {
+      const point = mapPoint(window.SaanUserLocation.lat, window.SaanUserLocation.lng);
+      userMarker.hidden = false;
+      userMarker.style.left = `${point.x}%`;
+      userMarker.style.top = `${point.y}%`;
+    } else {
+      userMarker.hidden = true;
+      userMarker.removeAttribute("style");
+    }
+  }
 
   markerLayer.innerHTML = visibleFoods.map((food, index) => {
     const point = mapPoint(food.latitude, food.longitude);
+    const icon = mapIconForFood(food);
     return `
       <button
         class="map-food-dot ${areaClass(food.area)}"
@@ -207,27 +248,39 @@ function updateMap(foods, campusKey) {
         aria-label="${markerLabel(food)}"
         title="${markerLabel(food)}"
       >
-        <span>${index + 1}</span>
+        <i data-lucide="${icon}"></i>
         <small>${food.walking_minutes}m</small>
       </button>
     `;
   }).join("");
+  if (window.lucide) window.lucide.createIcons();
 
-  summary.textContent = `${visibleFoods.length} stores near ${campusLabel(campusKey)}`;
+  summary.textContent = window.SaanUserLocation
+    ? `${visibleFoods.length} stores from your location`
+    : `${visibleFoods.length} stores near ${campusLabel(campusKey)}`;
   selectedPanel.hidden = true;
   selectedPanel.innerHTML = "";
   selectFoodOnMap(null, false);
 
   markerLayer.querySelectorAll("[data-food-target]").forEach((button) => {
     button.addEventListener("click", () => {
+      if (button.classList.contains("active")) {
+        clearMapSelection();
+        return;
+      }
       const food = visibleFoods[Number(button.dataset.foodIndex)];
       selectedPanel.innerHTML = selectedMapMarkup(food, Number(button.dataset.foodIndex));
       selectedPanel.hidden = false;
       selectFoodOnMap(button.dataset.foodTarget, false);
+      if (window.lucide) window.lucide.createIcons();
     });
   });
 
   selectedPanel.onclick = (event) => {
+    if (event.target.closest("[data-map-clear]")) {
+      clearMapSelection();
+      return;
+    }
     const button = event.target.closest("[data-map-view]");
     if (!button) return;
     selectFoodOnMap(button.dataset.mapView, true);
@@ -237,3 +290,4 @@ function updateMap(foods, campusKey) {
 
 document.addEventListener("DOMContentLoaded", initSaanMap);
 window.selectFoodOnMap = selectFoodOnMap;
+window.clearFoodOnMap = clearMapSelection;

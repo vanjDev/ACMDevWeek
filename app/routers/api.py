@@ -173,6 +173,8 @@ def list_foods(
     radius: int | None = Query(default=1200, ge=100, le=3000),
     sort: str = "distance",
     limit: int = Query(default=100, ge=1, le=250),
+    user_lat: float | None = Query(default=None, ge=-90, le=90),
+    user_lng: float | None = Query(default=None, ge=-180, le=180),
     db: Session = Depends(get_db),
 ):
     return filter_foods(
@@ -194,6 +196,8 @@ def list_foods(
         feature,
         time_max,
         meal_minutes,
+        user_lat,
+        user_lng,
     )
 
 
@@ -215,6 +219,8 @@ def pick_random_food(
     campus: str = "feu_tech",
     radius: int | None = Query(default=1200, ge=100, le=3000),
     sort: str = "distance",
+    user_lat: float | None = Query(default=None, ge=-90, le=90),
+    user_lng: float | None = Query(default=None, ge=-180, le=180),
     db: Session = Depends(get_db),
 ):
     food = random_food(
@@ -235,6 +241,8 @@ def pick_random_food(
         campus=campus,
         radius=radius,
         sort=sort,
+        user_lat=user_lat,
+        user_lng=user_lng,
     )
     if not food:
         raise HTTPException(status_code=404, detail="No matching food spots found.")
@@ -242,8 +250,14 @@ def pick_random_food(
 
 
 @router.get("/foods/{food_id}")
-def read_food(food_id: int, campus: str = "feu_tech", db: Session = Depends(get_db)):
-    food = get_food(db, food_id, campus)
+def read_food(
+    food_id: int,
+    campus: str = "feu_tech",
+    user_lat: float | None = Query(default=None, ge=-90, le=90),
+    user_lng: float | None = Query(default=None, ge=-180, le=180),
+    db: Session = Depends(get_db),
+):
+    food = get_food(db, food_id, campus, user_lat, user_lng)
     if not food:
         raise HTTPException(status_code=404, detail="Food spot not found.")
     return food

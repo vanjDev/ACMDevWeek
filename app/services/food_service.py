@@ -85,8 +85,13 @@ def _feature_matches(food: FoodSpotResponse, features: list[str]) -> bool:
     return all(feature in tags for feature in features)
 
 
-def serialize_food(food: FoodSpot, campus: str = "feu_tech") -> FoodSpotResponse:
-    lat, lng = campus_coordinates(campus)
+def serialize_food(
+    food: FoodSpot,
+    campus: str = "feu_tech",
+    user_lat: float | None = None,
+    user_lng: float | None = None,
+) -> FoodSpotResponse:
+    lat, lng = (user_lat, user_lng) if user_lat is not None and user_lng is not None else campus_coordinates(campus)
     distance = haversine_meters(lat, lng, food.latitude, food.longitude)
     data = FoodSpotResponse.model_validate(food)
     data.distance_m = round(distance, 1)
@@ -165,6 +170,8 @@ def filter_foods(
     feature: str | None = None,
     time_max: int | None = None,
     meal_minutes: int = 20,
+    user_lat: float | None = None,
+    user_lng: float | None = None,
 ) -> list[FoodSpotResponse]:
     query = _base_query()
 
@@ -197,7 +204,7 @@ def filter_foods(
             )
         )
 
-    foods = [serialize_food(food, campus) for food in db.scalars(query).all()]
+    foods = [serialize_food(food, campus, user_lat, user_lng) for food in db.scalars(query).all()]
 
     if radius:
         foods = [food for food in foods if (food.distance_m or 0) <= radius]
@@ -242,11 +249,17 @@ def random_food(db: Session, **filters: object) -> FoodSpotResponse | None:
     return random.choice(foods) if foods else None
 
 
-def get_food(db: Session, food_id: int, campus: str = "feu_tech") -> FoodSpotResponse | None:
+def get_food(
+    db: Session,
+    food_id: int,
+    campus: str = "feu_tech",
+    user_lat: float | None = None,
+    user_lng: float | None = None,
+) -> FoodSpotResponse | None:
     food = db.get(FoodSpot, food_id)
     if not food or not food.is_active:
         return None
-    return serialize_food(food, campus)
+    return serialize_food(food, campus, user_lat, user_lng)
 
 
 def timer_recommendations(

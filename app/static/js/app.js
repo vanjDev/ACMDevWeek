@@ -5,6 +5,7 @@ const state = {
   weatherMode: "auto",
   isLoading: false,
   selectedStoreId: null,
+  userLocation: null,
 };
 
 const DEFAULT_RADIUS = 1200;
@@ -12,6 +13,7 @@ const HISTORY_KEY = "saanFoodHistory";
 const FAVORITES_KEY = "saanFavoriteTypes";
 const STORE_BOOKMARKS_KEY = "bookmarkedStores";
 const BUDGET_KEY = "saanWeeklyBudget";
+const LOCATION_KEY = "saanPreciseLocation";
 
 const categoryImages = {
   chicken: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=900&q=80",
@@ -71,6 +73,39 @@ function updateSaveStatus(label = null) {
   const status = document.getElementById("saveStatus");
   if (!status) return;
   status.textContent = label || (window.SaanAuth?.user ? "Syncing saves to your account" : "Guest saves stay on this device");
+}
+
+function getSavedLocation() {
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(LOCATION_KEY) || "null");
+    if (!saved || !Number.isFinite(saved.lat) || !Number.isFinite(saved.lng)) return null;
+    return saved;
+  } catch {
+    return null;
+  }
+}
+
+function setUserLocation(location) {
+  state.userLocation = location;
+  window.SaanUserLocation = location;
+  const status = document.getElementById("locationStatus");
+  const button = document.getElementById("usePreciseLocation");
+  if (location) {
+    sessionStorage.setItem(LOCATION_KEY, JSON.stringify(location));
+    if (status) status.textContent = `Using your live position within about ${Math.round(location.accuracy || 0)}m.`;
+    if (button) {
+      button.classList.add("active");
+      button.innerHTML = `<i data-lucide="locate-fixed"></i> Using my location`;
+    }
+  } else {
+    sessionStorage.removeItem(LOCATION_KEY);
+    if (status) status.textContent = "Distances start from selected campus.";
+    if (button) {
+      button.classList.remove("active");
+      button.innerHTML = `<i data-lucide="locate-fixed"></i> Use my location`;
+    }
+  }
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function updateBookmarkToggle() {
@@ -181,6 +216,10 @@ function buildParams() {
   params.set("radius", String(DEFAULT_RADIUS));
   params.set("sort", document.getElementById("sort").value);
   params.set("limit", "250");
+  if (state.userLocation) {
+    params.set("user_lat", state.userLocation.lat.toFixed(7));
+    params.set("user_lng", state.userLocation.lng.toFixed(7));
+  }
 
   if (q) params.set("q", q);
   if (budget) {
@@ -411,16 +450,7 @@ function storeCardTemplate(store) {
 }
 
 function menuDetailTemplate(store) {
-  if (!store) {
-    return `
-      <div class="menu-detail-empty">
-        <i data-lucide="utensils"></i>
-        <span>Menu Preview</span>
-        <strong>Pick a restaurant</strong>
-        <p>Click any store card to open a larger menu with food photos and save buttons.</p>
-      </div>
-    `;
-  }
+  if (!store) return "";
 
   const storeSaved = getStoreBookmarks().includes(store.id);
   return `
@@ -445,6 +475,7 @@ function renderMenuDetail(stores) {
   const detail = document.getElementById("menuDetail");
   if (!detail) return;
   const selected = stores.find((store) => store.id === state.selectedStoreId);
+  detail.hidden = !selected;
   detail.innerHTML = menuDetailTemplate(selected);
 }
 
@@ -681,6 +712,42 @@ function setupFilters() {
     document.getElementById("pickResult")?.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 
+  document.getElementById("usePreciseLocation")?.addEventListener("click", () => {
+    if (state.userLocation) {
+      setUserLocation(null);
+      showToast("Using selected campus for distances.");
+      loadFoods();
+      return;
+    }
+    if (!navigator.geolocation) {
+      showToast("Precise location is not available in this browser.");
+      return;
+    }
+    const button = document.getElementById("usePreciseLocation");
+    const status = document.getElementById("locationStatus");
+    if (button) button.innerHTML = `<i data-lucide="loader-circle"></i> Locating...`;
+    if (status) status.textContent = "Asking your browser for precise location...";
+    if (window.lucide) window.lucide.createIcons();
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        });
+        state.visibleLimit = 12;
+        showToast("Using your precise location for walk times.");
+        loadFoods();
+      },
+      () => {
+        setUserLocation(null);
+        showToast("Location was not allowed. Using selected campus instead.");
+        loadFoods();
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
+    );
+  });
+
   document.getElementById("results").addEventListener("click", async (event) => {
     const bookmarkButton = event.target.closest("[data-bookmark]");
     const storeBookmarkButton = event.target.closest("[data-store-bookmark]");
@@ -718,10 +785,7 @@ function setupFilters() {
       const food = state.foods.find((item) => item.id === Number(ateButton.dataset.ate));
       if (food) logFood(food);
     } else if (card) {
-      state.selectedStoreId = card.dataset.storeId;
-      renderFoods(state.foods);
       window.selectFoodOnMap?.(card.dataset.storeId, false);
-      focusMenuDetail();
     }
   });
 
@@ -759,8 +823,12 @@ function setupFilters() {
 async function detectWeather() {
   const select = document.getElementById("weather");
   if (!select || select.value !== "auto") return;
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 2500);
   try {
-    const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=14.6042&longitude=120.9882&current=temperature_2m,precipitation,weather_code");
+    const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=14.6042&longitude=120.9882&current=temperature_2m,precipitation,weather_code", {
+      signal: controller.signal,
+    });
     const data = await response.json();
     const current = data.current || {};
     if (Number(current.precipitation || 0) > 0 || Number(current.weather_code || 0) >= 51) {
@@ -772,6 +840,8 @@ async function detectWeather() {
     }
   } catch {
     state.weatherMode = "any";
+  } finally {
+    window.clearTimeout(timeout);
   }
 }
 
@@ -789,6 +859,7 @@ window.addEventListener("saan:store-open", (event) => {
 
 document.addEventListener("DOMContentLoaded", async () => {
   await window.SaanAuth?.ready;
+  setUserLocation(getSavedLocation());
   restorePreferences();
   renderHabitStrip();
   updateBudgetInsight();
