@@ -2521,11 +2521,13 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 
 /* Compact cuisine filter rail sitting directly below the stores heading */
 .cuisine-rail--filter {
-  display: flex;
+  display: flex !important;
+  grid-auto-columns: unset !important;
+  grid-auto-flow: unset !important;
   gap: 8px;
   overflow-x: auto;
-  padding: 10px 16px 12px;
-  border-radius: 0 0 14px 14px;
+  padding: 10px 16px 14px;
+  border-radius: 0 0 16px 16px;
   background: var(--cream);
   margin-bottom: 20px;
   scrollbar-width: none;
@@ -2536,34 +2538,56 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 }
 
 .cuisine-rail--filter .cuisine-chip {
-  flex: 0 0 auto;
-  min-width: 0;
-  display: flex;
+  flex: 0 0 auto !important;
+  min-width: unset !important;
+  min-height: unset !important;
+  width: auto;
+  display: flex !important;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  gap: 5px;
   border-radius: 12px;
-  padding: 6px 10px;
-  background: rgba(0, 138, 84, 0.1);
+  padding: 7px 10px;
+  border: 1px solid rgba(0, 117, 78, 0.12);
+  background: rgba(0, 138, 84, 0.08);
   color: var(--green);
   font-size: 0.65rem;
   font-weight: 950;
   text-transform: uppercase;
   white-space: nowrap;
-  transition: background 0.15s, color 0.15s;
+  scroll-snap-align: unset;
+  box-shadow: none;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .cuisine-rail--filter .cuisine-chip img {
-  width: 36px;
-  height: 36px;
+  width: 38px !important;
+  height: 38px !important;
+  aspect-ratio: 1 !important;
   border-radius: 8px;
   object-fit: cover;
 }
 
+.cuisine-rail--filter .cuisine-chip:hover {
+  transform: none;
+  background: rgba(0, 138, 84, 0.15);
+  border-color: rgba(0, 117, 78, 0.28);
+  box-shadow: none;
+}
+
 .cuisine-rail--filter .cuisine-chip.active,
 .cuisine-rail--filter .cuisine-chip[aria-pressed="true"] {
+  transform: none;
+  border-color: transparent;
   background: var(--green);
   color: var(--cream);
+  box-shadow: 0 4px 12px rgba(0, 138, 84, 0.3);
+}
+
+.cuisine-rail--filter .cuisine-chip.active img,
+.cuisine-rail--filter .cuisine-chip[aria-pressed="true"] img {
+  outline: none;
 }
 
 .shops-heading-copy {
@@ -6420,10 +6444,15 @@ body.menu-detail-open {
   }
 }
 
+.store-rail-wrap {
+  position: relative;
+}
+
 .store-rail-nav {
   position: absolute;
   z-index: 6;
-  top: calc(58px + 150px);
+  top: 50%;
+  transform: translateY(-50%);
   width: 44px;
   height: 44px;
 }
@@ -6479,7 +6508,8 @@ body.menu-detail-open {
   }
 
   .store-rail-nav {
-    top: calc(48px + 130px);
+    top: 50%;
+    transform: translateY(-50%);
     width: 40px;
     height: 40px;
   }
