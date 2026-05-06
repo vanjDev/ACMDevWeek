@@ -2,23 +2,128 @@
 
 {% block content %}
 <section class="about-page">
-  <div>
+  <div class="about-hero">
+    <p>Student food decisions, clearer and faster.</p>
     <h1>About Saan?</h1>
-    <p>Saan? is a food finder for FEU Tech and FEU Manila students. It helps students choose where to eat around Morayta based on budget, cravings, distance, mood, and available break time.</p>
+    <span>Saan? is a food finder for FEU Tech and FEU Manila students. It helps students choose where to eat around Morayta based on budget, cravings, walking distance, mood, and available break time.</span>
+    <div class="about-anchor-nav" aria-label="About page sections">
+      <a href="#what-it-does">What it does</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#terms">Terms</a>
+      <a href="#disclaimers">Disclaimers</a>
+      <a href="#contact">Contact</a>
+    </div>
   </div>
+
   <div class="about-grid">
-    <article>
+    <article id="what-it-does">
       <h2>What It Does</h2>
-      <p>The system lists nearby food spots, filters them by student needs, shows them on a map, saves bookmarks, tracks meal logs, and can randomly suggest a place to eat.</p>
+      <p>The system lists nearby food spots, filters them by student needs, shows stores on a map, saves bookmarks, tracks meal logs, and can randomly suggest a place to eat.</p>
     </article>
     <article>
       <h2>Tracker</h2>
-      <p>The tracker page helps students review meal history, weekly spending, and budget progress without crowding the food finder itself.</p>
+      <p>The tracker helps students review meal history, weekly spending, budget progress, and tipid feedback without crowding the main food finder.</p>
     </article>
     <article>
       <h2>Tech Stack</h2>
       <p>Built with FastAPI, Uvicorn, Jinja2, SQLite, SQLAlchemy, vanilla JavaScript, CSS, Leaflet, and OpenStreetMap.</p>
     </article>
   </div>
+
+  <section id="privacy" class="about-section">
+    <div class="about-section-heading">
+      <span>Privacy notice</span>
+      <h2>How Your Data Is Used</h2>
+      <p>Saan? only asks for data that supports food recommendations, saved choices, and the budget tracker.</p>
+    </div>
+    <div class="policy-grid">
+      <article>
+        <i data-lucide="database"></i>
+        <h3>Data We Store</h3>
+        <p>Saved bookmarks, favorite filters, weekly budget value, and meal history may be stored locally in your browser. If you sign in, these saves can sync to your account.</p>
+      </article>
+      <article>
+        <i data-lucide="map-pin"></i>
+        <h3>Location</h3>
+        <p>Location access is optional. If enabled, it is used to estimate distance and walk time from your current position instead of the selected campus.</p>
+      </article>
+      <article>
+        <i data-lucide="clock"></i>
+        <h3>Meal History</h3>
+        <p>Meal logs use Manila time so daily and weekly spending totals match the local student schedule.</p>
+      </article>
+      <article>
+        <i data-lucide="shield-check"></i>
+        <h3>Control</h3>
+        <p>You can clear meal history from the tracker. Guest saves remain on the device unless you sign in and sync them.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="terms" class="about-section">
+    <div class="about-section-heading">
+      <span>Terms of use</span>
+      <h2>Using Saan?</h2>
+    </div>
+    <div class="terms-list">
+      <article>
+        <h3>Student Decision Tool</h3>
+        <p>Saan? is designed as a food discovery and budgeting aid. It does not guarantee store availability, exact prices, menu availability, or current operating hours.</p>
+      </article>
+      <article>
+        <h3>Responsible Use</h3>
+        <p>Use recommendations as guidance, then confirm important details directly with the store when needed. Do not rely on the app for emergency, medical, dietary, or financial decisions.</p>
+      </article>
+      <article>
+        <h3>Accounts and Saves</h3>
+        <p>If you create an account, you are responsible for keeping your login credentials private. The account feature is only meant to sync personal saves and preferences.</p>
+      </article>
+      <article>
+        <h3>Content Updates</h3>
+        <p>Restaurant data, photos, prices, routes, and map information may change. The app may update or remove entries to improve accuracy and usability.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="disclaimers" class="about-section">
+    <div class="about-section-heading">
+      <span>Accuracy and third parties</span>
+      <h2>Important Disclaimers</h2>
+    </div>
+    <div class="policy-grid">
+      <article>
+        <i data-lucide="route"></i>
+        <h3>Routes and Walk Times</h3>
+        <p>Walk times are estimates based on coordinates, routing services, or distance calculations. Actual travel time can vary due to crossings, gates, weather, and crowds.</p>
+      </article>
+      <article>
+        <i data-lucide="image"></i>
+        <h3>Photos and Sources</h3>
+        <p>Some images and restaurant references may come from public or third-party sources during research. Production use should prioritize permissioned or first-party photos.</p>
+      </article>
+      <article>
+        <i data-lucide="cloud-sun"></i>
+        <h3>External Services</h3>
+        <p>The app may use third-party services such as maps, routing, weather, authentication, and public food data. Those services may have their own terms and privacy practices.</p>
+      </article>
+      <article>
+        <i data-lucide="badge-alert"></i>
+        <h3>No Official Affiliation</h3>
+        <p>Saan? is a student-focused project and should not be treated as an official FEU, restaurant, or merchant publication unless explicitly stated.</p>
+      </article>
+    </div>
+  </section>
+
+  <section id="contact" class="about-section contact-section">
+    <div>
+      <span>Support and corrections</span>
+      <h2>Found Wrong Data?</h2>
+      <p>If a store, price, route, or photo looks wrong, update it through the project maintainers or admin tools. Accurate local data is the most important part of making Saan? useful.</p>
+    </div>
+    <a href="/" class="primary-button compact-button">
+      <i data-lucide="utensils"></i>
+      Back to food finder
+    </a>
+  </section>
 </section>
 {% endblock %}
