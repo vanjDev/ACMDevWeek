@@ -8,6 +8,26 @@ const ROUTE_API = "https://router.project-osrm.org/route/v1/foot";
 const DEFAULT_CENTER = [14.6042, 120.9888];
 const routeCache = new Map();
 
+const PEDESTRIAN_LANES = [
+  {
+    key: "feu_tech_paredes_crossing",
+    label: "FEU Tech pedestrian lane",
+    startCampus: "feu_tech",
+    destinationBox: {
+      minLat: 14.60325,
+      maxLat: 14.60445,
+      minLng: 120.98735,
+      maxLng: 120.9889,
+    },
+    points: [
+      [14.6042, 120.9882],
+      [14.60398, 120.98842],
+      [14.60379, 120.98825],
+      [14.60363, 120.98802],
+    ],
+  },
+];
+
 let saanLeafletMap = null;
 let foodLayer = null;
 let campusLayer = null;
@@ -33,6 +53,35 @@ function currentStartCoordinates() {
   return window.SaanUserLocation
     ? { lat: window.SaanUserLocation.lat, lng: window.SaanUserLocation.lng }
     : { lat: campus.lat, lng: campus.lng };
+}
+
+function distanceBetweenPoints(a, b) {
+  const latMeters = (a[0] - b[0]) * 111_320;
+  const lngMeters = (a[1] - b[1]) * 111_320 * Math.cos(((a[0] + b[0]) / 2) * Math.PI / 180);
+  return Math.sqrt((latMeters * latMeters) + (lngMeters * lngMeters));
+}
+
+function nearestPointIndex(points, target) {
+  return points.reduce((bestIndex, point, index) => (
+    distanceBetweenPoints(point, target) < distanceBetweenPoints(points[bestIndex], target) ? index : bestIndex
+  ), 0);
+}
+
+function customPedestrianRoute(food) {
+  if (window.SaanUserLocation || window.SaanMapCampus !== "feu_tech") return null;
+  const destination = [food.latitude, food.longitude];
+  const lane = PEDESTRIAN_LANES.find((item) => (
+    item.startCampus === "feu_tech"
+    && destination[0] >= item.destinationBox.minLat
+    && destination[0] <= item.destinationBox.maxLat
+    && destination[1] >= item.destinationBox.minLng
+    && destination[1] <= item.destinationBox.maxLng
+  ));
+  if (!lane) return null;
+
+  const lastLaneIndex = nearestPointIndex(lane.points, destination);
+  const lanePoints = lane.points.slice(0, lastLaneIndex + 1);
+  return [...lanePoints, destination];
 }
 
 function mapIconForFood(food) {
@@ -152,6 +201,12 @@ async function fetchWalkingRoute(food) {
   const start = currentStartCoordinates();
   const cacheKey = `${start.lat.toFixed(6)},${start.lng.toFixed(6)}:${food.latitude.toFixed(6)},${food.longitude.toFixed(6)}`;
   if (routeCache.has(cacheKey)) return routeCache.get(cacheKey);
+
+  const localRoute = customPedestrianRoute(food);
+  if (localRoute) {
+    routeCache.set(cacheKey, localRoute);
+    return localRoute;
+  }
 
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 3500);

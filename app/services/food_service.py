@@ -2,7 +2,7 @@ import random
 from collections.abc import Sequence
 
 from sqlalchemy import Select, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models import FoodSpot
 from app.schemas import FoodSpotResponse
@@ -16,7 +16,7 @@ def _split_csv(value: str | None) -> list[str]:
 
 
 def _base_query() -> Select[tuple[FoodSpot]]:
-    return select(FoodSpot).where(FoodSpot.is_active.is_(True))
+    return select(FoodSpot).options(joinedload(FoodSpot.store)).where(FoodSpot.is_active.is_(True))
 
 
 PORK_TERMS = ("pork", "sisig", "bacon", "bacsilog", "longsilog")
@@ -91,9 +91,22 @@ def serialize_food(
     user_lat: float | None = None,
     user_lng: float | None = None,
 ) -> FoodSpotResponse:
+    store = food.store
+    food_latitude = store.latitude if store else food.latitude
+    food_longitude = store.longitude if store else food.longitude
+    food_area = store.area if store else food.area
+    food_rating = max(food.rating, store.rating) if store else food.rating
+    restaurant = store.name if store else food.restaurant
+
     lat, lng = (user_lat, user_lng) if user_lat is not None and user_lng is not None else campus_coordinates(campus)
-    distance = haversine_meters(lat, lng, food.latitude, food.longitude)
+    distance = haversine_meters(lat, lng, food_latitude, food_longitude)
     data = FoodSpotResponse.model_validate(food)
+    data.restaurant = restaurant
+    data.latitude = food_latitude
+    data.longitude = food_longitude
+    data.area = food_area
+    data.rating = food_rating
+    data.image_url = food.image_url or (store.image_url if store else None)
     data.distance_m = round(distance, 1)
     data.walking_minutes = walking_minutes(distance)
     text = _haystack(food)
@@ -110,7 +123,7 @@ def serialize_food(
     data.diet_tags = diet_tags
 
     frames: list[str] = []
-    if food.rating >= 4.4 or food.area == "inside_campus":
+    if food_rating >= 4.4 or food_area == "inside_campus":
         frames.append("Safe choice")
     if food.price_max <= 80:
         frames.append("Budget-friendly")
@@ -143,7 +156,7 @@ def serialize_food(
         feature_tags.append("group")
     if food.mood == "study_fuel" or _matches_any(food, STUDY_TERMS):
         feature_tags.append("study")
-    if food.area == "inside_campus" or _matches_any(food, AIRCON_TERMS):
+    if food_area == "inside_campus" or _matches_any(food, AIRCON_TERMS):
         feature_tags.append("aircon")
     if food.mood == "late_night" or _matches_any(food, OPEN_LATE_TERMS):
         feature_tags.append("open_late")
@@ -256,7 +269,7 @@ def get_food(
     user_lat: float | None = None,
     user_lng: float | None = None,
 ) -> FoodSpotResponse | None:
-    food = db.get(FoodSpot, food_id)
+    food = db.query(FoodSpot).options(joinedload(FoodSpot.store)).filter(FoodSpot.id == food_id).first()
     if not food or not food.is_active:
         return None
     return serialize_food(food, campus, user_lat, user_lng)

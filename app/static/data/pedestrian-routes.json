@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-05-06",
+  "routes": [
+    {
+      "key": "feu_tech_paredes_crossing",
+      "label": "FEU Tech pedestrian lane",
+      "start_campus": "feu_tech",
+      "reason": "Manual correction for the nearby pedestrian lane that OSRM may route around.",
+      "destination_box": {
+        "min_lat": 14.60325,
+        "max_lat": 14.60445,
+        "min_lng": 120.98735,
+        "max_lng": 120.9889
+      },
+      "points": [
+        [14.6042, 120.9882],
+        [14.60398, 120.98842],
+        [14.60379, 120.98825],
+        [14.60363, 120.98802]
+      ]
+    }
+  ]
+}

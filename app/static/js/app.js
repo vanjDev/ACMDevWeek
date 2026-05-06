@@ -14,6 +14,8 @@ const FAVORITES_KEY = "saanFavoriteTypes";
 const STORE_BOOKMARKS_KEY = "bookmarkedStores";
 const BUDGET_KEY = "saanWeeklyBudget";
 const LOCATION_KEY = "saanPreciseLocation";
+const USER_STORE_RATINGS_KEY = "saanStoreRatings";
+const USER_FOOD_RATINGS_KEY = "saanFoodRatings";
 
 const categoryImages = {
   chicken: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=900&q=80",
@@ -331,6 +333,26 @@ async function setStoreBookmarks(ids) {
   setJson("saanUserData", next);
 }
 
+function getUserRatings(key) {
+  const raw = getJson(key, {});
+  return raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+}
+
+function getUserStoreRating(storeId) {
+  return Number(getUserRatings(USER_STORE_RATINGS_KEY)[String(storeId)] || 0);
+}
+
+function getUserFoodRating(foodId) {
+  return Number(getUserRatings(USER_FOOD_RATINGS_KEY)[String(foodId)] || 0);
+}
+
+function setUserRating(key, id, rating) {
+  const normalizedRating = Number(rating);
+  if (!id || !Number.isFinite(normalizedRating) || normalizedRating < 1 || normalizedRating > 5) return;
+  const ratings = { ...getUserRatings(key), [String(id)]: normalizedRating };
+  setJson(key, ratings);
+}
+
 function antiRepeatIds() {
   if (!document.getElementById("antiRepeat")?.checked) return [];
   return getHistory().slice(0, 4).map((item) => item.id);
@@ -492,6 +514,7 @@ function storeFrames(store) {
   if (getStoreBookmarks().includes(store.id)) frames.unshift("Favorite restaurant");
   if (store.menu.some((food) => getBookmarks().includes(food.id))) frames.unshift("Has saved item");
   if (store.menu.some((food) => antiRepeatIds().includes(food.id))) frames.unshift("Recently tried");
+  if (getUserStoreRating(store.id)) frames.unshift(`Your ${getUserStoreRating(store.id)}/5`);
   if (store.feature_tags?.includes("open_late")) frames.push("Open late");
   if (store.feature_tags?.includes("aircon")) frames.push("Aircon");
   return [...new Set(frames)].slice(0, 5);
@@ -499,6 +522,18 @@ function storeFrames(store) {
 
 function foodImageFor(food) {
   return food.image_url || restaurantImages[food.restaurant] || categoryImages[food.category] || categoryImages.snacks;
+}
+
+function ratingStarsTemplate({ id, type, value = 0, label }) {
+  return `
+    <div class="rating-stars" role="group" aria-label="${label}">
+      ${[1, 2, 3, 4, 5].map((rating) => `
+        <button class="rating-star ${value >= rating ? "active" : ""}" type="button" data-rate-${type}="${id}" data-rating="${rating}" aria-label="${rating} out of 5" aria-pressed="${value === rating}" title="${rating} out of 5">
+          <i data-lucide="star"></i>
+        </button>
+      `).join("")}
+    </div>
+  `;
 }
 
 function menuItemTemplate(food) {
@@ -528,6 +563,7 @@ function detailMenuItemTemplate(food) {
   const active = getBookmarks().includes(food.id);
   const foodLog = latestFoodLog(food.id);
   const eatenToday = Boolean(foodLog && foodLog.phDate === manilaParts().date);
+  const userRating = getUserFoodRating(food.id);
   return `
     <article class="detail-menu-item" data-menu-food-id="${food.id}">
       <img src="${foodImageFor(food)}" alt="">
@@ -541,6 +577,10 @@ function detailMenuItemTemplate(food) {
           <p>${food.description}</p>
         </div>
         <div class="detail-menu-meta">
+          <div class="rating-panel compact-rating">
+            <span>${userRating ? `Your food rating: ${userRating}/5` : "Rate food"}</span>
+            ${ratingStarsTemplate({ id: food.id, type: "food", value: userRating, label: `Rate ${food.name}` })}
+          </div>
           <button class="icon-button ate-button ${eatenToday ? "active" : ""}" type="button" data-ate="${food.id}" aria-label="${eatenToday ? "Edit meal log for" : "Log"} ${food.name}" aria-pressed="${eatenToday}" title="${eatenToday ? `Logged PHP ${foodLog.price} today` : "Log eaten"}">
             <i data-lucide="utensils"></i>
           </button>
@@ -560,6 +600,7 @@ function storeCardTemplate(store) {
   const image = foodImageFor(store);
   const frames = storeFrames(store);
   const isOpen = state.selectedStoreId === store.id;
+  const userRating = getUserStoreRating(store.id);
   return `
     <article class="food-card store-card ${isOpen ? "open" : ""}" data-store-id="${store.id}">
       <div class="food-image">
@@ -577,7 +618,11 @@ function storeCardTemplate(store) {
         <div class="food-meta">
           <span><small>Menu</small>${store.menu.length} items</span>
           <span><small>Walk</small>${store.walking_minutes} min</span>
-          <span><small>Rating</small>${store.rating.toFixed(1)}</span>
+          <span><small>Store rating</small><i data-lucide="star"></i> ${store.rating.toFixed(1)}</span>
+        </div>
+        <div class="rating-panel store-card-rating">
+          <span>${userRating ? `Your rating: ${userRating}/5` : "Rate store"}</span>
+          ${ratingStarsTemplate({ id: store.id, type: "store", value: userRating, label: `Rate ${store.name}` })}
         </div>
         <div class="card-actions">
           <span class="pill price-pill">
@@ -602,13 +647,14 @@ function menuDetailTemplate(store) {
   if (!store) return "";
 
   const storeSaved = getStoreBookmarks().includes(store.id);
+  const userRating = getUserStoreRating(store.id);
   return `
     <div class="menu-detail-header">
       <img src="${foodImageFor(store)}" alt="">
       <div>
         <span>${formatLabel(store.area)}</span>
         <strong>${store.name}</strong>
-        <p>${store.menu.length} menu items - ${store.walking_minutes} min walk</p>
+        <p>${store.menu.length} menu items - ${store.walking_minutes} min walk - store rating ${store.rating.toFixed(1)}/5</p>
         <b class="detail-price-range">PHP ${store.price_min}-${store.price_max}</b>
       </div>
       <div class="menu-detail-header-actions">
@@ -618,6 +664,17 @@ function menuDetailTemplate(store) {
         <button class="icon-button menu-detail-close" type="button" data-close-menu aria-label="Close menu" title="Close menu">
           <i data-lucide="x"></i>
         </button>
+      </div>
+    </div>
+    <div class="decision-rating">
+      <div>
+        <span>Decision signal</span>
+        <strong><i data-lucide="star"></i> ${store.rating.toFixed(1)} store rating</strong>
+        <p>Good ratings can guide the choice, but compare price, walk time, and what you actually want.</p>
+      </div>
+      <div class="rating-panel">
+        <span>${userRating ? `Your store rating: ${userRating}/5` : "Rate this store"}</span>
+        ${ratingStarsTemplate({ id: store.id, type: "store", value: userRating, label: `Rate ${store.name}` })}
       </div>
     </div>
     <div class="detail-menu-list">
@@ -649,10 +706,14 @@ function applyClientRanking(foods) {
   const treatMood = selectedMoods.includes("treat_myself");
   const rushMood = selectedMoods.includes("nagmamadali");
   const historyIds = antiRepeatIds();
+  const storeRatings = getUserRatings(USER_STORE_RATINGS_KEY);
+  const foodRatings = getUserRatings(USER_FOOD_RATINGS_KEY);
 
   return [...foods].sort((a, b) => {
     const score = (food) => {
       let total = food.rating * 8 - (food.walking_minutes || 0);
+      total += Number(foodRatings[String(food.id)] || 0) * 8;
+      total += Number(storeRatings[storeIdFor(food.restaurant)] || 0) * 5;
       if (favorites.includes(food.category)) total += 12;
       if (hotMood) total -= food.price_max / 16;
       if (treatMood) total += food.price_min >= 100 ? 8 : 0;
@@ -1063,9 +1124,20 @@ function setupFilters() {
   document.getElementById("results").addEventListener("click", async (event) => {
     const bookmarkButton = event.target.closest("[data-bookmark]");
     const storeBookmarkButton = event.target.closest("[data-store-bookmark]");
+    const storeRatingButton = event.target.closest("[data-rate-store]");
     const ateButton = event.target.closest("[data-ate]");
     const toggleButton = event.target.closest("[data-store-toggle]");
     const card = event.target.closest("[data-store-id]");
+    if (storeRatingButton) {
+      const id = String(storeRatingButton.dataset.rateStore || "");
+      const rating = Number(storeRatingButton.dataset.rating);
+      const store = groupFoodsByStore(state.foods).find((item) => item.id === id);
+      if (!id || !Number.isFinite(rating)) return;
+      setUserRating(USER_STORE_RATINGS_KEY, id, rating);
+      showToast(`Rated ${store?.name || "store"} ${rating}/5.`);
+      renderFoods(state.foods);
+      return;
+    }
     if (bookmarkButton) {
       const id = Number(bookmarkButton.dataset.bookmark);
       if (!Number.isFinite(id)) return;
@@ -1106,12 +1178,34 @@ function setupFilters() {
   document.getElementById("menuDetail")?.addEventListener("click", async (event) => {
     const bookmarkButton = event.target.closest("[data-bookmark]");
     const storeBookmarkButton = event.target.closest("[data-store-bookmark]");
+    const storeRatingButton = event.target.closest("[data-rate-store]");
+    const foodRatingButton = event.target.closest("[data-rate-food]");
     const ateButton = event.target.closest("[data-ate]");
     const closeButton = event.target.closest("[data-close-menu]");
     if (closeButton) {
       state.selectedStoreId = null;
       renderFoods(state.foods);
       window.selectFoodOnMap?.(null, false);
+      return;
+    }
+    if (storeRatingButton) {
+      const id = String(storeRatingButton.dataset.rateStore || "");
+      const rating = Number(storeRatingButton.dataset.rating);
+      const store = groupFoodsByStore(state.foods).find((item) => item.id === id);
+      if (!id || !Number.isFinite(rating)) return;
+      setUserRating(USER_STORE_RATINGS_KEY, id, rating);
+      showToast(`Rated ${store?.name || "store"} ${rating}/5.`);
+      renderFoods(state.foods);
+      return;
+    }
+    if (foodRatingButton) {
+      const id = Number(foodRatingButton.dataset.rateFood);
+      const rating = Number(foodRatingButton.dataset.rating);
+      const food = state.foods.find((item) => item.id === id);
+      if (!food || !Number.isFinite(rating)) return;
+      setUserRating(USER_FOOD_RATINGS_KEY, id, rating);
+      showToast(`Rated ${food.name} ${rating}/5.`);
+      renderFoods(state.foods);
       return;
     }
     if (bookmarkButton) {

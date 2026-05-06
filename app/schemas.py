@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 class FoodSpotResponse(BaseModel):
     id: int
+    store_id: int | None = None
     name: str
     restaurant: str
     price_min: int
@@ -29,6 +30,7 @@ class FoodSpotResponse(BaseModel):
 
 
 class AdminFoodSpotPayload(BaseModel):
+    store_id: int | None = None
     name: str = Field(..., min_length=1, max_length=120)
     restaurant: str = Field(..., min_length=1, max_length=120)
     price_min: int = Field(..., ge=0, le=5000)
@@ -46,6 +48,7 @@ class AdminFoodSpotPayload(BaseModel):
 
 class AdminFoodSpotResponse(BaseModel):
     id: int
+    store_id: int | None = None
     name: str
     restaurant: str
     price_min: int

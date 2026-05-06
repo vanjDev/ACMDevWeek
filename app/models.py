@@ -1,15 +1,32 @@
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+
+class Store(Base):
+    __tablename__ = "stores"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(String(120), unique=True, index=True)
+    latitude: Mapped[float] = mapped_column(Float)
+    longitude: Mapped[float] = mapped_column(Float)
+    area: Mapped[str] = mapped_column(String(100), index=True)
+    rating: Mapped[float] = mapped_column(Float, default=4.0)
+    image_url: Mapped[str] = mapped_column(String(500), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    foods: Mapped[list["FoodSpot"]] = relationship(back_populates="store")
 
 
 class FoodSpot(Base):
     __tablename__ = "food_spots"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    store_id: Mapped[int | None] = mapped_column(ForeignKey("stores.id", ondelete="SET NULL"), nullable=True, index=True)
     name: Mapped[str] = mapped_column(String(120), index=True)
     restaurant: Mapped[str] = mapped_column(String(120), index=True)
     price_min: Mapped[int] = mapped_column(Integer, index=True)
@@ -23,6 +40,8 @@ class FoodSpot(Base):
     image_url: Mapped[str] = mapped_column(String(500), nullable=True)
     description: Mapped[str] = mapped_column(Text)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+
+    store: Mapped[Store | None] = relationship(back_populates="foods")
 
 
 class User(Base):
