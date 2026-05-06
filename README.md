@@ -185,6 +185,14 @@ Browser geolocation requires HTTPS in production, so use the secure domain when 
 
 Starter food data lives in [`app/seed.py`](app/seed.py). Coordinates are focused on the FEU/Morayta area and can be improved as more real food spot data becomes available.
 
+Local photo and menu bundles in the root [`Data/`](Data/) folder can be imported into the app with:
+
+```powershell
+.\.venv\Scripts\python.exe -m app.import_data_bundle
+```
+
+That command copies the images into `app/static/uploads/foods/data-bundle/` and upserts matching stores and menu items into the database. Use `--dry-run` first if you want to preview what will be imported without writing anything.
+
 ## Why This Exists
 
 Saan? is built for a very specific student problem: deciding where to eat during short breaks around FEU. The goal is not just to list food places, but to make the decision faster, more visual, and more fun.

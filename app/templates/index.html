@@ -318,6 +318,42 @@
     </div>
   </form>
 </dialog>
+
+<dialog id="ratingDialog" class="auth-dialog rating-dialog">
+  <form id="ratingForm" class="auth-card rating-card" method="dialog">
+    <div class="auth-card-heading">
+      <div>
+        <p>Student review</p>
+        <h2 id="ratingDialogTitle">Rate store</h2>
+      </div>
+      <button id="closeRatingDialog" class="icon-button" value="cancel" type="button" aria-label="Close rating" title="Close">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <input id="ratingTargetType" type="hidden">
+    <input id="ratingTargetId" type="hidden">
+    <input id="ratingScore" type="hidden">
+    <div class="rating-dialog-summary">
+      <span id="ratingDialogSubtitle">Selected item</span>
+      <strong><i data-lucide="star"></i> <span id="ratingDialogScore">5/5</span></strong>
+    </div>
+    <label>
+      Why this rating?
+      <textarea id="ratingReason" rows="4" maxlength="240" required placeholder="Example: Sulit serving, fast line, good taste, or too expensive for the portion."></textarea>
+    </label>
+    <p id="ratingReasonHint" class="auth-message">Mention taste, serving, price, wait time, or if it felt sulit.</p>
+    <div class="meal-log-actions">
+      <button class="secondary-button compact-button" type="button" id="ratingCancel">
+        <i data-lucide="x"></i>
+        Cancel
+      </button>
+      <button class="primary-button compact-button" type="submit">
+        <i data-lucide="send"></i>
+        Save review
+      </button>
+    </div>
+  </form>
+</dialog>
 {% endblock %}
 
 {% block scripts %}
@@ -325,6 +361,6 @@
   window.SAAN_CAMPUSES = {{ campuses | tojson }};
 </script>
 <script src="{{ url_for('static', path='/js/map.js') }}?v=pedestrian-graph-20260506"></script>
-<script src="{{ url_for('static', path='/js/app.js') }}?v=opening-hours-20260506"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}?v=rating-dialog-20260506"></script>
 <script src="{{ url_for('static', path='/js/pickforme.js') }}?v=price-emphasis-20260506"></script>
 {% endblock %}

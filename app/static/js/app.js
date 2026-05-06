@@ -8,6 +8,7 @@ const state = {
   userLocation: null,
   publicStoreRatings: {},
   publicFoodRatings: {},
+  ratingDraft: null,
 };
 
 const DEFAULT_RADIUS = 1200;
@@ -429,6 +430,26 @@ function publicFoodRatingReason(foodId) {
   return summary?.reasons?.[0]?.reason || "";
 }
 
+function reviewsTemplate(summary, emptyText) {
+  const reasons = summary?.reasons || [];
+  return `
+    <div class="review-list">
+      <div class="review-list-heading">
+        <span>Student reviews</span>
+        <strong>${summary ? `${summary.average.toFixed(1)} from ${summary.count}` : "No reviews yet"}</strong>
+      </div>
+      ${reasons.length
+        ? reasons.map((review) => `
+          <article class="review-item">
+            <b><i data-lucide="star"></i> ${review.score}/5</b>
+            <p>${review.reason}</p>
+          </article>
+        `).join("")
+        : `<p class="review-empty">${emptyText}</p>`}
+    </div>
+  `;
+}
+
 async function loadPublicStoreRatings() {
   try {
     const [storeResponse, foodResponse] = await Promise.all([
@@ -752,6 +773,7 @@ function detailMenuItemTemplate(food) {
           <strong>${food.name}</strong>
           <p>${food.description}</p>
           ${publicRating ? `<p class="rating-reason"><i data-lucide="star"></i> ${publicRating.average.toFixed(1)} from ${publicRating.count} food rating${publicRating.count === 1 ? "" : "s"} - ${publicReason}</p>` : ""}
+          ${reviewsTemplate(publicRating, "No food reviews yet. Add the first useful note.")}
         </div>
         <div class="detail-menu-meta">
           <div class="rating-panel compact-rating">
@@ -867,6 +889,7 @@ function menuDetailTemplate(store) {
         <span>Decision signal</span>
         <strong><i data-lucide="star"></i> ${displayRating.toFixed(1)} ${ratingSource.toLowerCase()}</strong>
         <p>${ratingReasonText(userRatingEntry, publicReason || "This rating currently comes from the store dataset. Add your own score and reason to make the recommendation more useful.")}</p>
+        ${reviewsTemplate(publicRating, "No store reviews yet. Rate it after trying it.")}
       </div>
       <div class="rating-panel">
         <span>${userRating ? `Your store rating: ${userRating}/5` : "Rate this store"}</span>
@@ -994,6 +1017,67 @@ function openMealLogDialog(food, entry = null) {
   document.getElementById("mealLogRemove").dataset.entryId = entry?.entryId || "";
   dialog.showModal();
   if (window.lucide) window.lucide.createIcons();
+}
+
+function closeRatingDialog() {
+  document.getElementById("ratingDialog")?.close();
+  state.ratingDraft = null;
+}
+
+function openRatingDialog({ type, id, rating }) {
+  const dialog = document.getElementById("ratingDialog");
+  if (!dialog) return;
+  const isStore = type === "store";
+  const target = isStore
+    ? groupFoodsByStore(state.foods).find((store) => store.id === String(id))
+    : state.foods.find((food) => food.id === Number(id));
+  if (!target) return;
+
+  const previous = isStore ? getUserStoreRatingEntry(id) : getUserFoodRatingEntry(id);
+  state.ratingDraft = { type, id, rating: Number(rating), target };
+  document.getElementById("ratingTargetType").value = type;
+  document.getElementById("ratingTargetId").value = String(id);
+  document.getElementById("ratingScore").value = String(rating);
+  document.getElementById("ratingDialogTitle").textContent = `Rate ${isStore ? target.name : target.name}`;
+  document.getElementById("ratingDialogSubtitle").textContent = isStore ? target.name : `${target.name} at ${target.restaurant}`;
+  document.getElementById("ratingDialogScore").textContent = `${rating}/5`;
+  document.getElementById("ratingReason").value = previous.reason || "";
+  document.getElementById("ratingReasonHint").textContent = "Mention taste, serving, price, wait time, or if it felt sulit.";
+  dialog.showModal();
+  document.getElementById("ratingReason").focus();
+  if (window.lucide) window.lucide.createIcons();
+}
+
+async function saveRatingDialog(event) {
+  event.preventDefault();
+  const draft = state.ratingDraft;
+  if (!draft) return;
+  const reason = document.getElementById("ratingReason").value.trim();
+  if (!reason) {
+    document.getElementById("ratingReasonHint").textContent = "Add a short reason first so the rating helps other students.";
+    return;
+  }
+
+  if (draft.type === "store") {
+    setUserRating(USER_STORE_RATINGS_KEY, draft.id, draft.rating, reason);
+    try {
+      await submitPublicStoreRating(draft.target, draft.rating, reason);
+      showToast(`Rated ${draft.target.name} ${draft.rating}/5.`);
+    } catch {
+      showToast("Saved your rating locally. Public rating sync failed.");
+    }
+  } else {
+    setUserRating(USER_FOOD_RATINGS_KEY, draft.id, draft.rating, reason);
+    try {
+      await submitPublicFoodRating(draft.target, draft.rating, reason);
+      showToast(`Rated ${draft.target.name} ${draft.rating}/5.`);
+    } catch {
+      showToast("Saved your food rating locally. Public rating sync failed.");
+    }
+  }
+
+  closeRatingDialog();
+  renderFoods(state.foods);
 }
 
 async function loadFoods() {
@@ -1291,6 +1375,15 @@ function setupFilters() {
     closeMealLogDialog();
   });
 
+  document.getElementById("closeRatingDialog")?.addEventListener("click", closeRatingDialog);
+  document.getElementById("ratingCancel")?.addEventListener("click", closeRatingDialog);
+  document.getElementById("ratingDialog")?.addEventListener("click", (event) => {
+    if (event.target === event.currentTarget) closeRatingDialog();
+  });
+  document.getElementById("ratingForm")?.addEventListener("submit", (event) => {
+    saveRatingDialog(event).catch((error) => showToast(error.message));
+  });
+
   document.getElementById("usePreciseLocation")?.addEventListener("click", () => {
     if (state.userLocation) {
       setUserLocation(null);
@@ -1337,23 +1430,8 @@ function setupFilters() {
     if (storeRatingButton) {
       const id = String(storeRatingButton.dataset.rateStore || "");
       const rating = Number(storeRatingButton.dataset.rating);
-      const store = groupFoodsByStore(state.foods).find((item) => item.id === id);
       if (!id || !Number.isFinite(rating)) return;
-      const previous = getUserStoreRatingEntry(id);
-      const reason = window.prompt(`Why ${rating}/5 for ${store?.name || "this store"}?`, previous.reason || "");
-      if (reason === null) return;
-      if (!reason.trim()) {
-        showToast("Add a short reason so the rating helps other students.");
-        return;
-      }
-      setUserRating(USER_STORE_RATINGS_KEY, id, rating, reason);
-      try {
-        if (store) await submitPublicStoreRating(store, rating, reason.trim());
-        showToast(`Rated ${store?.name || "store"} ${rating}/5 with reason.`);
-      } catch {
-        showToast("Saved your rating locally. Public rating sync failed.");
-      }
-      renderFoods(state.foods);
+      openRatingDialog({ type: "store", id, rating });
       return;
     }
     if (bookmarkButton) {
@@ -1409,23 +1487,8 @@ function setupFilters() {
     if (storeRatingButton) {
       const id = String(storeRatingButton.dataset.rateStore || "");
       const rating = Number(storeRatingButton.dataset.rating);
-      const store = groupFoodsByStore(state.foods).find((item) => item.id === id);
       if (!id || !Number.isFinite(rating)) return;
-      const previous = getUserStoreRatingEntry(id);
-      const reason = window.prompt(`Why ${rating}/5 for ${store?.name || "this store"}?`, previous.reason || "");
-      if (reason === null) return;
-      if (!reason.trim()) {
-        showToast("Add a short reason so the rating helps other students.");
-        return;
-      }
-      setUserRating(USER_STORE_RATINGS_KEY, id, rating, reason);
-      try {
-        if (store) await submitPublicStoreRating(store, rating, reason.trim());
-        showToast(`Rated ${store?.name || "store"} ${rating}/5 with reason.`);
-      } catch {
-        showToast("Saved your rating locally. Public rating sync failed.");
-      }
-      renderFoods(state.foods);
+      openRatingDialog({ type: "store", id, rating });
       return;
     }
     if (foodRatingButton) {
@@ -1433,21 +1496,7 @@ function setupFilters() {
       const rating = Number(foodRatingButton.dataset.rating);
       const food = state.foods.find((item) => item.id === id);
       if (!food || !Number.isFinite(rating)) return;
-      const previous = getUserFoodRatingEntry(id);
-      const reason = window.prompt(`Why ${rating}/5 for ${food.name}?`, previous.reason || "");
-      if (reason === null) return;
-      if (!reason.trim()) {
-        showToast("Add a short reason so the rating is useful.");
-        return;
-      }
-      setUserRating(USER_FOOD_RATINGS_KEY, id, rating, reason);
-      try {
-        await submitPublicFoodRating(food, rating, reason.trim());
-        showToast(`Rated ${food.name} ${rating}/5 with reason.`);
-      } catch {
-        showToast("Saved your food rating locally. Public rating sync failed.");
-      }
-      renderFoods(state.foods);
+      openRatingDialog({ type: "food", id, rating });
       return;
     }
     if (bookmarkButton) {
