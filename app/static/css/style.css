@@ -17,6 +17,10 @@
   box-sizing: border-box;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 body {
   min-height: 100vh;
   margin: 0;
@@ -708,8 +712,9 @@ input[type="range"] {
 .content-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 18px;
+  gap: 28px;
   align-items: start;
+  clear: both;
 }
 
 .results-grid {
@@ -722,6 +727,7 @@ input[type="range"] {
   position: relative;
   z-index: 2;
   min-width: 0;
+  padding-top: 0;
 }
 
 .shops-heading {
@@ -784,7 +790,7 @@ input[type="range"] {
   min-height: 294px;
   display: grid;
   grid-template-rows: 108px 1fr;
-  overflow: visible;
+  overflow: hidden;
   border-radius: 28px 28px 10px 10px;
   color: var(--ink);
   background: var(--cream);
@@ -821,7 +827,7 @@ input[type="range"] {
 .food-image img {
   width: 112px;
   height: 112px;
-  margin-top: -10px;
+  margin-top: 10px;
   object-fit: cover;
   border: 8px solid var(--green);
   border-radius: 999px;
@@ -830,7 +836,7 @@ input[type="range"] {
 
 .food-image span {
   position: absolute;
-  bottom: 8px;
+  bottom: -2px;
   left: 50%;
   transform: translateX(-50%);
   min-width: 98px;
@@ -959,7 +965,7 @@ input[type="range"] {
 
 .top-map-wrap {
   border-radius: 24px 24px 8px 8px;
-  margin-bottom: 34px;
+  margin-bottom: 48px;
   transform: translateZ(0);
   z-index: 1;
 }
@@ -988,6 +994,7 @@ input[type="range"] {
   min-height: 320px;
   margin: 0 14px 14px;
   overflow: hidden;
+  isolation: isolate;
   border-radius: 22px;
   background:
     radial-gradient(circle at 52% 50%, rgba(246, 241, 231, 0.2), transparent 7rem),
