@@ -2633,6 +2633,190 @@ input[type="range"] {
   grid-template-columns: repeat(4, minmax(110px, 1fr)) auto minmax(170px, auto);
 }
 
+.admin-page {
+  width: min(1120px, calc(100% - 32px));
+  display: grid;
+  gap: 18px;
+  margin: 26px auto 48px;
+}
+
+.admin-heading,
+.admin-form,
+.admin-list-panel {
+  border: 1px solid var(--line);
+  background: rgba(4, 31, 29, 0.82);
+  box-shadow: var(--shadow);
+}
+
+.admin-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  border-radius: 28px 28px 8px 8px;
+  padding: 22px;
+}
+
+.admin-heading div {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-heading p,
+.admin-heading span,
+.admin-card-heading span,
+.admin-list-toolbar span {
+  margin: 0;
+  color: var(--mint);
+}
+
+.admin-heading p,
+.admin-card-heading span,
+.admin-list-toolbar span {
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.admin-heading h1 {
+  font-size: clamp(2.2rem, 6vw, 5rem);
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+.admin-heading span {
+  max-width: 720px;
+  line-height: 1.55;
+}
+
+.admin-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.admin-form,
+.admin-list-panel {
+  display: grid;
+  gap: 14px;
+  border-radius: 18px 18px 8px 8px;
+  padding: 16px;
+}
+
+.admin-card-heading,
+.admin-list-toolbar {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-card-heading div,
+.admin-list-toolbar div {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-card-heading strong,
+.admin-list-toolbar strong {
+  color: var(--white);
+  font-family: Outfit, Inter, sans-serif;
+  font-size: 1.25rem;
+  text-transform: uppercase;
+}
+
+.admin-form textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.admin-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-actions .primary-button,
+.admin-actions .secondary-button {
+  flex: 1 1 180px;
+}
+
+.admin-list-toolbar label {
+  width: min(240px, 100%);
+}
+
+.admin-food-list {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-food-list > p {
+  margin: 0;
+  color: var(--mint);
+  font-weight: 800;
+}
+
+.admin-food-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto 38px;
+  align-items: center;
+  gap: 10px;
+  border-radius: 14px;
+  padding: 10px;
+  color: var(--ink);
+  background: var(--cream);
+}
+
+.admin-food-row.is-inactive {
+  opacity: 0.62;
+}
+
+.admin-food-row div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.admin-food-row strong,
+.admin-food-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-food-row strong {
+  font-family: Outfit, Inter, sans-serif;
+  font-size: 0.92rem;
+  text-transform: uppercase;
+}
+
+.admin-food-row span {
+  color: #4f726b;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.admin-food-row b,
+.admin-food-row small {
+  border-radius: 999px;
+  padding: 6px 9px;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.admin-food-row b {
+  color: var(--cream);
+  background: var(--green);
+}
+
+.admin-food-row small {
+  color: var(--green);
+  background: rgba(0, 138, 84, 0.12);
+  text-transform: uppercase;
+}
+
 .timer-card {
   display: grid;
   grid-template-columns: repeat(5, minmax(120px, 1fr)) auto;
@@ -2764,6 +2948,15 @@ input[type="range"] {
   }
 
   .tracker-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .admin-layout {
     grid-template-columns: 1fr;
   }
 
@@ -3078,6 +3271,40 @@ body.menu-detail-open {
   .tracker-panel,
   .budget-row {
     grid-template-columns: 1fr;
+  }
+
+  .admin-page {
+    width: min(100% - 20px, 1120px);
+    margin-top: 14px;
+  }
+
+  .admin-heading,
+  .admin-form,
+  .admin-list-panel {
+    padding: 14px;
+    border-radius: 14px 14px 8px 8px;
+  }
+
+  .admin-heading h1 {
+    font-size: 2rem;
+  }
+
+  .admin-card-heading,
+  .admin-list-toolbar {
+    display: grid;
+  }
+
+  .admin-list-toolbar label {
+    width: 100%;
+  }
+
+  .admin-food-row {
+    grid-template-columns: minmax(0, 1fr) 38px;
+  }
+
+  .admin-food-row b,
+  .admin-food-row small {
+    justify-self: start;
   }
 
   .weekly-history-header,

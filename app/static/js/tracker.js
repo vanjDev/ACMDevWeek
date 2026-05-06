@@ -140,6 +140,99 @@ function weeklySpentTotal() {
   return thisWeekHistory().reduce((total, item) => total + Number(item.price || 0), 0);
 }
 
+function averageMealSpend(items) {
+  if (!items.length) return 0;
+  return Math.round(items.reduce((total, item) => total + Number(item.price || 0), 0) / items.length);
+}
+
+function mealPeriod() {
+  const hour = Number(manilaParts().time.split(":")[0]);
+  if (hour < 10) return "breakfast";
+  if (hour < 14) return "lunch";
+  if (hour < 18) return "merienda";
+  return "dinner";
+}
+
+function budgetCoachMessages(spent, weekly) {
+  const week = thisWeekHistory();
+  const today = todayHistory();
+  const remaining = weekly ? weekly - spent : 0;
+  const percent = weekly ? spent / weekly : 0;
+  const todaySpent = dailySpentTotal();
+  const average = averageMealSpend(week);
+  const messages = [];
+
+  if (!weekly) {
+    messages.push({
+      tone: "neutral",
+      title: "Set a weekly target",
+      body: week.length
+        ? `You already logged PHP ${spent} this week. Add a budget so the app can tell you when to magtipid.`
+        : "Start with a realistic weekly food budget. Even PHP 500-800 is enough for useful tipid feedback.",
+    });
+  } else if (remaining < 0) {
+    messages.push({
+      tone: "danger",
+      title: "Magtipid muna",
+      body: `You are PHP ${Math.abs(remaining)} over budget. Prioritize canteen meals, street food, or packed snacks for the rest of the week.`,
+    });
+  } else if (percent >= 0.85) {
+    messages.push({
+      tone: "warning",
+      title: "Tipid mode recommended",
+      body: `Only PHP ${remaining} left. Keep the next meals under PHP ${Math.max(50, Math.floor(remaining / 2))} if you still need budget buffer.`,
+    });
+  } else if (percent >= 0.6) {
+    messages.push({
+      tone: "warning",
+      title: "Konting ingat na",
+      body: `You have used ${Math.round(percent * 100)}% of the weekly budget. Avoid treating every break like a full meal.`,
+    });
+  } else {
+    messages.push({
+      tone: "good",
+      title: "Safe pa budget",
+      body: `PHP ${remaining} left this week. You can still eat normally, but keeping meals near PHP ${average || 100} protects the buffer.`,
+    });
+  }
+
+  if (today.length >= 3) {
+    messages.push({
+      tone: "warning",
+      title: "Three meals logged today",
+      body: "Check if the next one is a real meal or just cravings. Tubig muna or split a snack if kaya.",
+    });
+  } else if (todaySpent >= 220) {
+    messages.push({
+      tone: "warning",
+      title: "Today is getting expensive",
+      body: `You already spent PHP ${todaySpent} today. For ${mealPeriod()}, aim for a lower-cost pick.`,
+    });
+  } else if (today.length === 0) {
+    messages.push({
+      tone: "neutral",
+      title: "No meal logged today",
+      body: `When you eat ${mealPeriod()}, log it here so the weekly advice stays accurate in Manila time.`,
+    });
+  }
+
+  if (average >= 150) {
+    messages.push({
+      tone: "warning",
+      title: "Average meal is high",
+      body: `Your average logged meal is PHP ${average}. Try alternating one full meal with one tipid meal under PHP 100.`,
+    });
+  } else if (average && average <= 90) {
+    messages.push({
+      tone: "good",
+      title: "Tipid streak",
+      body: `Average meal is PHP ${average}. Good budget control, just make sure the meals are still filling enough.`,
+    });
+  }
+
+  return messages.slice(0, 3);
+}
+
 function streakDays() {
   const dates = [...new Set(getHistory().map((item) => item.phDate || item.date))].sort().reverse();
   let streak = 0;
@@ -176,6 +269,18 @@ function budgetMessage(spent, weekly) {
   }
   const remaining = Math.max(0, weekly - spent);
   return `You have PHP ${remaining} left this week.`;
+}
+
+function renderBudgetCoach(spent, weekly) {
+  const panel = document.getElementById("budgetCoachMessages");
+  if (!panel) return;
+  const messages = budgetCoachMessages(spent, weekly);
+  panel.innerHTML = messages.map((message) => `
+    <article class="budget-coach-message ${message.tone}">
+      <strong>${message.title}</strong>
+      <p>${message.body}</p>
+    </article>
+  `).join("");
 }
 
 function renderHistory() {
@@ -237,6 +342,7 @@ function updateBudgetInsight() {
     bar.style.background = percent >= 100 ? "#ff7d7d" : "linear-gradient(90deg, #00a664 0%, #f6f1e7 100%)";
   }
   if (insight) insight.textContent = budgetMessage(spent, weekly);
+  renderBudgetCoach(spent, weekly);
 }
 
 function renderTracker() {

@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="admin-page">
+  <div class="admin-heading">
+    <div>
+      <p>Admin</p>
+      <h1>Manage Food Spots</h1>
+      <span>Add menu items, update store details, and hide entries that should no longer appear.</span>
+    </div>
+    <a class="secondary-button compact-button" href="/">
+      <i data-lucide="utensils"></i>
+      Food finder
+    </a>
+  </div>
+
+  <section class="admin-layout">
+    <form id="adminFoodForm" class="admin-form">
+      <div class="admin-card-heading">
+        <div>
+          <span id="adminFormMode">New item</span>
+          <strong id="adminFormTitle">Add food spot</strong>
+        </div>
+        <button id="adminResetForm" class="icon-button" type="button" aria-label="Reset form" title="Reset form">
+          <i data-lucide="rotate-ccw"></i>
+        </button>
+      </div>
+
+      <input id="adminFoodId" type="hidden">
+
+      <label>
+        Store / restaurant
+        <input id="adminRestaurant" name="restaurant" required placeholder="Example: 1008 Kopi">
+      </label>
+
+      <label>
+        Menu item
+        <input id="adminName" name="name" required placeholder="Example: Iced Spanish Latte">
+      </label>
+
+      <div class="budget-row">
+        <label>
+          Min price
+          <input id="adminPriceMin" name="price_min" type="number" min="0" step="1" required placeholder="PHP">
+        </label>
+        <label>
+          Max price
+          <input id="adminPriceMax" name="price_max" type="number" min="0" step="1" required placeholder="PHP">
+        </label>
+      </div>
+
+      <div class="budget-row">
+        <label>
+          Category
+          <select id="adminCategory" name="category" required>
+            <option value="chicken">Chicken</option>
+            <option value="rice_meals">Rice meals</option>
+            <option value="street_food">Street food</option>
+            <option value="dimsum">Dimsum</option>
+            <option value="coffee_drinks">Coffee / drinks</option>
+            <option value="burgers">Burgers</option>
+            <option value="unli_rice">Unli rice</option>
+            <option value="snacks">Snacks</option>
+          </select>
+        </label>
+        <label>
+          Mood
+          <select id="adminMood" name="mood" required>
+            <option value="quick_lunch">Quick lunch</option>
+            <option value="study_fuel">Study fuel</option>
+            <option value="chill_hangout">Chill hangout</option>
+            <option value="group_meal">Group meal</option>
+            <option value="late_night">Late night</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="budget-row">
+        <label>
+          Area
+          <select id="adminArea" name="area" required>
+            <option value="near_feu_tech">Near FEU Tech</option>
+            <option value="near_feu_manila">Near FEU Manila</option>
+            <option value="lerma">Lerma</option>
+            <option value="p_campa">P. Campa</option>
+            <option value="hepa_lane">Hepa Lane</option>
+            <option value="inside_campus">Inside campus</option>
+          </select>
+        </label>
+        <label>
+          Rating
+          <input id="adminRating" name="rating" type="number" min="0" max="5" step="0.1" value="4.0" required>
+        </label>
+      </div>
+
+      <div class="budget-row">
+        <label>
+          Latitude
+          <input id="adminLatitude" name="latitude" type="number" min="-90" max="90" step="0.000001" required placeholder="14.6042">
+        </label>
+        <label>
+          Longitude
+          <input id="adminLongitude" name="longitude" type="number" min="-180" max="180" step="0.000001" required placeholder="120.9882">
+        </label>
+      </div>
+
+      <label>
+        Image URL
+        <input id="adminImageUrl" name="image_url" type="url" placeholder="Optional">
+      </label>
+
+      <label>
+        Description
+        <textarea id="adminDescription" name="description" rows="4" required placeholder="Short student-friendly description"></textarea>
+      </label>
+
+      <label class="toggle-row">
+        <input id="adminIsActive" name="is_active" type="checkbox" checked>
+        Show in food finder
+      </label>
+
+      <div class="admin-actions">
+        <button id="adminDisableFood" class="secondary-button compact-button" type="button" hidden>
+          <i data-lucide="eye-off"></i>
+          Hide item
+        </button>
+        <button class="primary-button compact-button" type="submit">
+          <i data-lucide="save"></i>
+          Save item
+        </button>
+      </div>
+    </form>
+
+    <section class="admin-list-panel">
+      <div class="admin-list-toolbar">
+        <div>
+          <span>Food database</span>
+          <strong id="adminFoodCount">Loading...</strong>
+        </div>
+        <label>
+          Search
+          <input id="adminSearch" type="search" placeholder="Store or item">
+        </label>
+      </div>
+      <div id="adminFoodList" class="admin-food-list" aria-live="polite"></div>
+    </section>
+  </section>
+</section>
+
+<div id="toast" class="toast" hidden></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='/js/admin.js') }}?v=admin-foods-20260506"></script>
+{% endblock %}
