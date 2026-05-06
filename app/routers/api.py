@@ -65,6 +65,55 @@ def admin_food_response(food: FoodSpot) -> AdminFoodSpotResponse:
     return response
 
 
+def mask_reviewer_name(user: User | None) -> str:
+    if not user:
+        return "Student"
+    source = (user.name or "").strip() or user.email.split("@", 1)[0]
+    visible = source.strip()[:3]
+    return f"{visible}..." if visible else "Student"
+
+
+def school_tag_for_email(email: str | None) -> str | None:
+    if not email or "@" not in email:
+        return None
+    domain = email.rsplit("@", 1)[1].lower()
+    if domain.endswith("fit.edu.ph"):
+        return "FEU-Tech"
+    if domain == "feu.edu.ph" or domain.endswith(".feu.edu.ph"):
+        return "FEU"
+    return None
+
+
+def rating_user_map(db: Session, rows: list[StoreRating | FoodRating]) -> dict[int, User]:
+    user_ids = sorted({row.user_id for row in rows if row.user_id})
+    if not user_ids:
+        return {}
+    return {user.id: user for user in db.query(User).filter(User.id.in_(user_ids)).all()}
+
+
+def rating_reason_payload(row: StoreRating | FoodRating, users_by_id: dict[int, User]) -> dict[str, object]:
+    user = users_by_id.get(row.user_id) if row.user_id else None
+    updated_at = row.updated_at or row.created_at
+    return {
+        "score": row.score,
+        "reason": row.reason,
+        "reviewer_name": mask_reviewer_name(user),
+        "school_tag": school_tag_for_email(user.email if user else None),
+        "created_at": row.created_at.isoformat(),
+        "updated_at": updated_at.isoformat() if updated_at else None,
+    }
+
+
+def rating_summary(rows: list[StoreRating | FoodRating], users_by_id: dict[int, User]) -> StoreRatingSummary:
+    average = round(sum(row.score for row in rows) / len(rows), 1)
+    sorted_rows = sorted(rows, key=lambda row: row.updated_at or row.created_at, reverse=True)
+    return {
+        "average": average,
+        "count": len(rows),
+        "reasons": [rating_reason_payload(row, users_by_id) for row in sorted_rows[:3]],
+    }
+
+
 def admin_store_response(store: Store) -> AdminStoreResponse:
     return AdminStoreResponse.model_validate(store)
 
@@ -136,113 +185,93 @@ def public_config():
 
 @router.get("/store-ratings", response_model=dict[str, StoreRatingSummary])
 def list_store_ratings(db: Session = Depends(get_db)):
-    rows = db.query(StoreRating).order_by(StoreRating.created_at.desc()).limit(500).all()
+    rows = db.query(StoreRating).order_by(StoreRating.updated_at.desc(), StoreRating.created_at.desc()).limit(500).all()
+    users_by_id = rating_user_map(db, rows)
     grouped: dict[str, list[StoreRating]] = {}
     for row in rows:
         grouped.setdefault(row.store_key, []).append(row)
 
     summaries = {}
     for store_key, ratings in grouped.items():
-        average = round(sum(row.score for row in ratings) / len(ratings), 1)
-        summaries[store_key] = {
-            "average": average,
-            "count": len(ratings),
-            "reasons": [
-                {
-                    "score": row.score,
-                    "reason": row.reason,
-                    "created_at": row.created_at.isoformat(),
-                }
-                for row in ratings[:3]
-            ],
-        }
+        summaries[store_key] = rating_summary(ratings, users_by_id)
     return summaries
 
 
 @router.post("/store-ratings", response_model=StoreRatingSummary)
-def create_store_rating(payload: StoreRatingPayload, db: Session = Depends(get_db)):
+def create_store_rating(
+    payload: StoreRatingPayload,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
     reason = payload.reason.strip()
     if not reason:
         raise HTTPException(status_code=422, detail="Rating reason is required.")
 
-    rating = StoreRating(
-        store_key=payload.store_key.strip(),
-        store_name=payload.store_name.strip(),
-        score=payload.score,
-        reason=reason,
-    )
-    db.add(rating)
+    store_key = payload.store_key.strip()
+    rating = db.query(StoreRating).filter(StoreRating.user_id == user.id, StoreRating.store_key == store_key).first()
+    if rating:
+        rating.store_name = payload.store_name.strip()
+        rating.score = payload.score
+        rating.reason = reason
+        rating.updated_at = datetime.utcnow()
+    else:
+        rating = StoreRating(
+            user_id=user.id,
+            store_key=store_key,
+            store_name=payload.store_name.strip(),
+            score=payload.score,
+            reason=reason,
+        )
+        db.add(rating)
     db.commit()
-    rows = db.query(StoreRating).filter(StoreRating.store_key == rating.store_key).order_by(StoreRating.created_at.desc()).all()
-    average = round(sum(row.score for row in rows) / len(rows), 1)
-    return {
-        "average": average,
-        "count": len(rows),
-        "reasons": [
-            {
-                "score": row.score,
-                "reason": row.reason,
-                "created_at": row.created_at.isoformat(),
-            }
-            for row in rows[:3]
-        ],
-    }
+    rows = db.query(StoreRating).filter(StoreRating.store_key == rating.store_key).all()
+    return rating_summary(rows, rating_user_map(db, rows))
 
 
 @router.get("/food-ratings", response_model=dict[int, StoreRatingSummary])
 def list_food_ratings(db: Session = Depends(get_db)):
-    rows = db.query(FoodRating).order_by(FoodRating.created_at.desc()).limit(500).all()
+    rows = db.query(FoodRating).order_by(FoodRating.updated_at.desc(), FoodRating.created_at.desc()).limit(500).all()
+    users_by_id = rating_user_map(db, rows)
     grouped: dict[int, list[FoodRating]] = {}
     for row in rows:
         grouped.setdefault(row.food_id, []).append(row)
 
     summaries = {}
     for food_id, ratings in grouped.items():
-        average = round(sum(row.score for row in ratings) / len(ratings), 1)
-        summaries[food_id] = {
-            "average": average,
-            "count": len(ratings),
-            "reasons": [
-                {
-                    "score": row.score,
-                    "reason": row.reason,
-                    "created_at": row.created_at.isoformat(),
-                }
-                for row in ratings[:3]
-            ],
-        }
+        summaries[food_id] = rating_summary(ratings, users_by_id)
     return summaries
 
 
 @router.post("/food-ratings", response_model=StoreRatingSummary)
-def create_food_rating(payload: FoodRatingPayload, db: Session = Depends(get_db)):
+def create_food_rating(
+    payload: FoodRatingPayload,
+    user: User = Depends(require_user),
+    db: Session = Depends(get_db),
+):
     reason = payload.reason.strip()
     if not reason:
         raise HTTPException(status_code=422, detail="Rating reason is required.")
 
-    rating = FoodRating(
-        food_id=payload.food_id,
-        food_name=payload.food_name.strip(),
-        restaurant=payload.restaurant.strip(),
-        score=payload.score,
-        reason=reason,
-    )
-    db.add(rating)
+    rating = db.query(FoodRating).filter(FoodRating.user_id == user.id, FoodRating.food_id == payload.food_id).first()
+    if rating:
+        rating.food_name = payload.food_name.strip()
+        rating.restaurant = payload.restaurant.strip()
+        rating.score = payload.score
+        rating.reason = reason
+        rating.updated_at = datetime.utcnow()
+    else:
+        rating = FoodRating(
+            user_id=user.id,
+            food_id=payload.food_id,
+            food_name=payload.food_name.strip(),
+            restaurant=payload.restaurant.strip(),
+            score=payload.score,
+            reason=reason,
+        )
+        db.add(rating)
     db.commit()
-    rows = db.query(FoodRating).filter(FoodRating.food_id == rating.food_id).order_by(FoodRating.created_at.desc()).all()
-    average = round(sum(row.score for row in rows) / len(rows), 1)
-    return {
-        "average": average,
-        "count": len(rows),
-        "reasons": [
-            {
-                "score": row.score,
-                "reason": row.reason,
-                "created_at": row.created_at.isoformat(),
-            }
-            for row in rows[:3]
-        ],
-    }
+    rows = db.query(FoodRating).filter(FoodRating.food_id == rating.food_id).all()
+    return rating_summary(rows, rating_user_map(db, rows))
 
 
 @router.post("/auth/register", response_model=AuthResponse)

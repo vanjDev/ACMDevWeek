@@ -41,10 +41,11 @@ On-slide text:
 - Filters by budget, mood, food type, needs, weather, and time
 - Campus fallback or precise browser location
 - Store menus with photos, prices, ratings, and walk time
+- Privacy-aware student reviews with masked names and FEU/FEU-Tech tags
 Visual:
 - Screenshot of filters and store cards.
 Speaker notes, 40 seconds:
-"The core experience is a fast food finder. Students can filter by campus, budget, mood, dish, dining style, weather, and available break time. If location permission is allowed, walking estimates start from the student's current position. If not, it falls back to FEU Tech or FEU Manila."
+"The core experience is a fast food finder. Students can filter by campus, budget, mood, dish, dining style, weather, and available break time. If location permission is allowed, walking estimates start from the student's current position. If not, it falls back to FEU Tech or FEU Manila. Reviews are tied to users, but the UI only shows masked names like Jhe... plus FEU affiliation tags."
 
 ### Slide 4 - Demo Flow
 Goal: Give the live demo path.
@@ -80,6 +81,7 @@ On-slide text:
 - Decision-first: filters match real student constraints
 - Visual: food photos, campus map, route feedback
 - Habit-aware: bookmarks, anti-repeat, spending tracker, streaks
+- Review-safe: one rating per user per target, with private reviewer display
 - Deployable: simple FastAPI stack and SQLite seed/import flow
 Visual:
 - 2x3 feature grid using icons and screenshots.

@@ -19,6 +19,7 @@ const BUDGET_KEY = "saanWeeklyBudget";
 const LOCATION_KEY = "saanPreciseLocation";
 const USER_STORE_RATINGS_KEY = "saanStoreRatings";
 const USER_FOOD_RATINGS_KEY = "saanFoodRatings";
+const COMBO_BUDGET_KEY = "saanComboBudget";
 
 const categoryImages = {
   chicken: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=900&q=80",
@@ -430,6 +431,16 @@ function publicFoodRatingReason(foodId) {
   return summary?.reasons?.[0]?.reason || "";
 }
 
+function escapeHtml(value) {
+  return String(value || "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#39;",
+  }[char]));
+}
+
 function reviewsTemplate(summary, emptyText) {
   const reasons = summary?.reasons || [];
   const keywords = reviewKeywords(reasons);
@@ -444,7 +455,8 @@ function reviewsTemplate(summary, emptyText) {
         ? reasons.map((review) => `
           <article class="review-item">
             <b><i data-lucide="star"></i> ${review.score}/5</b>
-            <p>${review.reason}</p>
+            <span class="review-author">${escapeHtml(review.reviewer_name || "Student")}${review.school_tag ? ` <small>${escapeHtml(review.school_tag)}</small>` : ""}</span>
+            <p>${escapeHtml(review.reason)}</p>
           </article>
         `).join("")
         : `<p class="review-empty">${emptyText}</p>`}
@@ -497,6 +509,7 @@ async function submitPublicStoreRating(store, rating, reason) {
       reason,
     }),
   });
+  if (response.status === 401) throw new Error("Sign in to publish ratings.");
   if (!response.ok) throw new Error("Rating failed to save.");
   state.publicStoreRatings = {
     ...state.publicStoreRatings,
@@ -516,6 +529,7 @@ async function submitPublicFoodRating(food, rating, reason) {
       reason,
     }),
   });
+  if (response.status === 401) throw new Error("Sign in to publish ratings.");
   if (!response.ok) throw new Error("Rating failed to save.");
   state.publicFoodRatings = {
     ...state.publicFoodRatings,
@@ -701,6 +715,227 @@ function averagePrice(food) {
   return Math.round((food.price_min + food.price_max) / 2);
 }
 
+function comboPrice(food) {
+  if (!food) return 0;
+  return Number(food.price_min || averagePrice(food) || 0);
+}
+
+function comboRole(food) {
+  const text = `${food.name || ""} ${food.restaurant || ""} ${food.description || ""}`.toLowerCase();
+  if (food.category === "coffee_drinks" && /coffee|kopi|latte|americano|espresso|cappuccino|mocha/.test(text)) return "coffee";
+  if (food.category === "coffee_drinks" || /drink|tea|milk tea|juice|soda|shake|frappe|lemonade/.test(text)) return "drink";
+  if (["rice_meals", "chicken", "burgers", "unli_rice"].includes(food.category) || /rice|meal|silog|pares|burger|chicken|wings/.test(text)) return "meal";
+  return "snack";
+}
+
+function comboRoleLabel(role) {
+  return {
+    meal: "Food",
+    coffee: "Coffee",
+    drink: "Drink",
+    snack: "Snack",
+  }[role] || "Food";
+}
+
+function comboTypeFor(items) {
+  const roles = items.map(comboRole);
+  if (roles.includes("meal") && roles.some((role) => ["drink", "coffee"].includes(role))) return "Food + drink";
+  if (roles.includes("coffee") && roles.includes("snack")) return "Coffee + snack";
+  if (roles.includes("meal") && roles.includes("snack")) return "Food + snack";
+  if (roles.every((role) => role === "snack")) return "Snack combo";
+  return "Budget combo";
+}
+
+function comboTypeIcon(type) {
+  if (type.includes("drink")) return "cup-soda";
+  if (type.includes("Coffee")) return "coffee";
+  if (type.includes("Snack")) return "cookie";
+  return "utensils";
+}
+
+function comboItemLine(item) {
+  return `${item.name} <small>PHP ${comboPrice(item)}</small>`;
+}
+
+function comboScore(combo, amount) {
+  const store = combo.store;
+  const openStatus = openStatusFor(store);
+  const leftover = amount - combo.total;
+  let score = 100 - leftover;
+  if (openStatus.isOpen === true) score += 45;
+  if (openStatus.isOpen === false) score -= 80;
+  score += Number(store.rating || 0) * 4;
+  score -= Number(store.walking_minutes || 0) * 3;
+  if (combo.items.some((item) => comboRole(item) === "meal")) score += 12;
+  if (new Set(combo.items.map(comboRole)).size > 1) score += 16;
+  return score;
+}
+
+function comboFoodPool() {
+  return applyClientRanking(state.foods || [])
+    .filter((food) => Number.isFinite(comboPrice(food)) && comboPrice(food) > 0)
+    .sort((a, b) => comboPrice(a) - comboPrice(b) || (a.walking_minutes || 0) - (b.walking_minutes || 0));
+}
+
+function buildBudgetCombos(amount) {
+  const stores = groupFoodsByStore(comboFoodPool());
+  const combos = [];
+  stores.forEach((store) => {
+    const menu = [...store.menu].sort((a, b) => comboPrice(a) - comboPrice(b));
+    for (let leftIndex = 0; leftIndex < menu.length; leftIndex += 1) {
+      for (let rightIndex = leftIndex + 1; rightIndex < menu.length; rightIndex += 1) {
+        const items = [menu[leftIndex], menu[rightIndex]];
+        const total = items.reduce((sum, item) => sum + comboPrice(item), 0);
+        if (total > amount) continue;
+        const roles = items.map(comboRole);
+        const hasUsefulPair =
+          new Set(roles).size > 1 ||
+          roles.every((role) => role === "snack") ||
+          roles.every((role) => role === "coffee");
+        if (!hasUsefulPair) continue;
+        const type = comboTypeFor(items);
+        combos.push({
+          id: `${store.id}-${items.map((item) => item.id).join("-")}`,
+          store,
+          items,
+          total,
+          type,
+          score: 0,
+        });
+      }
+    }
+  });
+  return combos
+    .map((combo) => ({ ...combo, score: comboScore(combo, amount) }))
+    .sort((a, b) => b.score - a.score || a.total - b.total)
+    .slice(0, 8);
+}
+
+function buildBudgetSingles(amount) {
+  return comboFoodPool()
+    .filter((food) => comboPrice(food) <= amount)
+    .sort((a, b) => {
+      const openA = openStatusFor(a).isOpen === false ? 1 : 0;
+      const openB = openStatusFor(b).isOpen === false ? 1 : 0;
+      return openA - openB || comboPrice(b) - comboPrice(a) || (a.walking_minutes || 0) - (b.walking_minutes || 0);
+    });
+}
+
+function comboCardTemplate(combo, amount) {
+  const openStatus = openStatusFor(combo.store);
+  const leftover = amount - combo.total;
+  return `
+    <article class="combo-card-result">
+      <div class="combo-card-heading">
+        <span><i data-lucide="${comboTypeIcon(combo.type)}"></i> ${combo.type}</span>
+        <strong>PHP ${combo.total}</strong>
+      </div>
+      <h3>${combo.store.name}</h3>
+      <p>${combo.items.map(comboItemLine).join(" + ")}</p>
+      <div class="combo-meta-row">
+        <span class="${openStatus.className}">${openStatus.label}</span>
+        <span>${combo.store.walking_minutes || 0} min walk</span>
+        <span>${leftover ? `PHP ${leftover} left` : "Exact fit"}</span>
+      </div>
+      <button class="secondary-button compact-button" type="button" data-combo-store="${combo.store.id}">
+        <i data-lucide="utensils"></i>
+        Open menu
+      </button>
+    </article>
+  `;
+}
+
+function singlePickTemplate(food) {
+  const openStatus = openStatusFor(food);
+  return `
+    <button class="combo-single" type="button" data-combo-food="${food.id}">
+      <span>${comboRoleLabel(comboRole(food))}</span>
+      <strong>${food.name}</strong>
+      <small>${food.restaurant} - PHP ${comboPrice(food)} - ${openStatus.label}</small>
+    </button>
+  `;
+}
+
+function renderComboResults(amount) {
+  const results = document.getElementById("comboResults");
+  if (!results) return;
+  if (!amount || amount < 1) {
+    results.innerHTML = `<p>Enter your cash and Saan will build affordable picks from the current menu list.</p>`;
+    return;
+  }
+
+  const combos = buildBudgetCombos(amount);
+  const singles = buildBudgetSingles(amount);
+  const roles = ["meal", "coffee", "drink", "snack"];
+  const roleSections = roles.map((role) => {
+    const items = singles.filter((food) => comboRole(food) === role).slice(0, 4);
+    if (!items.length) return "";
+    return `
+      <section class="combo-single-section">
+        <div class="combo-section-heading">
+          <span>${comboRoleLabel(role)}</span>
+          <strong>${items.length} pick${items.length === 1 ? "" : "s"}</strong>
+        </div>
+        <div class="combo-single-grid">
+          ${items.map(singlePickTemplate).join("")}
+        </div>
+      </section>
+    `;
+  }).join("");
+
+  results.innerHTML = `
+    <div class="combo-summary">
+      <span>PHP ${amount}</span>
+      <strong>${combos.length ? `${combos.length} combo ideas` : `${singles.length} affordable picks`}</strong>
+      <p>${combos.length ? "Built from the same store so ordering feels realistic." : "No same-store combo fits yet, but these items fit your cash."}</p>
+    </div>
+    ${combos.length ? `
+      <section class="combo-section">
+        <div class="combo-section-heading">
+          <span>Same-store combos</span>
+          <strong>Best fits first</strong>
+        </div>
+        <div class="combo-card-grid">
+          ${combos.map((combo) => comboCardTemplate(combo, amount)).join("")}
+        </div>
+      </section>
+    ` : ""}
+    ${roleSections || `<p class="combo-empty">No menu item fits PHP ${amount} with the current filters. Try a higher amount or loosen filters.</p>`}
+  `;
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function openComboDialog() {
+  const dialog = document.getElementById("comboDialog");
+  if (!dialog) return;
+  const input = document.getElementById("comboBudgetAmount");
+  const savedAmount = Number(getJson(COMBO_BUDGET_KEY, ""));
+  if (input && savedAmount) input.value = String(savedAmount);
+  renderComboResults(Number(input?.value || 0));
+  dialog.showModal();
+  input?.focus();
+}
+
+function closeComboDialog() {
+  document.getElementById("comboDialog")?.close();
+}
+
+function openStoreFromCombo(storeId) {
+  const stores = groupFoodsByStore(applyClientRanking(state.foods));
+  const storeIndex = stores.findIndex((store) => store.id === String(storeId));
+  if (storeIndex >= 0) state.visibleLimit = Math.max(state.visibleLimit, storeIndex + 1);
+  state.selectedStoreId = String(storeId);
+  closeComboDialog();
+  renderFoods(state.foods);
+  window.selectFoodOnMap?.(state.selectedStoreId, true);
+  window.setTimeout(() => {
+    document.querySelector(`[data-store-id="${state.selectedStoreId}"]`)?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, 80);
+}
+
 function averageMealSpend(items = thisWeekHistory()) {
   if (!items.length) return 0;
   return Math.round(items.reduce((total, item) => total + Number(item.price || 0), 0) / items.length);
@@ -723,23 +958,106 @@ function mealPeriodLabel() {
 }
 
 function recommendationReason(food) {
-  const health = budgetHealth();
-  const price = averagePrice(food);
-  const reasons = [];
-  if (health.weekly) {
-    if (health.remaining - price < 0) {
-      reasons.push(`over your weekly budget by PHP ${Math.abs(health.remaining - price)}`);
-    } else if (health.percent >= 0.75 || health.remaining <= 180) {
-      reasons.push(price <= 100 ? "fits tipid mode" : "worth checking before spending");
-    } else {
-      reasons.push(`leaves PHP ${health.remaining - price} after eating`);
-    }
+  return decisionProfile(food).reasons.map((reason) => reason.label).slice(0, 3).join(", ") || "matches your current filters";
+}
+
+function clampNumber(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function historyInsights() {
+  const week = thisWeekHistory();
+  const today = todayHistory();
+  const recentIds = new Set(getHistory().slice(0, 4).map((item) => Number(item.id)));
+  const categories = {};
+  const restaurants = {};
+  week.forEach((item) => {
+    const food = state.foods.find((candidate) => candidate.id === Number(item.id));
+    if (food?.category) categories[food.category] = (categories[food.category] || 0) + 1;
+    if (item.restaurant) restaurants[item.restaurant] = (restaurants[item.restaurant] || 0) + 1;
+  });
+  return { week, today, recentIds, categories, restaurants };
+}
+
+function mealPeriodScore(food) {
+  const period = mealPeriodLabel();
+  if (period === "breakfast") {
+    if (food.category === "coffee_drinks") return 96;
+    if (food.category === "snacks") return 82;
+    return 62;
   }
-  if ((food.walking_minutes || 0) <= 3) reasons.push("very near campus");
-  else if ((food.walking_minutes || 0) <= 6) reasons.push(`${food.walking_minutes} min walk`);
-  if (food.price_max <= 100) reasons.push("student-friendly price");
-  if (food.rating >= 4.4) reasons.push("strong rating");
-  return reasons.slice(0, 3).join(", ") || "matches your current filters";
+  if (period === "lunch" || period === "dinner") {
+    if (["rice_meals", "chicken", "unli_rice"].includes(food.category)) return 96;
+    if (["dimsum", "street_food"].includes(food.category)) return 78;
+    return 58;
+  }
+  if (["snacks", "coffee_drinks", "dimsum", "street_food"].includes(food.category)) return 94;
+  return 70;
+}
+
+function decisionProfile(food) {
+  const health = budgetHealth();
+  const insights = historyInsights();
+  const price = averagePrice(food);
+  const remaining = health.weekly ? Math.max(0, health.remaining) : 0;
+  const walk = Number(food.walking_minutes || 0);
+  const openStatus = openStatusFor(food);
+  const userFoodRating = getUserFoodRating(food.id);
+  const publicRating = publicRatingForFood(food.id)?.average || food.rating;
+  const favoriteTypes = getJson(FAVORITES_KEY, []);
+
+  const budgetScore = !health.weekly
+    ? clampNumber(100 - price / 3, 45, 92)
+    : remaining <= 0
+      ? (price <= 80 ? 60 : 18)
+      : clampNumber(100 - (price / Math.max(remaining, 1)) * 70, 12, 100);
+  const distanceScore = clampNumber(106 - walk * 14, 18, 100);
+  const ratingScore = clampNumber(((userFoodRating || publicRating || 4) / 5) * 100, 45, 100);
+  const timeScore = mealPeriodScore(food);
+  const freshnessScore = insights.recentIds.has(food.id) ? 18 : 88;
+  const preferenceScore = favoriteTypes.includes(food.category)
+    ? 96
+    : insights.categories[food.category]
+      ? 84
+      : 70;
+  const openScore = openStatus.isOpen === false ? 20 : openStatus.isOpen === true ? 100 : 74;
+
+  let total = (
+    budgetScore * 0.27
+    + distanceScore * 0.22
+    + ratingScore * 0.18
+    + timeScore * 0.13
+    + freshnessScore * 0.09
+    + preferenceScore * 0.07
+    + openScore * 0.04
+  );
+
+  const selectedMoods = selectedValues("mood");
+  if (selectedMoods.includes("tipid")) total += price <= 100 ? 8 : -8;
+  if (selectedMoods.includes("nagmamadali")) total += walk <= 3 ? 8 : -walk;
+  if (antiRepeatIds().includes(food.id)) total -= 24;
+  if (openStatus.isOpen === false) total -= 18;
+
+  const reasonPool = [
+    { key: "budget", score: budgetScore, label: health.weekly ? `leaves PHP ${Math.max(0, remaining - price)}` : `PHP ${price} average` },
+    { key: "walk", score: distanceScore, label: walk <= 2 ? "super near" : `${walk} min walk` },
+    { key: "rating", score: ratingScore, label: ratingScore >= 88 ? "trusted rating" : "decent rating" },
+    { key: "time", score: timeScore, label: `fits ${mealPeriodLabel()}` },
+    { key: "fresh", score: freshnessScore, label: insights.recentIds.has(food.id) ? "recently tried" : "not recently eaten" },
+    { key: "pref", score: preferenceScore, label: preferenceScore >= 84 ? "matches your pattern" : "good variety" },
+  ].sort((a, b) => b.score - a.score);
+
+  return {
+    total: Math.round(clampNumber(total, 0, 100)),
+    reasons: reasonPool,
+    budgetScore: Math.round(budgetScore),
+    distanceScore: Math.round(distanceScore),
+    ratingScore: Math.round(ratingScore),
+    timeScore: Math.round(timeScore),
+    price,
+    walk,
+    openStatus,
+  };
 }
 
 function breakDecisionFor(food) {
@@ -779,8 +1097,16 @@ function renderDecisionCoach(stores) {
     return;
   }
   const health = budgetHealth();
-  const topStore = stores[0];
-  const topFood = topStore.menu[0];
+  const rankedStores = stores.map((store) => ({
+    store,
+    food: store.menu[0],
+    profile: decisionProfile(store.menu[0]),
+  })).sort((a, b) => b.profile.total - a.profile.total);
+  const best = rankedStores[0];
+  const topStore = best.store;
+  const topFood = best.food;
+  const profile = best.profile;
+  const alternates = rankedStores.slice(1, 3);
   const breakInfo = breakDecisionFor(topStore);
   const average = averageMealSpend();
   const today = todayHistory();
@@ -794,37 +1120,57 @@ function renderDecisionCoach(stores) {
     ? `${breakInfo.label}: ${topStore.name} needs about ${breakInfo.total} min total.`
     : `Best now for ${mealPeriodLabel()}: ${topStore.name} because ${recommendationReason(topFood)}.`;
   const budgetPill = health.weekly ? `PHP ${Math.max(0, health.remaining)} left` : "Set budget";
-  const pickPill = breakInfo ? `${breakInfo.total} min total` : `${topStore.walking_minutes} min walk`;
+  const pickPill = `Saan IQ ${profile.total}`;
   const todayPill = today.length ? `PHP ${dailySpentTotal()} spent` : "No logs";
+  const reasonChips = profile.reasons.slice(0, 4).map((reason) => `<span>${reason.label}</span>`).join("");
 
   panel.innerHTML = `
-    <article class="decision-coach-card ${mode}">
-      <div class="decision-coach-icon"><i data-lucide="${mode === "tipid" ? "wallet" : "sparkles"}"></i></div>
-      <div class="decision-coach-copy">
-        <span>Saan says</span>
-        <strong>${mode === "tipid" ? "Tipid mode is on" : "Best decision right now"}</strong>
-        <p>${budgetLine}</p>
+    <article class="saan-iq-main ${mode}">
+      <div class="saan-iq-ring" style="--score-pct:${profile.total}%;">
+        <strong>${profile.total}</strong>
+        <span>IQ</span>
       </div>
-      <b>${budgetPill}</b>
-    </article>
-    <article class="decision-coach-card featured">
-      <div class="decision-coach-icon"><i data-lucide="${breakInfo ? "timer" : "utensils"}"></i></div>
-      <div class="decision-coach-copy">
-        <span>Recommended</span>
+      <div class="saan-iq-copy">
+        <span>Saan IQ</span>
         <strong>${topStore.name}</strong>
         <p>${breakLine}</p>
+        <div class="saan-iq-chips">${reasonChips}</div>
       </div>
-      <b>${pickPill}</b>
+      <button class="secondary-button compact-button" type="button" data-store-toggle="${topStore.id}">
+        <i data-lucide="utensils"></i>
+        Menu
+      </button>
     </article>
-    <article class="decision-coach-card">
-      <div class="decision-coach-icon"><i data-lucide="history"></i></div>
-      <div class="decision-coach-copy">
-        <span>Today</span>
-        <strong>${today.length ? `${today.length} logged` : "No logs yet"}</strong>
-        <p>${today.length ? `You spent PHP ${dailySpentTotal()} today.` : "Log what you eat to unlock better picks."}</p>
+    <aside class="saan-iq-side">
+      <div class="saan-iq-stat">
+        <i data-lucide="${mode === "tipid" ? "wallet" : "badge-check"}"></i>
+        <div>
+          <span>${mode === "tipid" ? "Tipid signal" : "Budget signal"}</span>
+          <strong>${budgetPill}</strong>
+          <p>${budgetLine}</p>
+        </div>
       </div>
-      <b>${todayPill}</b>
-    </article>
+      <div class="saan-iq-stat">
+        <i data-lucide="history"></i>
+        <div>
+          <span>Today</span>
+          <strong>${today.length ? `${today.length} logged` : "No logs yet"}</strong>
+          <p>${today.length ? `You spent PHP ${dailySpentTotal()} today.` : "Log meals to unlock better picks."}</p>
+        </div>
+      </div>
+    </aside>
+    <div class="saan-iq-alt">
+      <div class="saan-iq-alt-heading">
+        <span>Alternates</span>
+        <b>${pickPill}</b>
+      </div>
+      ${alternates.map(({ store, profile: altProfile }) => `
+        <button type="button" data-store-toggle="${store.id}">
+          <strong>${store.name}</strong>
+          <span>${altProfile.total} IQ - ${store.walking_minutes} min - PHP ${store.price_min}-${store.price_max}</span>
+        </button>
+      `).join("") || `<p>No alternates yet.</p>`}
+    </div>
   `;
 }
 
@@ -1090,7 +1436,7 @@ function applyClientRanking(foods) {
 
   return [...foods].sort((a, b) => {
     const score = (food) => {
-      let total = food.rating * 8 - (food.walking_minutes || 0);
+      let total = decisionProfile(food).total;
       total += normalizedRatingEntry(foodRatings[String(food.id)]).score * 8;
       total += normalizedRatingEntry(storeRatings[storeIdFor(food.restaurant)]).score * 5;
       const openStatus = openStatusFor(food);
@@ -1498,9 +1844,53 @@ function setupFilters() {
     document.getElementById("map")?.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 
+  document.getElementById("decisionCoach")?.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-store-toggle]");
+    if (!button) return;
+    state.selectedStoreId = button.dataset.storeToggle;
+    renderFoods(state.foods);
+    window.selectFoodOnMap?.(state.selectedStoreId, true);
+  });
+
   document.getElementById("heroPickForMe")?.addEventListener("click", () => {
     document.getElementById("pickForMe")?.click();
     document.getElementById("pickResult")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+
+  document.getElementById("openComboFinder")?.addEventListener("click", openComboDialog);
+  document.getElementById("closeComboDialog")?.addEventListener("click", closeComboDialog);
+  document.getElementById("comboDialog")?.addEventListener("click", (event) => {
+    if (event.target === event.currentTarget) closeComboDialog();
+  });
+  document.getElementById("comboForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const amount = Number(document.getElementById("comboBudgetAmount")?.value || 0);
+    if (!amount || amount < 1) {
+      showToast("Add your budget first.");
+      return;
+    }
+    setJson(COMBO_BUDGET_KEY, amount);
+    renderComboResults(amount);
+  });
+  document.getElementById("comboResults")?.addEventListener("click", (event) => {
+    const storeButton = event.target.closest("[data-combo-store]");
+    const foodButton = event.target.closest("[data-combo-food]");
+    if (storeButton) {
+      openStoreFromCombo(storeButton.dataset.comboStore);
+      return;
+    }
+    if (foodButton) {
+      const food = state.foods.find((item) => item.id === Number(foodButton.dataset.comboFood));
+      if (food) openStoreFromCombo(storeIdFor(food.restaurant));
+    }
+  });
+  document.querySelectorAll("[data-combo-budget]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const amount = Number(button.dataset.comboBudget || 0);
+      document.getElementById("comboBudgetAmount").value = String(amount);
+      setJson(COMBO_BUDGET_KEY, amount);
+      renderComboResults(amount);
+    });
   });
 
   document.getElementById("mealLogPrice")?.addEventListener("input", () => {

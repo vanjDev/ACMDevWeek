@@ -68,25 +68,31 @@ class SavedFood(Base):
 
 class StoreRating(Base):
     __tablename__ = "store_ratings"
+    __table_args__ = (UniqueConstraint("user_id", "store_key", name="uq_store_rating_user_store"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     store_key: Mapped[str] = mapped_column(String(140), index=True)
     store_name: Mapped[str] = mapped_column(String(120), index=True)
     score: Mapped[int] = mapped_column(Integer)
     reason: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, index=True)
 
 
 class FoodRating(Base):
     __tablename__ = "food_ratings"
+    __table_args__ = (UniqueConstraint("user_id", "food_id", name="uq_food_rating_user_food"),)
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
     food_id: Mapped[int] = mapped_column(Integer, index=True)
     food_name: Mapped[str] = mapped_column(String(120), index=True)
     restaurant: Mapped[str] = mapped_column(String(120), index=True)
     score: Mapped[int] = mapped_column(Integer)
     reason: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, index=True)
 
 
 class UserPreference(Base):

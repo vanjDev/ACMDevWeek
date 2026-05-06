@@ -30,6 +30,7 @@ def init_db() -> None:
     Base.metadata.create_all(bind=engine)
     ensure_user_columns()
     ensure_store_tables()
+    ensure_rating_columns()
 
 
 def ensure_user_columns() -> None:
@@ -149,3 +150,34 @@ def ensure_store_tables() -> None:
                 """
             )
         )
+
+
+def ensure_rating_columns() -> None:
+    if not settings.database_url.startswith("sqlite"):
+        return
+
+    inspector = inspect(engine)
+    table_names = inspector.get_table_names()
+
+    with engine.begin() as connection:
+        if "store_ratings" in table_names:
+            store_columns = {column["name"] for column in inspector.get_columns("store_ratings")}
+            if "user_id" not in store_columns:
+                connection.execute(text("ALTER TABLE store_ratings ADD COLUMN user_id INTEGER"))
+                connection.execute(text("CREATE INDEX IF NOT EXISTS ix_store_ratings_user_id ON store_ratings (user_id)"))
+            if "updated_at" not in store_columns:
+                connection.execute(text("ALTER TABLE store_ratings ADD COLUMN updated_at DATETIME"))
+                connection.execute(text("UPDATE store_ratings SET updated_at = created_at WHERE updated_at IS NULL"))
+                connection.execute(text("CREATE INDEX IF NOT EXISTS ix_store_ratings_updated_at ON store_ratings (updated_at)"))
+            connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_store_rating_user_store ON store_ratings (user_id, store_key)"))
+
+        if "food_ratings" in table_names:
+            food_columns = {column["name"] for column in inspector.get_columns("food_ratings")}
+            if "user_id" not in food_columns:
+                connection.execute(text("ALTER TABLE food_ratings ADD COLUMN user_id INTEGER"))
+                connection.execute(text("CREATE INDEX IF NOT EXISTS ix_food_ratings_user_id ON food_ratings (user_id)"))
+            if "updated_at" not in food_columns:
+                connection.execute(text("ALTER TABLE food_ratings ADD COLUMN updated_at DATETIME"))
+                connection.execute(text("UPDATE food_ratings SET updated_at = created_at WHERE updated_at IS NULL"))
+                connection.execute(text("CREATE INDEX IF NOT EXISTS ix_food_ratings_updated_at ON food_ratings (updated_at)"))
+            connection.execute(text("CREATE UNIQUE INDEX IF NOT EXISTS uq_food_rating_user_food ON food_ratings (user_id, food_id)"))

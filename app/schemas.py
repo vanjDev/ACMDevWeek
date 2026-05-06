@@ -155,7 +155,10 @@ class StoreRatingPayload(BaseModel):
 class StoreRatingReason(BaseModel):
     score: int
     reason: str
+    reviewer_name: str = "Student"
+    school_tag: str | None = None
     created_at: str
+    updated_at: str | None = None
 
 
 class StoreRatingSummary(BaseModel):
