@@ -7,24 +7,21 @@
     <meta name="description" content="Find student-friendly food near FEU Tech and FEU Manila.">
     <meta property="og:title" content="{{ app_name }} - {{ title }}">
     <meta property="og:description" content="A food decision tool for FEU students.">
-    <link rel="icon" href="{{ url_for('static', path='/img/saan-mark.svg') }}" type="image/svg+xml">
+    <link rel="icon" href="{{ url_for('static', path='/img/saan-logo-mark.png') }}" type="image/png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}?v=filter-rail-20260506">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}?v=mobile-density-20260506">
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="/">
-        <span class="brand-mark">
-          <img src="{{ url_for('static', path='/img/saan-mark.svg') }}" alt="">
-        </span>
-        <span>Saan?</span>
+        <img class="brand-logo" src="{{ url_for('static', path='/img/saan-logo-header.png') }}" alt="Saan? FEU Food Finder">
       </a>
       <nav class="nav-links" aria-label="Main navigation">
         <a class="{{ 'active' if active_page == 'home' else '' }}" href="/">Home</a>
-        <a class="{{ 'active' if active_page == 'timer' else '' }}" href="/timer">Timer</a>
+        <a class="{{ 'active' if active_page == 'tracker' else '' }}" href="/tracker">Tracker</a>
         <a class="{{ 'active' if active_page == 'about' else '' }}" href="/about">About</a>
       </nav>
       <div class="auth-controls">
@@ -84,7 +81,7 @@
     </dialog>
 
     <footer class="site-footer">
-      <img class="footer-logo" src="{{ url_for('static', path='/img/saan-logo.svg') }}" alt="Saan?">
+      <img class="footer-logo" src="{{ url_for('static', path='/img/saan-logo-brand.png') }}" alt="Saan? FEU Food Finder">
       <span>FEU Tech and Morayta food finder</span>
     </footer>
 
@@ -94,7 +91,7 @@
       window.SAAN_GOOGLE_CLIENT_ID = {{ google_client_id | tojson }};
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="{{ url_for('static', path='/js/auth.js') }}?v=friendly-header-20260506"></script>
+    <script src="{{ url_for('static', path='/js/auth.js') }}?v=tracker-nav-20260506"></script>
     {% block scripts %}{% endblock %}
     <script>
       if (window.lucide) window.lucide.createIcons();

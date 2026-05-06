@@ -96,9 +96,17 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+  flex: 0 0 auto;
   font-family: Outfit, Inter, sans-serif;
   font-size: 1.2rem;
   font-weight: 800;
+}
+
+.brand-logo {
+  width: auto;
+  height: clamp(46px, 6vw, 62px);
+  display: block;
+  object-fit: contain;
 }
 
 .brand-mark {
@@ -2525,13 +2533,14 @@ input[type="range"] {
 }
 
 .footer-logo {
-  width: 180px;
+  width: 220px;
   max-width: 55vw;
   height: auto;
   display: block;
 }
 
 .timer-layout,
+.tracker-page,
 .about-page {
   width: min(1040px, calc(100% - 32px));
   margin: 26px auto 48px;
@@ -2539,6 +2548,37 @@ input[type="range"] {
   gap: 18px;
 }
 
+.tracker-hero {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid var(--line);
+  border-radius: 28px 28px 8px 8px;
+  padding: 22px;
+  background: rgba(4, 31, 29, 0.82);
+  box-shadow: var(--shadow);
+}
+
+.tracker-hero div {
+  display: grid;
+  gap: 8px;
+}
+
+.tracker-hero p,
+.tracker-hero span {
+  margin: 0;
+  max-width: 700px;
+  color: var(--mint);
+}
+
+.tracker-hero p {
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.tracker-hero h1,
 .timer-copy h1,
 .about-page h1 {
   font-size: clamp(2.5rem, 7vw, 6rem);
@@ -2552,6 +2592,14 @@ input[type="range"] {
   color: var(--mint);
   font-size: 1.05rem;
   line-height: 1.7;
+}
+
+.tracker-page-panel {
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+}
+
+.tracker-habit-strip {
+  grid-template-columns: repeat(4, minmax(110px, 1fr)) auto minmax(170px, auto);
 }
 
 .timer-card {
@@ -2679,6 +2727,11 @@ input[type="range"] {
     grid-template-columns: 1fr;
   }
 
+  .tracker-hero {
+    align-items: start;
+    flex-direction: column;
+  }
+
   .tracker-panel {
     grid-template-columns: 1fr;
   }
@@ -2717,8 +2770,73 @@ input[type="range"] {
 }
 
 @media (max-width: 860px) {
+  .brand-ribbon {
+    display: none;
+  }
+
+  .hero-board {
+    min-height: 0;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 22px 18px;
+  }
+
+  .hero-board::before,
+  .hero-visual {
+    display: none;
+  }
+
+  .hero-copy {
+    gap: 8px;
+  }
+
+  .hero-copy h1 {
+    font-size: 2.2rem;
+  }
+
+  .hero-copy span {
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+
+  .top-map-wrap {
+    margin-bottom: 8px;
+  }
+
+  #map,
+  .campus-map,
+  .leaflet-campus-map {
+    min-height: 280px;
+    height: 280px;
+  }
+
+  .shops-heading {
+    margin-bottom: 14px;
+  }
+
+  .food-card {
+    min-height: 280px;
+    grid-template-rows: 92px 1fr;
+  }
+
+  .food-image img {
+    width: 92px;
+    height: 92px;
+    border-width: 6px;
+  }
+
+  .food-body {
+    gap: 10px;
+    padding: 13px;
+  }
+
+  .food-frames span:nth-child(n + 5) {
+    display: none;
+  }
+
   .results-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 14px;
   }
 }
 
@@ -2746,6 +2864,11 @@ body.menu-detail-open {
 
   .brand {
     min-width: 0;
+  }
+
+  .brand-logo {
+    height: 54px;
+    max-width: 44vw;
   }
 
   .nav-links {
@@ -2786,24 +2909,46 @@ body.menu-detail-open {
     width: min(100% - 20px, 1120px);
   }
 
+  .brand-ribbon {
+    display: none;
+  }
+
   .hero-board {
     min-height: 0;
-    gap: 14px;
-    padding: 24px 18px;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 18px 16px;
+  }
+
+  .hero-board::before,
+  .hero-visual {
+    display: none;
+  }
+
+  .hero-copy {
+    gap: 8px;
+  }
+
+  .hero-copy p {
+    font-size: 0.7rem;
   }
 
   .hero-copy h1 {
-    font-size: 2.45rem;
+    font-size: 2rem;
   }
 
-  .brand-ribbon {
-    height: 34px;
-    gap: 18px;
-    font-size: 0.95rem;
+  .hero-copy span {
+    font-size: 0.92rem;
+    line-height: 1.4;
+  }
+
+  .hero-copy .primary-button {
+    min-height: 38px;
+    padding-inline: 14px;
   }
 
   .filter-panel {
-    padding: 14px;
+    padding: 12px;
     border-radius: 8px;
   }
 
@@ -2828,29 +2973,33 @@ body.menu-detail-open {
   .main-pane {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
   }
 
   .section-label {
     order: 1;
-    min-height: 48px;
-    padding: 0 14px;
+    min-height: 42px;
+    padding: 0 12px;
     border-radius: 8px;
   }
 
+  .section-label span {
+    font-size: 0.68rem;
+  }
+
   .section-label strong {
-    font-size: 1rem;
+    font-size: 0.92rem;
   }
 
   .top-map-wrap {
     order: 2;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 
   .action-strip {
     order: 3;
     min-height: 0;
-    padding: 10px;
+    padding: 8px 10px;
   }
 
   .pick-result {
@@ -2881,7 +3030,8 @@ body.menu-detail-open {
 
   .result-count {
     margin-left: 0;
-    padding: 4px 2px 0;
+    padding: 2px 2px 0;
+    font-size: 0.72rem;
     text-align: center;
   }
 
@@ -2909,7 +3059,8 @@ body.menu-detail-open {
   }
 
   .action-buttons {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     align-items: stretch;
     flex: 0 1 auto;
     width: 100%;
@@ -2917,8 +3068,10 @@ body.menu-detail-open {
 
   .action-strip .primary-button,
   .action-strip .secondary-button {
-    flex-basis: auto;
+    min-width: 0;
     width: 100%;
+    padding-inline: 10px;
+    font-size: 0.82rem;
   }
 
   .wheel-layout {
@@ -2933,6 +3086,7 @@ body.menu-detail-open {
 
   .results-grid {
     grid-template-columns: 1fr;
+    gap: 14px;
   }
 
   .menu-detail {
@@ -2946,17 +3100,18 @@ body.menu-detail-open {
   }
 
   .map-heading {
-    margin: 10px;
-    padding: 9px 12px;
-    font-size: 0.78rem;
+    margin: 8px;
+    min-height: 44px;
+    padding: 8px 10px;
+    font-size: 0.72rem;
   }
 
   #map,
   .campus-map,
   .leaflet-campus-map {
-    height: 350px;
-    min-height: 350px;
-    margin: 0 10px 10px;
+    height: 250px;
+    min-height: 250px;
+    margin: 0 8px 8px;
   }
 
   .leaflet-food-pin {
@@ -3001,7 +3156,96 @@ body.menu-detail-open {
   }
 
   .detail-menu-item > img {
-    height: 190px;
+    height: 150px;
+  }
+
+  .shops-heading {
+    min-height: 48px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+  }
+
+  .shops-heading span {
+    font-size: 0.68rem;
+  }
+
+  .shops-heading strong {
+    font-size: 0.9rem;
+  }
+
+  .food-card {
+    min-height: 252px;
+    grid-template-rows: 84px 1fr;
+    border-radius: 14px 14px 8px 8px;
+  }
+
+  .food-image img {
+    width: 84px;
+    height: 84px;
+    margin-top: 6px;
+    border-width: 6px;
+  }
+
+  .food-image span {
+    min-width: 76px;
+    padding: 4px 7px;
+    font-size: 0.58rem;
+  }
+
+  .food-body {
+    gap: 9px;
+    padding: 12px;
+  }
+
+  .food-body h3 {
+    min-height: 0;
+    font-size: 0.92rem;
+  }
+
+  .food-body p {
+    font-size: 0.72rem;
+  }
+
+  .food-frames {
+    gap: 4px;
+  }
+
+  .food-frames span {
+    padding: 4px 7px;
+    font-size: 0.56rem;
+  }
+
+  .food-frames span:nth-child(n + 4) {
+    display: none;
+  }
+
+  .food-meta span {
+    padding: 5px 4px;
+    font-size: 0.6rem;
+  }
+
+  .food-meta small {
+    font-size: 0.52rem;
+  }
+
+  .pill {
+    padding: 6px 8px;
+    font-size: 0.62rem;
+  }
+
+  .card-actions {
+    gap: 6px;
+  }
+
+  .card-actions .secondary-button {
+    min-height: 32px;
+    padding-inline: 10px;
+    font-size: 0.68rem;
+  }
+
+  .store-save-dot {
+    width: 34px;
+    height: 34px;
   }
 
   .map-selected {

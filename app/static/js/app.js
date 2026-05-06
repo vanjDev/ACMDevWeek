@@ -200,8 +200,10 @@ function getBudgetState() {
 }
 
 function setBudgetState() {
+  const budgetInput = document.getElementById("weeklyBudget");
+  if (!budgetInput) return;
   setJson(BUDGET_KEY, {
-    weekly: document.getElementById("weeklyBudget").value,
+    weekly: budgetInput.value,
   });
   updateBudgetInsight();
 }
@@ -777,8 +779,8 @@ function renderHabitStrip() {
 
 function updateBudgetInsight(food = null) {
   const insight = document.getElementById("budgetInsight");
-  if (!insight) return;
-  const weekly = Number(document.getElementById("weeklyBudget").value || 0);
+  const budgetInput = document.getElementById("weeklyBudget");
+  const weekly = Number(budgetInput?.value || 0);
   const spent = weeklySpentTotal();
   const spentInput = document.getElementById("weeklySpent");
   const spentLabel = document.getElementById("budgetSpentLabel");
@@ -823,6 +825,7 @@ function updateBudgetInsight(food = null) {
       : `<p>No meals logged this week yet. Tap the utensil button on a menu item after eating.</p>`;
     if (window.lucide) window.lucide.createIcons();
   }
+  if (!insight) return;
   if (!weekly) {
     insight.textContent = spent
       ? `You logged PHP ${spent} this week. Set a weekly budget to track what is left.`
@@ -842,10 +845,14 @@ function updateBudgetInsight(food = null) {
 
 function restorePreferences() {
   const budget = getBudgetState();
-  document.getElementById("weeklyBudget").value = budget.weekly || "";
-  document.getElementById("weeklySpent").value = String(weeklySpentTotal());
-  document.getElementById("timeAvailable").value = getJson("saanTimeAvailable", "");
-  document.getElementById("mealMinutes").value = getJson("saanMealMinutes", "20");
+  const weeklyBudgetInput = document.getElementById("weeklyBudget");
+  const weeklySpentInput = document.getElementById("weeklySpent");
+  const timeAvailableInput = document.getElementById("timeAvailable");
+  const mealMinutesInput = document.getElementById("mealMinutes");
+  if (weeklyBudgetInput) weeklyBudgetInput.value = budget.weekly || "";
+  if (weeklySpentInput) weeklySpentInput.value = String(weeklySpentTotal());
+  if (timeAvailableInput) timeAvailableInput.value = getJson("saanTimeAvailable", "");
+  if (mealMinutesInput) mealMinutesInput.value = getJson("saanMealMinutes", "20");
   getJson(FAVORITES_KEY, []).forEach((category) => {
     document.querySelector(`[data-filter="category"] [data-value="${category}"]`)?.classList.add("active");
   });
@@ -856,7 +863,7 @@ function setupFilterToggle() {
   const button = document.getElementById("toggleFilters");
   if (!panel || !button) return;
 
-  const compactQuery = window.matchMedia("(max-width: 640px)");
+  const compactQuery = window.matchMedia("(max-width: 860px)");
   const setCollapsed = (collapsed) => {
     panel.classList.toggle("is-collapsed", collapsed);
     button.setAttribute("aria-expanded", String(!collapsed));
@@ -905,9 +912,7 @@ function setupFilters() {
     });
   });
 
-  ["weeklyBudget"].forEach((id) => {
-    document.getElementById(id).addEventListener("input", setBudgetState);
-  });
+  document.getElementById("weeklyBudget")?.addEventListener("input", setBudgetState);
 
   let searchTimer;
   document.getElementById("foodSearch").addEventListener("input", () => {
@@ -938,7 +943,7 @@ function setupFilters() {
     renderFoods(state.foods);
   });
 
-  document.getElementById("clearHistory").addEventListener("click", () => {
+  document.getElementById("clearHistory")?.addEventListener("click", () => {
     const hasHistory = getHistory().length > 0;
     if (!hasHistory) {
       showToast("No food history to clear yet.");

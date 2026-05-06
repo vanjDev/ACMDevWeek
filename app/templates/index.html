@@ -228,50 +228,11 @@
         <span>This week</span>
         <strong id="weekSpent">PHP 0</strong>
       </div>
-      <button id="clearHistory" class="secondary-button compact-button" type="button">
-        <i data-lucide="history"></i>
-        Clear history
-      </button>
+      <a href="/tracker" class="secondary-button compact-button">
+        <i data-lucide="wallet"></i>
+        Open tracker
+      </a>
       <span id="saveStatus" class="save-status">Guest saves stay on this device</span>
-    </section>
-
-    <section class="tracker-panel" aria-label="Budget tracker and meal logs">
-      <div class="tracker-card">
-        <div class="tracker-card-heading">
-          <div>
-            <span>Budget tracker</span>
-            <strong>Know what you already spent</strong>
-          </div>
-        </div>
-        <div class="budget-row">
-          <label>
-            Weekly budget
-            <input type="number" id="weeklyBudget" min="0" step="10" placeholder="PHP">
-          </label>
-          <label>
-            Auto spent
-            <input type="number" id="weeklySpent" min="0" step="10" placeholder="PHP" readonly>
-          </label>
-        </div>
-        <div class="budget-meter" aria-label="Weekly budget progress">
-          <div>
-            <span id="budgetSpentLabel">PHP 0 spent</span>
-            <span id="budgetRemainingLabel">Set a budget</span>
-          </div>
-          <div class="budget-bar"><span id="budgetBar"></span></div>
-        </div>
-        <p id="budgetInsight">Set a weekly budget to see smarter spending notes.</p>
-      </div>
-
-      <div class="tracker-card tracker-history-card">
-        <div class="tracker-card-heading">
-          <div>
-            <span>Meal logs</span>
-            <strong>This week in Manila time</strong>
-          </div>
-        </div>
-        <div id="weeklyHistory" class="weekly-history" aria-live="polite"></div>
-      </div>
     </section>
 
     <section class="map-wrap top-map-wrap" aria-label="Food map">
@@ -363,7 +324,7 @@
 <script>
   window.SAAN_CAMPUSES = {{ campuses | tojson }};
 </script>
-<script src="{{ url_for('static', path='/js/map.js') }}?v=floating-menu-20260506"></script>
-<script src="{{ url_for('static', path='/js/app.js') }}?v=floating-menu-20260506"></script>
-<script src="{{ url_for('static', path='/js/pickforme.js') }}?v=floating-menu-20260506"></script>
+<script src="{{ url_for('static', path='/js/map.js') }}?v=tracker-nav-20260506"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}?v=tracker-nav-20260506"></script>
+<script src="{{ url_for('static', path='/js/pickforme.js') }}?v=tracker-nav-20260506"></script>
 {% endblock %}

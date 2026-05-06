@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request
 from fastapi.templating import Jinja2Templates
+from fastapi.responses import RedirectResponse
 
 from app.config import get_settings
 
@@ -24,9 +25,14 @@ def home(request: Request):
     return templates.TemplateResponse("index.html", context(request, "Find food near FEU", "home"))
 
 
+@router.get("/tracker")
+def tracker(request: Request):
+    return templates.TemplateResponse("tracker.html", context(request, "Tracker", "tracker"))
+
+
 @router.get("/timer")
-def timer(request: Request):
-    return templates.TemplateResponse("timer.html", context(request, "Can I Make It?", "timer"))
+def timer():
+    return RedirectResponse(url="/tracker", status_code=307)
 
 
 @router.get("/about")
