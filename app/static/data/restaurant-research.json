@@ -2,7 +2,8 @@
   "generated_at": "2026-05-06",
   "notes": [
     "Photo URLs are source-backed remote references for prototype use and review. Before production, confirm licensing or replace with first-party/permissioned photos.",
-    "Some existing app restaurants are broad placeholders, not easily verifiable businesses. Those are listed under suggested_real_replacements instead of being treated as confirmed."
+    "Some existing app restaurants are broad placeholders, not easily verifiable businesses. Those are listed under suggested_real_replacements or needs_manual_verification instead of being treated as confirmed.",
+    "Lamona and directory pages can change without notice. Treat addresses, hours, and photos as research leads, not locked production data."
   ],
   "confirmed_current_app_matches": [
     {
@@ -13,7 +14,9 @@
       "hours": "Mon-Sat 10:30AM-8:30PM; Sun closed",
       "rating": "Google 4.5/5 via RestaurantGuru listing",
       "known_for": ["Banana Rhuma", "sisig", "kebabs", "Filipino food"],
-      "photo_url": "https://img02.restaurantguru.com/c205-Mang-Tootz-Foodhouse-Manila-meals-1.jpg",
+      "photo_urls": [
+        "https://img02.restaurantguru.com/c205-Mang-Tootz-Foodhouse-Manila-meals-1.jpg"
+      ],
       "source_url": "https://restaurantguru.com/Mang-Tootz-Manila"
     },
     {
@@ -24,7 +27,9 @@
       "payments": ["Cash", "GCash"],
       "features": ["Open air"],
       "good_for": ["Breakfast", "Lunch", "Dinner", "Quick bite", "Snack"],
-      "photo_url": "https://cdn.draft143.com/static/lamona/nCwMrT0N76VjwQUPJajxoYuJ2tcCR5nmAxi1.dimsum_treats-featured.webp",
+      "photo_urls": [
+        "https://cdn.draft143.com/static/lamona/nCwMrT0N76VjwQUPJajxoYuJ2tcCR5nmAxi1.dimsum_treats-featured.webp"
+      ],
       "menu_photo_urls": [
         "https://cdn.draft143.com/static/lamona/OSGNN7ORyRmDPlQhcc9XPQQST4FhYyWA0Hag.dimsum_treats-menu1.webp"
       ],
@@ -34,9 +39,11 @@
       "app_restaurant": "Obscure Cafe",
       "confirmed_name": "Obscure Cafe - FEU Morayta",
       "address": "860 Nicanor Reyes St, Sampaloc, Manila",
-      "hours": "Friday shown as 8:00 AM-10:00 PM on Corner listing",
+      "hours": "Wednesday shown as 8:00 AM-10:00 PM on Corner listing",
       "summary": "Hideaway cafe near FEU Morayta, described as good for coffee, snacks, work, dates, and wifi.",
-      "photo_url": "https://cdn.corner.inc/place-photo/ATKogpcEz_2cOa-ml4fZSr-yfhq1kSsOgGQbQhGPLH3kyLygWueD8rbFMS3hDq1x6U0JWMx5wBO9rx4n1XZAD_HpWyGNyCNyFvSQ8uXG6Omgu-jyp7T2Y93oJgwCA-QzgTR432zg0N1bYnOhrXyU4bxDF8SsHZh2WuEI9npPXcZjxNimec1uXkOFu_R3qkdJLBSy-NyK_GV5sKIgg8HVcNTbPMsvCf4sRfrSYyoGD0c9QsFYiD1cSEAXXepJXDNL1vwkucNAQqfcaMAU-93JabOjlUjWflfsUAzndo-mCEz37izNxNUn-XHvQ4YDCUVFfFkTgPIVKNLzkvmVOdBjA1dq2bvpxZ9C-rEnfy-MZZFVM_LGQU0IlqP-bEfIMGjfxt9pjmy3-V86Ly-E6eoU-FsKaa8zqe3ivjuoOlNjDSaXa-b291ncvfjqYDpShbNDJHC9qTXUkN1DwkauRkObKD3y3qlyjPD0pKs1FbUOiA7tdUfNB7cJtHL4sOC9iFgNYOk0Xqlw_pzQPRAIQa9bsSNbwTNOH9OkIYAEomhoDyU5bgV38wVnuXK4E6vhoQ12ef6Ym8uNZCVYCkF9-ZBU9m2xf2hEGmDk0eQogy44YybUuS-UoR_ba0e6tKU7TnTEaQv--ruDvTZs.jpeg",
+      "photo_urls": [
+        "https://cdn.corner.inc/place-photo/ATKogpcEz_2cOa-ml4fZSr-yfhq1kSsOgGQbQhGPLH3kyLygWueD8rbFMS3hDq1x6U0JWMx5wBO9rx4n1XZAD_HpWyGNyCNyFvSQ8uXG6Omgu-jyp7T2Y93oJgwCA-QzgTR432zg0N1bYnOhrXyU4bxDF8SsHZh2WuEI9npPXcZjxNimec1uXkOFu_R3qkdJLBSy-NyK_GV5sKIgg8HVcNTbPMsvCf4sRfrSYyoGD0c9QsFYiD1cSEAXXepJXDNL1vwkucNAQqfcaMAU-93JabOjlUjWflfsUAzndo-mCEz37izNxNUn-XHvQ4YDCUVFfFkTgPIVKNLzkvmVOdBjA1dq2bvpxZ9C-rEnfy-MZZFVM_LGQU0IlqP-bEfIMGjfxt9pjmy3-V86Ly-E6eoU-FsKaa8zqe3ivjuoOlNjDSaXa-b291ncvfjqYDpShbNDJHC9qTXUkN1DwkauRkObKD3y3qlyjPD0pKs1FbUOiA7tdUfNB7cJtHL4sOC9iFgNYOk0Xqlw_pzQPRAIQa9bsSNbwTNOH9OkIYAEomhoDyU5bgV38wVnuXK4E6vhoQ12ef6Ym8uNZCVYCkF9-ZBU9m2xf2hEGmDk0eQogy44YybUuS-UoR_ba0e6tKU7TnTEaQv--ruDvTZs.jpeg"
+      ],
       "source_urls": [
         "https://www.corner.inc/place/755514",
         "https://www.top-rated.online/cities/Manila/place/p/16151536/Obscure%2BCafe%2B-%2BFEU%2BMorayta"
@@ -47,14 +54,18 @@
       "confirmed_name": "Ate Rica's Bacsilog",
       "brand_note": "Official site describes Ate Rica's as superior-silog/bacsilog meals in schools, commercial spaces, and supermarkets; branch-specific Morayta data still needs confirmation.",
       "known_for": ["Bacsilog", "silog bowls", "cheese sauce"],
-      "photo_url": "https://static.wixstatic.com/media/52e0bf_07f854d8165a4936b5794c55e3e4e1f6~mv2_d_1500_1500_s_2.jpg/v1/fit/w_2500,h_1330,al_c/52e0bf_07f854d8165a4936b5794c55e3e4e1f6~mv2_d_1500_1500_s_2.jpg",
+      "photo_urls": [
+        "https://static.wixstatic.com/media/52e0bf_07f854d8165a4936b5794c55e3e4e1f6~mv2_d_1500_1500_s_2.jpg/v1/fit/w_2500,h_1330,al_c/52e0bf_07f854d8165a4936b5794c55e3e4e1f6~mv2_d_1500_1500_s_2.jpg"
+      ],
       "source_url": "https://www.bacsilog.com.ph/the-basilog"
     },
     {
       "app_restaurant": "Potato Corner",
       "confirmed_name": "Potato Corner",
       "brand_note": "Official menu page lists flavored fries, other flavored snacks, beverages, and sizes from Regular to Tera Mix; prices vary by branch.",
-      "photo_url": "https://potatocorner.com/wp-content/uploads/2026/04/BBQ-Mega-copy.png",
+      "photo_urls": [
+        "https://potatocorner.com/wp-content/uploads/2026/04/BBQ-Mega-copy.png"
+      ],
       "source_url": "https://potatocorner.com/menu/"
     },
     {
@@ -75,7 +86,11 @@
       "hours": "10:00 AM-10:00 PM Mon-Fri; 12:00 NN-10:00 PM Sat-Sun",
       "payments": ["Bank transfer", "Cash", "GCash", "Maya"],
       "features": ["Air conditioning", "Comfort room", "Outlets", "WiFi"],
-      "photo_url": "https://cdn.draft143.com/static/lamona/EcCFg9ybQN1EmTyDiNqHDANUuSrxFNKvqe7D.coffeepages-featured.webp",
+      "photo_urls": [
+        "https://cdn.draft143.com/static/lamona/EcCFg9ybQN1EmTyDiNqHDANUuSrxFNKvqe7D.coffeepages-featured.webp",
+        "https://cdn.draft143.com/static/lamona/dcs4CpFoRsiSwzwQ00CvRurkYLREYTb38Bzn.coffeepages-menu1.webp",
+        "https://cdn.draft143.com/static/lamona/Usrp6Uaq7P1nqIUZv0anN76DXw2QNg4PllrG.coffeepages-menu2.webp"
+      ],
       "source_url": "https://lamona.lol/restaurant/coffeepages"
     },
     {
@@ -84,7 +99,10 @@
       "address": "1604 Dapitan St, Sampaloc, Manila, 1008 Metro Manila",
       "hours": "10:00 AM-11:00 PM Mon-Sat; 12:00 AM-8:00 PM Sun",
       "features": ["Air conditioning", "Surveillance cameras"],
-      "photo_url": "https://cdn.draft143.com/static/lamona/lwp4nYvkSi4ynZZ1WMFUrwSeHjZ9C2IsWoDr.oishiku_tabemashou-featured.webp",
+      "photo_urls": [
+        "https://cdn.draft143.com/static/lamona/lwp4nYvkSi4ynZZ1WMFUrwSeHjZ9C2IsWoDr.oishiku_tabemashou-featured.webp",
+        "https://cdn.draft143.com/static/lamona/eBtoNh0VSyBAW1Ejsp6PdyXYCEpTEGa4elmw.oishiku_tabemashou-menu1.webp"
+      ],
       "source_url": "https://lamona.lol/restaurant/oishiku-tabemoshou"
     },
     {
@@ -93,7 +111,11 @@
       "address": "1226-A Concepcion St, Sampaloc, Manila, 1015 Metro Manila",
       "hours": "10:00 AM-9:00 PM",
       "dietary": ["Halal"],
-      "photo_url": "https://cdn.draft143.com/static/lamona/T0yiBCHr7ClRtl81dIm9h6YKnarRabKxb3vw.al_jograts_persian_grill-featured.webp",
+      "photo_urls": [
+        "https://cdn.draft143.com/static/lamona/T0yiBCHr7ClRtl81dIm9h6YKnarRabKxb3vw.al_jograts_persian_grill-featured.webp",
+        "https://cdn.draft143.com/static/lamona/77DXO43XWZF5bXX9Rn1WFQJmcpeWefmOdBxs.al_jograts_persian_grill-menu1.webp",
+        "https://cdn.draft143.com/static/lamona/GXtA6ya2tkDfpkpzT2M2SymfD0ewMVqNzaZe.al_jograts_persian_grill-menu2.webp"
+      ],
       "source_url": "https://lamona.lol/restaurant/al-jograts-persian-grill"
     },
     {
@@ -110,8 +132,32 @@
       "candidate": "Manila Cafe",
       "address": "Annie's Place Bldg., 1015 P. Noval Street Brgy. 468, Sampaloc, Manila",
       "hours": "09:00 AM to 12:00 AM",
-      "photo_url": "https://cdn.draft143.com/static/lamona/O1aGaOsPFpTSQcg8BPLsjOmrsAQE5gJaMtCs.manila_cafe-menu1.webp",
+      "photo_urls": [
+        "https://cdn.draft143.com/static/lamona/O1aGaOsPFpTSQcg8BPLsjOmrsAQE5gJaMtCs.manila_cafe-menu1.webp",
+        "https://cdn.draft143.com/static/lamona/ll4VlB64QBn5brIdmn3K1KtM2xvVleIUql76.manila_cafe-featured.webp"
+      ],
       "source_url": "https://lamona.lol/restaurant/manila-cafe"
     }
+  ],
+  "needs_manual_verification": [
+    "1008 Kopi",
+    "Hepa Lane Street Food",
+    "Lerma Carinderia Row",
+    "FEU Tech Canteen",
+    "Jollibee Morayta",
+    "McDonald's Morayta",
+    "Dakasi Morayta",
+    "Moonleaf Morayta",
+    "Paresan sa Lerma",
+    "Wing Corner",
+    "P. Campa Sisigan",
+    "Morayta Tapsihan",
+    "Tokyo Bites",
+    "Shawarma Shack Morayta",
+    "Refreshers Morayta",
+    "Snack Stop Lerma",
+    "Morayta Wings Hub",
+    "FEU Manila Canteen",
+    "Study Nook Cafe"
   ]
 }

@@ -64,11 +64,21 @@ function formatManilaTime(iso) {
   }).format(new Date(iso));
 }
 
+function formatStoredMealTime(time) {
+  const [hourText, minuteText] = String(time || "").split(":");
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return "";
+  const period = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${String(minute).padStart(2, "0")} ${period}`;
+}
+
 function mealTimeLabel(item) {
-  if (item.phTime) return `${item.phTime} PHT`;
-  if (item.loggedAt) return `${formatManilaTime(item.loggedAt)} PHT`;
-  if (item.phDate || item.date) return `${item.phDate || item.date} PHT`;
-  return "PHT time unavailable";
+  if (item.phTime) return formatStoredMealTime(item.phTime);
+  if (item.loggedAt) return formatManilaTime(item.loggedAt);
+  if (item.phDate || item.date) return item.phDate || item.date;
+  return "Time unavailable";
 }
 
 function manilaWeekKey(dateText = manilaParts().date) {
