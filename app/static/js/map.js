@@ -99,9 +99,9 @@ function initSaanMap() {
     <div class="walk-ring walk-ring-near"><span>3-5 min</span></div>
     <div class="walk-ring walk-ring-far"><span>8-12 min</span></div>
     <div class="reference-landmarks" aria-hidden="true">
-      <div class="landmark landmark-isetan">Isetann<br>Recto</div>
-      <div class="landmark landmark-ever">Ever Gotesco<br>Manila</div>
-      <div class="landmark landmark-gym">FEU Gym</div>
+      <div class="landmark landmark-isetan"><span>Isetann<br>Recto</span></div>
+      <div class="landmark landmark-ever"><span>Ever Gotesco<br>Manila</span></div>
+      <div class="landmark landmark-gym"><span>FEU Gym</span></div>
     </div>
     <div class="campus-block feu-main-block" aria-hidden="true"><span>FEU Manila</span></div>
     <div class="map-roads" aria-hidden="true">

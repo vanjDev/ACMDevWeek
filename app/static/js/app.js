@@ -316,6 +316,10 @@ function storeFrames(store) {
   return [...new Set(frames)].slice(0, 5);
 }
 
+function foodImageFor(food) {
+  return food.image_url || categoryImages[food.category] || categoryImages.snacks;
+}
+
 function menuItemTemplate(food) {
   const active = getBookmarks().includes(food.id);
   const eatenToday = getHistory().some((item) => item.id === food.id && item.date === new Date().toISOString().slice(0, 10));
@@ -338,11 +342,37 @@ function menuItemTemplate(food) {
   `;
 }
 
+function detailMenuItemTemplate(food) {
+  const active = getBookmarks().includes(food.id);
+  const eatenToday = getHistory().some((item) => item.id === food.id && item.date === new Date().toISOString().slice(0, 10));
+  return `
+    <article class="detail-menu-item" data-menu-food-id="${food.id}">
+      <img src="${foodImageFor(food)}" alt="">
+      <div class="detail-menu-copy">
+        <div>
+          <span>${categoryLabel(food.category)}</span>
+          <strong>${food.name}</strong>
+          <p>${food.description}</p>
+        </div>
+        <div class="detail-menu-meta">
+          <span>PHP ${food.price_min}-${food.price_max}</span>
+          <button class="icon-button ate-button ${eatenToday ? "active" : ""}" type="button" data-ate="${food.id}" aria-label="${eatenToday ? "Logged" : "Log"} ${food.name}" aria-pressed="${eatenToday}" title="${eatenToday ? "Logged today" : "Log eaten"}">
+            <i data-lucide="utensils"></i>
+          </button>
+          <button class="icon-button bookmark ${active ? "active" : ""}" type="button" data-bookmark="${food.id}" aria-label="${active ? "Remove bookmark for" : "Bookmark"} ${food.name}" aria-pressed="${active}" title="${active ? "Saved" : "Bookmark"}">
+            <i data-lucide="heart"></i>
+          </button>
+        </div>
+      </div>
+    </article>
+  `;
+}
+
 function storeCardTemplate(store) {
   const bookmarks = getBookmarks();
   const hasSavedFood = store.menu.some((food) => bookmarks.includes(food.id));
   const storeSaved = getStoreBookmarks().includes(store.id);
-  const image = store.image_url || categoryImages[store.category] || categoryImages.snacks;
+  const image = foodImageFor(store);
   const frames = storeFrames(store);
   const isOpen = state.selectedStoreId === store.id;
   return `
@@ -367,20 +397,60 @@ function storeCardTemplate(store) {
         <div class="card-actions">
           <span class="pill">PHP ${store.price_min}-${store.price_max}</span>
           <button class="secondary-button compact-button" type="button" data-store-toggle="${store.id}" aria-expanded="${isOpen}" aria-label="${isOpen ? "Hide menu for" : "View menu for"} ${store.name}">
-            <i data-lucide="${isOpen ? "chevron-up" : "utensils"}"></i>
-            ${isOpen ? "Hide menu" : "View menu"}
+            <i data-lucide="${isOpen ? "panel-right-open" : "utensils"}"></i>
+            ${isOpen ? "Viewing" : "View menu"}
           </button>
           <button class="store-save-dot ${storeSaved ? "active" : ""}" type="button" data-store-bookmark="${store.id}" title="${storeSaved ? "Saved restaurant" : "Save restaurant"}" aria-label="${storeSaved ? "Remove restaurant bookmark for" : "Bookmark restaurant"} ${store.name}" aria-pressed="${storeSaved}">
             <i data-lucide="heart"></i>
           </button>
         </div>
         ${hasSavedFood ? `<p class="store-saved-note">Has saved food item</p>` : ""}
-        <ul class="store-menu" ${isOpen ? "" : "hidden"}>
-          ${store.menu.map(menuItemTemplate).join("")}
-        </ul>
       </div>
     </article>
   `;
+}
+
+function menuDetailTemplate(store) {
+  if (!store) {
+    return `
+      <div class="menu-detail-empty">
+        <i data-lucide="utensils"></i>
+        <span>Menu Preview</span>
+        <strong>Pick a restaurant</strong>
+        <p>Click any store card to open a larger menu with food photos and save buttons.</p>
+      </div>
+    `;
+  }
+
+  const storeSaved = getStoreBookmarks().includes(store.id);
+  return `
+    <div class="menu-detail-header">
+      <img src="${foodImageFor(store)}" alt="">
+      <div>
+        <span>${formatLabel(store.area)}</span>
+        <strong>${store.name}</strong>
+        <p>${store.menu.length} menu items - PHP ${store.price_min}-${store.price_max} - ${store.walking_minutes} min walk</p>
+      </div>
+      <button class="store-save-dot ${storeSaved ? "active" : ""}" type="button" data-store-bookmark="${store.id}" title="${storeSaved ? "Saved restaurant" : "Save restaurant"}" aria-label="${storeSaved ? "Remove restaurant bookmark for" : "Bookmark restaurant"} ${store.name}" aria-pressed="${storeSaved}">
+        <i data-lucide="heart"></i>
+      </button>
+    </div>
+    <div class="detail-menu-list">
+      ${store.menu.map(detailMenuItemTemplate).join("")}
+    </div>
+  `;
+}
+
+function renderMenuDetail(stores) {
+  const detail = document.getElementById("menuDetail");
+  if (!detail) return;
+  const selected = stores.find((store) => store.id === state.selectedStoreId);
+  detail.innerHTML = menuDetailTemplate(selected);
+}
+
+function focusMenuDetail() {
+  if (window.innerWidth > 1100) return;
+  document.getElementById("menuDetail")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function applyClientRanking(foods) {
@@ -425,6 +495,7 @@ function renderFoods(foods) {
   results.innerHTML = paged.length
     ? paged.map(storeCardTemplate).join("")
     : `<div class="pick-result"><h2>No matches yet</h2><p>Adjust the filters, time window, budget, or anti-repeat setting.</p></div>`;
+  renderMenuDetail(stores);
 
   document.getElementById("resultCount").textContent = state.showingBookmarks
     ? `${Math.min(state.visibleLimit, stores.length)} of ${stores.length} saved store${stores.length === 1 ? "" : "s"}`
@@ -637,9 +708,10 @@ function setupFilters() {
       return;
     }
     if (toggleButton) {
-      state.selectedStoreId = state.selectedStoreId === toggleButton.dataset.storeToggle ? null : toggleButton.dataset.storeToggle;
+      state.selectedStoreId = toggleButton.dataset.storeToggle;
       renderFoods(state.foods);
       window.selectFoodOnMap?.(toggleButton.dataset.storeToggle, false);
+      focusMenuDetail();
       return;
     }
     if (ateButton) {
@@ -649,6 +721,37 @@ function setupFilters() {
       state.selectedStoreId = card.dataset.storeId;
       renderFoods(state.foods);
       window.selectFoodOnMap?.(card.dataset.storeId, false);
+      focusMenuDetail();
+    }
+  });
+
+  document.getElementById("menuDetail")?.addEventListener("click", async (event) => {
+    const bookmarkButton = event.target.closest("[data-bookmark]");
+    const storeBookmarkButton = event.target.closest("[data-store-bookmark]");
+    const ateButton = event.target.closest("[data-ate]");
+    if (bookmarkButton) {
+      const id = Number(bookmarkButton.dataset.bookmark);
+      if (!Number.isFinite(id)) return;
+      const bookmarks = getBookmarks();
+      const next = bookmarks.includes(id) ? bookmarks.filter((item) => item !== id) : [...bookmarks, id];
+      await setBookmarks(next);
+      showToast(next.includes(id) ? "Saved food." : "Removed food.");
+      renderFoods(state.foods);
+      return;
+    }
+    if (storeBookmarkButton) {
+      const id = String(storeBookmarkButton.dataset.storeBookmark || "");
+      if (!id) return;
+      const bookmarks = getStoreBookmarks();
+      const next = bookmarks.includes(id) ? bookmarks.filter((item) => item !== id) : [...bookmarks, id];
+      await setStoreBookmarks(next);
+      showToast(next.includes(id) ? "Saved restaurant." : "Removed restaurant.");
+      renderFoods(state.foods);
+      return;
+    }
+    if (ateButton) {
+      const food = state.foods.find((item) => item.id === Number(ateButton.dataset.ate));
+      if (food) logFood(food);
     }
   });
 }

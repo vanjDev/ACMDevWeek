@@ -254,6 +254,8 @@
           Show More
         </button>
       </section>
+
+      <aside id="menuDetail" class="menu-detail" aria-live="polite"></aside>
     </div>
   </section>
 </section>
@@ -275,7 +277,7 @@
 <script>
   window.SAAN_CAMPUSES = {{ campuses | tojson }};
 </script>
-<script src="{{ url_for('static', path='/js/map.js') }}?v=flat-walker-map-20260506"></script>
-<script src="{{ url_for('static', path='/js/app.js') }}?v=store-heart-20260506"></script>
-<script src="{{ url_for('static', path='/js/pickforme.js') }}?v=wheel-20260506"></script>
+<script src="{{ url_for('static', path='/js/map.js') }}?v=feu-reference-map-20260506"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}?v=side-menu-20260506"></script>
+<script src="{{ url_for('static', path='/js/pickforme.js') }}?v=pick-ready-20260506"></script>
 {% endblock %}
