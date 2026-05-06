@@ -3775,10 +3775,6 @@ body.menu-detail-open {
     border-radius: 8px;
   }
 
-  .filter-panel.is-collapsed .panel-title h1 {
-    font-size: 1.05rem;
-  }
-
   .main-pane {
     display: flex;
     flex-direction: column;
