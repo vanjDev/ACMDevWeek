@@ -128,10 +128,20 @@
         </label>
       </div>
 
-      <label>
-        Image URL
-        <input id="adminImageUrl" name="image_url" type="url" placeholder="Optional">
-      </label>
+      <section class="admin-image-card">
+        <div>
+          <label>
+            Image path / URL
+            <input id="adminImageUrl" name="image_url" type="text" placeholder="Optional, or upload below">
+          </label>
+          <label>
+            Upload image
+            <input id="adminImageUpload" name="image_upload" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+          </label>
+          <p id="adminImageHint">Uploads are saved to app/static/uploads/foods.</p>
+        </div>
+        <img id="adminImagePreview" alt="" hidden>
+      </section>
 
       <label>
         Description
@@ -175,5 +185,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', path='/js/admin.js') }}?v=store-parent-20260506"></script>
+<script src="{{ url_for('static', path='/js/admin.js') }}?v=image-upload-20260506"></script>
 {% endblock %}

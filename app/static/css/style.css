@@ -599,6 +599,12 @@ input[type="range"] {
   background: var(--cream);
 }
 
+.mini-action.active {
+  color: var(--white);
+  background: var(--green);
+  box-shadow: 0 0 0 3px rgba(0, 166, 100, 0.22);
+}
+
 .budget-coach {
   display: grid;
   gap: 10px;
@@ -3100,6 +3106,38 @@ input[type="range"] {
   font-weight: 800;
 }
 
+.admin-image-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 112px;
+  gap: 12px;
+  align-items: stretch;
+  border-radius: 16px 16px 8px 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.admin-image-card > div {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-image-card p {
+  margin: 0;
+  color: var(--mint);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.admin-image-card img {
+  width: 112px;
+  height: 112px;
+  object-fit: cover;
+  border: 4px solid rgba(246, 241, 231, 0.72);
+  border-radius: 14px;
+  background: rgba(246, 241, 231, 0.12);
+}
+
 .admin-card-heading,
 .admin-list-toolbar {
   display: flex;
@@ -3701,6 +3739,15 @@ body.menu-detail-open {
 
   .admin-list-toolbar label {
     width: 100%;
+  }
+
+  .admin-image-card {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-image-card img {
+    width: 100%;
+    height: 160px;
   }
 
   .admin-food-row {

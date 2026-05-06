@@ -64,6 +64,17 @@ class SavedFood(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
+class StoreRating(Base):
+    __tablename__ = "store_ratings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    store_key: Mapped[str] = mapped_column(String(140), index=True)
+    store_name: Mapped[str] = mapped_column(String(120), index=True)
+    score: Mapped[int] = mapped_column(Integer)
+    reason: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+
 class UserPreference(Base):
     __tablename__ = "user_preferences"
 

@@ -27,6 +27,25 @@ async function adminFetch(url, options = {}) {
   return data;
 }
 
+async function adminUploadImage(file) {
+  const formData = new FormData();
+  formData.append("image", file);
+  const response = await fetch("/api/admin/uploads/image", {
+    method: "POST",
+    body: formData,
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.detail || "Image upload failed.");
+  return data;
+}
+
+function setImagePreview(url) {
+  const preview = document.getElementById("adminImagePreview");
+  if (!preview) return;
+  preview.hidden = !url;
+  preview.src = url || "";
+}
+
 function setAdminAccessState(state, message = "") {
   const accessPanel = document.getElementById("adminAccessPanel");
   const workspace = document.getElementById("adminWorkspace");
@@ -91,6 +110,8 @@ function resetAdminForm() {
   document.getElementById("adminFormMode").textContent = "New item";
   document.getElementById("adminFormTitle").textContent = "Add food spot";
   document.getElementById("adminDisableFood").hidden = true;
+  document.getElementById("adminImageHint").textContent = "Uploads are saved to app/static/uploads/foods.";
+  setImagePreview("");
   setMapPosition(null);
 }
 
@@ -108,6 +129,8 @@ function fillAdminForm(food) {
   document.getElementById("adminLatitude").value = food.latitude;
   document.getElementById("adminLongitude").value = food.longitude;
   document.getElementById("adminImageUrl").value = food.image_url || "";
+  document.getElementById("adminImageHint").textContent = food.image_url ? "Current image is saved with this item." : "Uploads are saved to app/static/uploads/foods.";
+  setImagePreview(food.image_url || "");
   document.getElementById("adminDescription").value = food.description;
   document.getElementById("adminIsActive").checked = food.is_active;
   document.getElementById("adminFormMode").textContent = `Editing #${food.id}`;
@@ -226,6 +249,27 @@ function setupAdmin() {
     saveAdminFood(event).catch((error) => showToast(error.message));
   });
   document.getElementById("adminResetForm")?.addEventListener("click", resetAdminForm);
+  document.getElementById("adminImageUrl")?.addEventListener("input", (event) => {
+    setImagePreview(event.target.value.trim());
+  });
+  document.getElementById("adminImageUpload")?.addEventListener("change", async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const hint = document.getElementById("adminImageHint");
+    if (hint) hint.textContent = "Uploading image...";
+    try {
+      const upload = await adminUploadImage(file);
+      document.getElementById("adminImageUrl").value = upload.image_url;
+      setImagePreview(upload.image_url);
+      if (hint) hint.textContent = `Uploaded ${upload.filename}. Save the item to use it.`;
+      showToast("Image uploaded.");
+    } catch (error) {
+      if (hint) hint.textContent = error.message;
+      showToast(error.message);
+    } finally {
+      event.target.value = "";
+    }
+  });
   document.getElementById("adminDisableFood")?.addEventListener("click", () => {
     disableCurrentFood().catch((error) => showToast(error.message));
   });

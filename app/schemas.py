@@ -123,3 +123,22 @@ class BookmarkPayload(BaseModel):
 
 class UserDataPayload(BaseModel):
     data: dict[str, Any] = Field(default_factory=dict)
+
+
+class StoreRatingPayload(BaseModel):
+    store_key: str = Field(..., min_length=1, max_length=140)
+    store_name: str = Field(..., min_length=1, max_length=120)
+    score: int = Field(..., ge=1, le=5)
+    reason: str = Field(..., min_length=1, max_length=240)
+
+
+class StoreRatingReason(BaseModel):
+    score: int
+    reason: str
+    created_at: str
+
+
+class StoreRatingSummary(BaseModel):
+    average: float
+    count: int
+    reasons: list[StoreRatingReason] = Field(default_factory=list)

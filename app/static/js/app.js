@@ -6,6 +6,7 @@ const state = {
   isLoading: false,
   selectedStoreId: null,
   userLocation: null,
+  publicStoreRatings: {},
 };
 
 const DEFAULT_RADIUS = 1200;
@@ -50,6 +51,18 @@ function selectedValues(filterName) {
 function setChipActive(chip, active) {
   chip.classList.toggle("active", active);
   chip.setAttribute("aria-pressed", String(active));
+}
+
+function updateFavoriteTypesButton() {
+  const button = document.getElementById("saveFavoriteTypes");
+  if (!button) return;
+  const favorites = getJson(FAVORITES_KEY, []);
+  const count = favorites.length;
+  button.classList.toggle("active", count > 0);
+  button.innerHTML = count
+    ? `<i data-lucide="star"></i> ${count} favorite type${count === 1 ? "" : "s"} saved`
+    : `<i data-lucide="star"></i> Save selected types`;
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function getJson(key, fallback) {
@@ -397,6 +410,43 @@ function ratingReasonText(entry, fallback) {
   return entry.reason || fallback;
 }
 
+function publicRatingForStore(storeId) {
+  return state.publicStoreRatings[String(storeId)] || null;
+}
+
+function publicRatingReason(storeId) {
+  const summary = publicRatingForStore(storeId);
+  return summary?.reasons?.[0]?.reason || "";
+}
+
+async function loadPublicStoreRatings() {
+  try {
+    const response = await fetch("/api/store-ratings");
+    if (!response.ok) throw new Error("Ratings failed to load.");
+    state.publicStoreRatings = await response.json();
+  } catch {
+    state.publicStoreRatings = {};
+  }
+}
+
+async function submitPublicStoreRating(store, rating, reason) {
+  const response = await fetch("/api/store-ratings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      store_key: store.id,
+      store_name: store.name,
+      score: rating,
+      reason,
+    }),
+  });
+  if (!response.ok) throw new Error("Rating failed to save.");
+  state.publicStoreRatings = {
+    ...state.publicStoreRatings,
+    [store.id]: await response.json(),
+  };
+}
+
 function antiRepeatIds() {
   if (!document.getElementById("antiRepeat")?.checked) return [];
   return getHistory().slice(0, 4).map((item) => item.id);
@@ -648,6 +698,9 @@ function storeCardTemplate(store) {
   const isOpen = state.selectedStoreId === store.id;
   const userRatingEntry = getUserStoreRatingEntry(store.id);
   const userRating = userRatingEntry.score;
+  const publicRating = publicRatingForStore(store.id);
+  const displayRating = publicRating?.average || store.rating;
+  const displayRatingLabel = publicRating ? `${publicRating.count} rating${publicRating.count === 1 ? "" : "s"}` : "Store data";
   return `
     <article class="food-card store-card ${isOpen ? "open" : ""}" data-store-id="${store.id}">
       <div class="food-image">
@@ -665,12 +718,12 @@ function storeCardTemplate(store) {
         <div class="food-meta">
           <span><small>Menu</small>${store.menu.length} items</span>
           <span><small>Walk</small>${store.walking_minutes} min</span>
-          <span><small>Store rating</small><i data-lucide="star"></i> ${store.rating.toFixed(1)}</span>
+          <span><small>${displayRatingLabel}</small><i data-lucide="star"></i> ${displayRating.toFixed(1)}</span>
         </div>
         <div class="rating-panel store-card-rating">
           <span>${userRating ? `Your rating: ${userRating}/5` : "Rate store"}</span>
           ${ratingStarsTemplate({ id: store.id, type: "store", value: userRating, label: `Rate ${store.name}` })}
-          <p class="rating-reason">${ratingReasonText(userRatingEntry, "Based on the starting dataset until you add a reason.")}</p>
+          <p class="rating-reason">${ratingReasonText(userRatingEntry, publicRatingReason(store.id) || "Based on the starting dataset until real ratings are added.")}</p>
         </div>
         <div class="card-actions">
           <span class="pill price-pill">
@@ -697,8 +750,10 @@ function menuDetailTemplate(store) {
   const storeSaved = getStoreBookmarks().includes(store.id);
   const userRatingEntry = getUserStoreRatingEntry(store.id);
   const userRating = userRatingEntry.score;
-  const displayRating = userRating || store.rating;
-  const ratingSource = userRating ? "Your rating" : "Store data rating";
+  const publicRating = publicRatingForStore(store.id);
+  const displayRating = userRating || publicRating?.average || store.rating;
+  const ratingSource = userRating ? "Your rating" : publicRating ? `${publicRating.count} public rating${publicRating.count === 1 ? "" : "s"}` : "Store data rating";
+  const publicReason = publicRatingReason(store.id);
   return `
     <div class="menu-detail-header">
       <img src="${foodImageFor(store)}" alt="">
@@ -721,7 +776,7 @@ function menuDetailTemplate(store) {
       <div>
         <span>Decision signal</span>
         <strong><i data-lucide="star"></i> ${displayRating.toFixed(1)} ${ratingSource.toLowerCase()}</strong>
-        <p>${ratingReasonText(userRatingEntry, "This rating currently comes from the store dataset. Add your own score and reason to make the recommendation more personal.")}</p>
+        <p>${ratingReasonText(userRatingEntry, publicReason || "This rating currently comes from the store dataset. Add your own score and reason to make the recommendation more useful.")}</p>
       </div>
       <div class="rating-panel">
         <span>${userRating ? `Your store rating: ${userRating}/5` : "Rate this store"}</span>
@@ -991,6 +1046,7 @@ function restorePreferences() {
     const chip = document.querySelector(`[data-filter="category"] [data-value="${category}"]`);
     if (chip) setChipActive(chip, true);
   });
+  updateFavoriteTypesButton();
 }
 
 function setupFilterToggle() {
@@ -1066,7 +1122,14 @@ function setupFilters() {
   });
 
   document.getElementById("saveFavoriteTypes").addEventListener("click", () => {
-    setJson(FAVORITES_KEY, selectedValues("category"));
+    const categories = selectedValues("category");
+    setJson(FAVORITES_KEY, categories);
+    updateFavoriteTypesButton();
+    showToast(
+      categories.length
+        ? `Saved ${categories.length} favorite food type${categories.length === 1 ? "" : "s"}. These get ranked higher.`
+        : "Favorite food types cleared.",
+    );
     renderFoods(state.foods);
   });
 
@@ -1186,8 +1249,17 @@ function setupFilters() {
       const previous = getUserStoreRatingEntry(id);
       const reason = window.prompt(`Why ${rating}/5 for ${store?.name || "this store"}?`, previous.reason || "");
       if (reason === null) return;
+      if (!reason.trim()) {
+        showToast("Add a short reason so the rating helps other students.");
+        return;
+      }
       setUserRating(USER_STORE_RATINGS_KEY, id, rating, reason);
-      showToast(`Rated ${store?.name || "store"} ${rating}/5.`);
+      try {
+        if (store) await submitPublicStoreRating(store, rating, reason.trim());
+        showToast(`Rated ${store?.name || "store"} ${rating}/5 with reason.`);
+      } catch {
+        showToast("Saved your rating locally. Public rating sync failed.");
+      }
       renderFoods(state.foods);
       return;
     }
@@ -1249,8 +1321,17 @@ function setupFilters() {
       const previous = getUserStoreRatingEntry(id);
       const reason = window.prompt(`Why ${rating}/5 for ${store?.name || "this store"}?`, previous.reason || "");
       if (reason === null) return;
+      if (!reason.trim()) {
+        showToast("Add a short reason so the rating helps other students.");
+        return;
+      }
       setUserRating(USER_STORE_RATINGS_KEY, id, rating, reason);
-      showToast(`Rated ${store?.name || "store"} ${rating}/5.`);
+      try {
+        if (store) await submitPublicStoreRating(store, rating, reason.trim());
+        showToast(`Rated ${store?.name || "store"} ${rating}/5 with reason.`);
+      } catch {
+        showToast("Saved your rating locally. Public rating sync failed.");
+      }
       renderFoods(state.foods);
       return;
     }
@@ -1262,8 +1343,12 @@ function setupFilters() {
       const previous = getUserFoodRatingEntry(id);
       const reason = window.prompt(`Why ${rating}/5 for ${food.name}?`, previous.reason || "");
       if (reason === null) return;
+      if (!reason.trim()) {
+        showToast("Add a short reason so the rating is useful.");
+        return;
+      }
       setUserRating(USER_FOOD_RATINGS_KEY, id, rating, reason);
-      showToast(`Rated ${food.name} ${rating}/5.`);
+      showToast(`Rated ${food.name} ${rating}/5 with reason.`);
       renderFoods(state.foods);
       return;
     }
@@ -1367,6 +1452,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderHabitStrip();
   updateBudgetInsight();
   setupFilters();
+  await loadPublicStoreRatings();
   await detectWeather();
   loadFoods();
 });

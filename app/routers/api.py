@@ -1,12 +1,14 @@
 from datetime import datetime, timedelta
+from pathlib import Path
+import re
 import secrets
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Response, UploadFile
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.database import get_db
-from app.models import FoodSpot, SavedFood, Store, User, UserPreference
+from app.models import FoodSpot, SavedFood, Store, StoreRating, User, UserPreference
 from app.schemas import (
     AdminFoodSpotPayload,
     AdminFoodSpotResponse,
@@ -15,6 +17,8 @@ from app.schemas import (
     BookmarkPayload,
     GoogleAuthRequest,
     PublicConfigResponse,
+    StoreRatingPayload,
+    StoreRatingSummary,
     TimerRecommendation,
     TimerRequest,
     TimerResponse,
@@ -37,6 +41,15 @@ from app.services.food_service import filter_foods, get_food, random_food, timer
 
 router = APIRouter(prefix="/api", tags=["api"])
 
+UPLOAD_ROOT = Path("app/static/uploads/foods")
+ALLOWED_IMAGE_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
+MAX_IMAGE_BYTES = 5 * 1024 * 1024
+
 
 def user_response(user: User) -> UserResponse:
     return UserResponse(id=user.id, name=user.name, email=user.email, is_admin=is_admin_user(user))
@@ -44,6 +57,12 @@ def user_response(user: User) -> UserResponse:
 
 def admin_food_response(food: FoodSpot) -> AdminFoodSpotResponse:
     return AdminFoodSpotResponse.model_validate(food)
+
+
+def safe_upload_stem(filename: str) -> str:
+    stem = Path(filename or "food-image").stem.lower()
+    stem = re.sub(r"[^a-z0-9]+", "-", stem).strip("-")
+    return stem[:48] or "food-image"
 
 
 def get_or_create_store(db: Session, payload: AdminFoodSpotPayload) -> Store:
@@ -93,6 +112,61 @@ def public_config():
     settings = get_settings()
     client_id = settings.google_client_id.strip()
     return PublicConfigResponse(google_client_id=client_id, google_enabled=bool(client_id))
+
+
+@router.get("/store-ratings", response_model=dict[str, StoreRatingSummary])
+def list_store_ratings(db: Session = Depends(get_db)):
+    rows = db.query(StoreRating).order_by(StoreRating.created_at.desc()).limit(500).all()
+    grouped: dict[str, list[StoreRating]] = {}
+    for row in rows:
+        grouped.setdefault(row.store_key, []).append(row)
+
+    summaries = {}
+    for store_key, ratings in grouped.items():
+        average = round(sum(row.score for row in ratings) / len(ratings), 1)
+        summaries[store_key] = {
+            "average": average,
+            "count": len(ratings),
+            "reasons": [
+                {
+                    "score": row.score,
+                    "reason": row.reason,
+                    "created_at": row.created_at.isoformat(),
+                }
+                for row in ratings[:3]
+            ],
+        }
+    return summaries
+
+
+@router.post("/store-ratings", response_model=StoreRatingSummary)
+def create_store_rating(payload: StoreRatingPayload, db: Session = Depends(get_db)):
+    reason = payload.reason.strip()
+    if not reason:
+        raise HTTPException(status_code=422, detail="Rating reason is required.")
+
+    rating = StoreRating(
+        store_key=payload.store_key.strip(),
+        store_name=payload.store_name.strip(),
+        score=payload.score,
+        reason=reason,
+    )
+    db.add(rating)
+    db.commit()
+    rows = db.query(StoreRating).filter(StoreRating.store_key == rating.store_key).order_by(StoreRating.created_at.desc()).all()
+    average = round(sum(row.score for row in rows) / len(rows), 1)
+    return {
+        "average": average,
+        "count": len(rows),
+        "reasons": [
+            {
+                "score": row.score,
+                "reason": row.reason,
+                "created_at": row.created_at.isoformat(),
+            }
+            for row in rows[:3]
+        ],
+    }
 
 
 @router.post("/auth/register", response_model=AuthResponse)
@@ -219,6 +293,28 @@ def admin_list_foods(
         query = query.filter((FoodSpot.name.ilike(term)) | (FoodSpot.restaurant.ilike(term)))
     rows = query.order_by(FoodSpot.restaurant.asc(), FoodSpot.name.asc()).limit(250).all()
     return [admin_food_response(row) for row in rows]
+
+
+@router.post("/admin/uploads/image")
+async def admin_upload_image(
+    image: UploadFile = File(...),
+    admin: User = Depends(require_admin),
+):
+    extension = ALLOWED_IMAGE_TYPES.get(image.content_type or "")
+    if not extension:
+        raise HTTPException(status_code=422, detail="Upload a JPG, PNG, WEBP, or GIF image.")
+
+    data = await image.read()
+    if not data:
+        raise HTTPException(status_code=422, detail="Image file is empty.")
+    if len(data) > MAX_IMAGE_BYTES:
+        raise HTTPException(status_code=413, detail="Image must be 5 MB or smaller.")
+
+    UPLOAD_ROOT.mkdir(parents=True, exist_ok=True)
+    filename = f"{safe_upload_stem(image.filename)}-{secrets.token_hex(6)}{extension}"
+    path = UPLOAD_ROOT / filename
+    path.write_bytes(data)
+    return {"image_url": f"/static/uploads/foods/{filename}", "filename": filename}
 
 
 @router.post("/admin/foods", response_model=AdminFoodSpotResponse)
