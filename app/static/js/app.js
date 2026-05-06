@@ -48,6 +48,7 @@ function setJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
   const data = { ...(window.SaanAuth?.getData?.() || {}) };
   data[key] = value;
+  if (window.SaanAuth) SaanAuth.data = data;
   updateSaveStatus("Saving...");
   window.SaanAuth?.setData?.(data)
     .then(() => updateSaveStatus())
@@ -299,6 +300,7 @@ function storeFrames(store) {
 
 function menuItemTemplate(food) {
   const active = getBookmarks().includes(food.id);
+  const eatenToday = getHistory().some((item) => item.id === food.id && item.date === new Date().toISOString().slice(0, 10));
   return `
     <li class="menu-item" data-menu-food-id="${food.id}">
       <div class="menu-copy">
@@ -307,7 +309,7 @@ function menuItemTemplate(food) {
       </div>
       <div class="menu-controls">
         <span>PHP ${food.price_min}-${food.price_max}</span>
-        <button class="icon-button ate-button" type="button" data-ate="${food.id}" aria-label="Log ${food.name}" title="Log eaten">
+        <button class="icon-button ate-button ${eatenToday ? "active" : ""}" type="button" data-ate="${food.id}" aria-label="${eatenToday ? "Logged" : "Log"} ${food.name}" aria-pressed="${eatenToday}" title="${eatenToday ? "Logged today" : "Log eaten"}">
           <i data-lucide="utensils"></i>
         </button>
         <button class="icon-button bookmark ${active ? "active" : ""}" type="button" data-bookmark="${food.id}" aria-label="${active ? "Remove bookmark for" : "Bookmark"} ${food.name}" aria-pressed="${active}" title="${active ? "Saved" : "Bookmark"}">

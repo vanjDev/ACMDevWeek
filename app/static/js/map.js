@@ -207,7 +207,7 @@ function updateMap(foods, campusKey) {
       const food = visibleFoods[Number(button.dataset.foodIndex)];
       selectedPanel.innerHTML = selectedMapMarkup(food, Number(button.dataset.foodIndex));
       selectedPanel.hidden = false;
-      selectFoodOnMap(button.dataset.foodTarget, true);
+      selectFoodOnMap(button.dataset.foodTarget, false);
     });
   });
 

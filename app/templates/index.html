@@ -261,11 +261,11 @@
 <section class="contact-band">
   <div>
     <h2>Still undecided?</h2>
-    <p>Tap Pick for Me, trust the filters, and let lunch stop being a committee meeting.</p>
+    <p>Spin the wheel. Saan? will pick a nearby shop and open the menu for you.</p>
   </div>
-  <a class="round-link" href="/timer" aria-label="Open timer page">
-    <i data-lucide="arrow-right"></i>
-  </a>
+  <button id="footerPickForMe" class="round-link" type="button" aria-label="Spin randomizer">
+    <i data-lucide="rotate-cw"></i>
+  </button>
 </section>
 
 <div id="toast" class="toast" hidden></div>
@@ -275,7 +275,7 @@
 <script>
   window.SAAN_CAMPUSES = {{ campuses | tojson }};
 </script>
-<script src="{{ url_for('static', path='/js/map.js') }}?v=storemenu-polish-20260506"></script>
-<script src="{{ url_for('static', path='/js/app.js') }}?v=storemenu-polish-20260506"></script>
-<script src="{{ url_for('static', path='/js/pickforme.js') }}?v=storemenu-polish-20260506"></script>
+<script src="{{ url_for('static', path='/js/map.js') }}?v=walker-map-20260506"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}?v=eatlog-20260506"></script>
+<script src="{{ url_for('static', path='/js/pickforme.js') }}?v=wheel-20260506"></script>
 {% endblock %}
