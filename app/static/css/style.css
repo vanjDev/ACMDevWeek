@@ -899,12 +899,14 @@ input[type="range"] {
 
 .decision-coach {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1.32fr) minmax(0, 0.92fr);
+  gap: 12px;
   border: 1px solid var(--line);
   border-radius: 18px 18px 8px 8px;
-  padding: 12px;
-  background: rgba(4, 31, 29, 0.82);
+  padding: 14px;
+  background:
+    linear-gradient(135deg, rgba(246, 241, 231, 0.08), rgba(0, 166, 100, 0.08)),
+    rgba(4, 31, 29, 0.88);
   box-shadow: var(--shadow);
 }
 
@@ -912,32 +914,91 @@ input[type="range"] {
   display: none;
 }
 
-.decision-coach div {
+.decision-coach-card {
+  position: relative;
   display: grid;
-  gap: 3px;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 10px;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(246, 241, 231, 0.12);
+  border-radius: 12px 12px 6px 6px;
+  padding: 12px;
+  background: rgba(246, 241, 231, 0.07);
+}
+
+.decision-coach-card.featured {
+  border-color: rgba(255, 207, 67, 0.36);
+  background: rgba(246, 241, 231, 0.11);
+  box-shadow: inset 0 -3px 0 rgba(255, 207, 67, 0.28);
+}
+
+.decision-coach-card.tipid {
+  border-color: rgba(255, 207, 67, 0.28);
+}
+
+.decision-coach-icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--ink);
+  background: var(--cream);
+  box-shadow: inset 0 -3px 0 rgba(0, 138, 84, 0.2);
+}
+
+.decision-coach-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.decision-coach-copy {
+  display: grid;
+  gap: 4px;
   min-width: 0;
 }
 
-.decision-coach span {
+.decision-coach-copy span {
   color: var(--mint);
   font-size: 0.65rem;
   font-weight: 950;
   text-transform: uppercase;
 }
 
-.decision-coach strong {
+.decision-coach-copy strong {
   overflow: hidden;
   color: var(--cream);
+  font-family: Outfit, Inter, sans-serif;
+  font-size: 1rem;
+  line-height: 1.05;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-transform: uppercase;
 }
 
-.decision-coach p {
+.decision-coach-copy p {
   margin: 0;
   color: rgba(246, 241, 231, 0.76);
   font-size: 0.78rem;
   font-weight: 800;
   line-height: 1.35;
+}
+
+.decision-coach-card > b {
+  grid-column: 1 / -1;
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+  padding: 6px 9px;
+  color: var(--ink);
+  background: var(--yellow);
+  font-size: 0.68rem;
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-transform: uppercase;
 }
 
 .save-status {

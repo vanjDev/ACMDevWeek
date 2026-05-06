@@ -793,23 +793,38 @@ function renderDecisionCoach(stores) {
   const breakLine = breakInfo
     ? `${breakInfo.label}: ${topStore.name} needs about ${breakInfo.total} min total.`
     : `Best now for ${mealPeriodLabel()}: ${topStore.name} because ${recommendationReason(topFood)}.`;
+  const budgetPill = health.weekly ? `PHP ${Math.max(0, health.remaining)} left` : "Set budget";
+  const pickPill = breakInfo ? `${breakInfo.total} min total` : `${topStore.walking_minutes} min walk`;
+  const todayPill = today.length ? `PHP ${dailySpentTotal()} spent` : "No logs";
 
   panel.innerHTML = `
-    <div>
-      <span>Saan says</span>
-      <strong>${mode === "tipid" ? "Tipid mode is on" : "Best decision right now"}</strong>
-      <p>${budgetLine}</p>
-    </div>
-    <div>
-      <span>Recommended</span>
-      <strong>${topStore.name}</strong>
-      <p>${breakLine}</p>
-    </div>
-    <div>
-      <span>Today</span>
-      <strong>${today.length ? `${today.length} logged` : "No logs yet"}</strong>
-      <p>${today.length ? `You spent PHP ${dailySpentTotal()} today.` : "Log what you eat to unlock better picks."}</p>
-    </div>
+    <article class="decision-coach-card ${mode}">
+      <div class="decision-coach-icon"><i data-lucide="${mode === "tipid" ? "wallet" : "sparkles"}"></i></div>
+      <div class="decision-coach-copy">
+        <span>Saan says</span>
+        <strong>${mode === "tipid" ? "Tipid mode is on" : "Best decision right now"}</strong>
+        <p>${budgetLine}</p>
+      </div>
+      <b>${budgetPill}</b>
+    </article>
+    <article class="decision-coach-card featured">
+      <div class="decision-coach-icon"><i data-lucide="${breakInfo ? "timer" : "utensils"}"></i></div>
+      <div class="decision-coach-copy">
+        <span>Recommended</span>
+        <strong>${topStore.name}</strong>
+        <p>${breakLine}</p>
+      </div>
+      <b>${pickPill}</b>
+    </article>
+    <article class="decision-coach-card">
+      <div class="decision-coach-icon"><i data-lucide="history"></i></div>
+      <div class="decision-coach-copy">
+        <span>Today</span>
+        <strong>${today.length ? `${today.length} logged` : "No logs yet"}</strong>
+        <p>${today.length ? `You spent PHP ${dailySpentTotal()} today.` : "Log what you eat to unlock better picks."}</p>
+      </div>
+      <b>${todayPill}</b>
+    </article>
   `;
 }
 
