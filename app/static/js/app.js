@@ -389,12 +389,14 @@ function detailMenuItemTemplate(food) {
       <img src="${foodImageFor(food)}" alt="">
       <div class="detail-menu-copy">
         <div>
-          <span>${categoryLabel(food.category)}</span>
+          <div class="detail-menu-topline">
+            <span>${categoryLabel(food.category)}</span>
+            <b>PHP ${food.price_min}-${food.price_max}</b>
+          </div>
           <strong>${food.name}</strong>
           <p>${food.description}</p>
         </div>
         <div class="detail-menu-meta">
-          <span>PHP ${food.price_min}-${food.price_max}</span>
           <button class="icon-button ate-button ${eatenToday ? "active" : ""}" type="button" data-ate="${food.id}" aria-label="${eatenToday ? "Logged" : "Log"} ${food.name}" aria-pressed="${eatenToday}" title="${eatenToday ? "Logged today" : "Log eaten"}">
             <i data-lucide="utensils"></i>
           </button>
@@ -459,7 +461,8 @@ function menuDetailTemplate(store) {
       <div>
         <span>${formatLabel(store.area)}</span>
         <strong>${store.name}</strong>
-        <p>${store.menu.length} menu items - PHP ${store.price_min}-${store.price_max} - ${store.walking_minutes} min walk</p>
+        <p>${store.menu.length} menu items - ${store.walking_minutes} min walk</p>
+        <b class="detail-price-range">PHP ${store.price_min}-${store.price_max}</b>
       </div>
       <button class="store-save-dot ${storeSaved ? "active" : ""}" type="button" data-store-bookmark="${store.id}" title="${storeSaved ? "Saved restaurant" : "Save restaurant"}" aria-label="${storeSaved ? "Remove restaurant bookmark for" : "Bookmark restaurant"} ${store.name}" aria-pressed="${storeSaved}">
         <i data-lucide="heart"></i>
@@ -775,10 +778,12 @@ function setupFilters() {
       return;
     }
     if (toggleButton) {
-      state.selectedStoreId = toggleButton.dataset.storeToggle;
+      const nextStoreId = toggleButton.dataset.storeToggle;
+      const isClosing = state.selectedStoreId === nextStoreId;
+      state.selectedStoreId = isClosing ? null : nextStoreId;
       renderFoods(state.foods);
-      window.selectFoodOnMap?.(toggleButton.dataset.storeToggle, false);
-      focusMenuDetail();
+      window.selectFoodOnMap?.(isClosing ? null : nextStoreId, false);
+      if (!isClosing) focusMenuDetail();
       return;
     }
     if (ateButton) {

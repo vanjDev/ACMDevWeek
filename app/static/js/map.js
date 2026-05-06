@@ -21,6 +21,10 @@ const MAP_ROADS = [
   { className: "road-papa", label: "R. Papa St." },
 ];
 
+const ROUTE_API = "https://router.project-osrm.org/route/v1/foot";
+const routeCache = new Map();
+let routeRequestId = 0;
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -75,30 +79,81 @@ function currentStartPoint() {
     : currentCampusPoint();
 }
 
-function renderWalkingRoute(food = null) {
+function currentStartCoordinates() {
+  const campus = MAP_ANCHORS.find((anchor) => anchor.key === window.SaanMapCampus) || MAP_ANCHORS[0];
+  return window.SaanUserLocation
+    ? { lat: window.SaanUserLocation.lat, lng: window.SaanUserLocation.lng }
+    : { lat: campus.lat, lng: campus.lng };
+}
+
+function fallbackRoutePoints(food) {
+  const start = currentStartPoint();
+  const end = mapPoint(food.latitude, food.longitude);
+  const horizontalRoadY = food.area === "p_campa" ? 57 : food.area === "lerma" ? 62 : 47;
+  const verticalRoadX = food.area === "near_feu_manila" ? 56 : 38;
+  return [
+    start,
+    { x: start.x, y: horizontalRoadY },
+    { x: verticalRoadX, y: horizontalRoadY },
+    { x: verticalRoadX, y: end.y },
+    end,
+  ];
+}
+
+async function fetchWalkingRoutePoints(food) {
+  const start = currentStartCoordinates();
+  const cacheKey = `${start.lat.toFixed(6)},${start.lng.toFixed(6)}:${food.latitude.toFixed(6)},${food.longitude.toFixed(6)}`;
+  if (routeCache.has(cacheKey)) return routeCache.get(cacheKey);
+
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 2800);
+  try {
+    const endpoint = `${ROUTE_API}/${start.lng},${start.lat};${food.longitude},${food.latitude}?overview=full&geometries=geojson&steps=false`;
+    const response = await fetch(endpoint, { signal: controller.signal });
+    if (!response.ok) throw new Error("Route API failed.");
+    const data = await response.json();
+    const coordinates = data.routes?.[0]?.geometry?.coordinates || [];
+    if (coordinates.length < 2) throw new Error("Route API returned no path.");
+    const points = coordinates.map(([lng, lat]) => mapPoint(lat, lng));
+    routeCache.set(cacheKey, points);
+    return points;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
+function drawRoutePoints(points) {
   const route = document.getElementById("mapRoute");
+  const routeLine = document.getElementById("mapRouteLine");
+  if (!route || !routeLine) return;
+
+  routeLine.setAttribute("points", points.map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(" "));
+  route.hidden = false;
+  route.removeAttribute("hidden");
+}
+
+async function renderWalkingRoute(food = null) {
+  const route = document.getElementById("mapRoute");
+  const routeLine = document.getElementById("mapRouteLine");
   if (!route) return;
 
   if (!food) {
+    routeRequestId += 1;
     route.hidden = true;
-    route.removeAttribute("style");
+    routeLine?.removeAttribute("points");
     return;
   }
 
-  const start = currentStartPoint();
-  const end = mapPoint(food.latitude, food.longitude);
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const length = Math.sqrt(dx * dx + dy * dy);
-  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+  const requestId = routeRequestId + 1;
+  routeRequestId = requestId;
+  drawRoutePoints(fallbackRoutePoints(food));
 
-  route.hidden = false;
-  route.style.cssText = `
-    left:${start.x}%;
-    top:${start.y}%;
-    width:${length}%;
-    transform:rotate(${angle}deg);
-  `;
+  try {
+    const points = await fetchWalkingRoutePoints(food);
+    if (requestId === routeRequestId) drawRoutePoints(points);
+  } catch {
+    if (requestId === routeRequestId) drawRoutePoints(fallbackRoutePoints(food));
+  }
 }
 
 function initSaanMap() {
@@ -124,7 +179,9 @@ function initSaanMap() {
         </div>
       `).join("")}
     </div>
-    <div class="map-route" id="mapRoute" hidden></div>
+    <svg class="map-route" id="mapRoute" viewBox="0 0 100 100" preserveAspectRatio="none" hidden>
+      <polyline id="mapRouteLine" points=""></polyline>
+    </svg>
     <div id="mapAnchors"></div>
     <div id="mapUserMarker" class="map-user-marker" hidden>
       <i data-lucide="navigation"></i>
