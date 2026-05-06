@@ -26,6 +26,14 @@ const categoryImages = {
   snacks: "https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&w=900&q=80",
 };
 
+const restaurantImages = {
+  "Mang Tootz Food House": "https://img02.restaurantguru.com/c205-Mang-Tootz-Foodhouse-Manila-meals-1.jpg",
+  "Dimsum Treats": "https://cdn.draft143.com/static/lamona/nCwMrT0N76VjwQUPJajxoYuJ2tcCR5nmAxi1.dimsum_treats-featured.webp",
+  "Obscure Cafe": "https://cdn.corner.inc/place-photo/ATKogpcEz_2cOa-ml4fZSr-yfhq1kSsOgGQbQhGPLH3kyLygWueD8rbFMS3hDq1x6U0JWMx5wBO9rx4n1XZAD_HpWyGNyCNyFvSQ8uXG6Omgu-jyp7T2Y93oJgwCA-QzgTR432zg0N1bYnOhrXyU4bxDF8SsHZh2WuEI9npPXcZjxNimec1uXkOFu_R3qkdJLBSy-NyK_GV5sKIgg8HVcNTbPMsvCf4sRfrSYyoGD0c9QsFYiD1cSEAXXepJXDNL1vwkucNAQqfcaMAU-93JabOjlUjWflfsUAzndo-mCEz37izNxNUn-XHvQ4YDCUVFfFkTgPIVKNLzkvmVOdBjA1dq2bvpxZ9C-rEnfy-MZZFVM_LGQU0IlqP-bEfIMGjfxt9pjmy3-V86Ly-E6eoU-FsKaa8zqe3ivjuoOlNjDSaXa-b291ncvfjqYDpShbNDJHC9qTXUkN1DwkauRkObKD3y3qlyjPD0pKs1FbUOiA7tdUfNB7cJtHL4sOC9iFgNYOk0Xqlw_pzQPRAIQa9bsSNbwTNOH9OkIYAEomhoDyU5bgV38wVnuXK4E6vhoQ12ef6Ym8uNZCVYCkF9-ZBU9m2xf2hEGmDk0eQogy44YybUuS-UoR_ba0e6tKU7TnTEaQv--ruDvTZs.jpeg",
+  "Ate Rica's Bacsilog": "https://static.wixstatic.com/media/52e0bf_07f854d8165a4936b5794c55e3e4e1f6~mv2_d_1500_1500_s_2.jpg/v1/fit/w_2500,h_1330,al_c/52e0bf_07f854d8165a4936b5794c55e3e4e1f6~mv2_d_1500_1500_s_2.jpg",
+  "Potato Corner": "https://potatocorner.com/wp-content/uploads/2026/04/BBQ-Mega-copy.png",
+};
+
 const moodAliases = {
   tipid: { budget: "0-100", moods: ["quick_lunch"], sort: "price" },
   treat_myself: { budget: "100-500", moods: ["chill_hangout", "group_meal", "study_fuel"], sort: "rating" },
@@ -480,7 +488,7 @@ function storeFrames(store) {
 }
 
 function foodImageFor(food) {
-  return food.image_url || categoryImages[food.category] || categoryImages.snacks;
+  return food.image_url || restaurantImages[food.restaurant] || categoryImages[food.category] || categoryImages.snacks;
 }
 
 function menuItemTemplate(food) {

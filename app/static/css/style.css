@@ -981,6 +981,7 @@ input[type="range"] {
 .primary-button,
 .secondary-button {
   padding: 0 18px;
+  text-decoration: none;
 }
 
 .action-strip .primary-button,
