@@ -1120,7 +1120,7 @@ function renderDecisionCoach(stores) {
     ? `${breakInfo.label}: ${topStore.name} needs about ${breakInfo.total} min total.`
     : `Best now for ${mealPeriodLabel()}: ${topStore.name} because ${recommendationReason(topFood)}.`;
   const budgetPill = health.weekly ? `PHP ${Math.max(0, health.remaining)} left` : "Set budget";
-  const pickPill = `Saan IQ ${profile.total}`;
+  const pickPill = `Match score ${profile.total}`;
   const todayPill = today.length ? `PHP ${dailySpentTotal()} spent` : "No logs";
   const reasonChips = profile.reasons.slice(0, 4).map((reason) => `<span>${reason.label}</span>`).join("");
 
@@ -1131,7 +1131,7 @@ function renderDecisionCoach(stores) {
         <span>IQ</span>
       </div>
       <div class="saan-iq-copy">
-        <span>Saan IQ</span>
+        <span>Best match</span>
         <strong>${topStore.name}</strong>
         <p>${breakLine}</p>
         <div class="saan-iq-chips">${reasonChips}</div>
@@ -1167,7 +1167,7 @@ function renderDecisionCoach(stores) {
       ${alternates.map(({ store, profile: altProfile }) => `
         <button type="button" data-store-toggle="${store.id}">
           <strong>${store.name}</strong>
-          <span>${altProfile.total} IQ - ${store.walking_minutes} min - PHP ${store.price_min}-${store.price_max}</span>
+          <span>${altProfile.total} match - ${store.walking_minutes} min - PHP ${store.price_min}-${store.price_max}</span>
         </button>
       `).join("") || `<p>No alternates yet.</p>`}
     </div>

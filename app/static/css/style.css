@@ -899,16 +899,13 @@ input[type="range"] {
 
 .decision-coach {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(220px, 0.72fr);
-  gap: 14px;
+  grid-template-columns: minmax(0, 1.45fr) minmax(220px, 0.65fr);
+  gap: 10px;
   border: 1px solid var(--line);
-  border-radius: 18px 18px 8px 8px;
-  padding: 14px;
-  background:
-    radial-gradient(circle at top left, rgba(255, 207, 67, 0.16), transparent 36%),
-    linear-gradient(135deg, rgba(246, 241, 231, 0.08), rgba(0, 166, 100, 0.08)),
-    rgba(4, 31, 29, 0.88);
-  box-shadow: var(--shadow);
+  border-radius: 16px 16px 8px 8px;
+  padding: 10px;
+  background: rgba(4, 31, 29, 0.56);
+  box-shadow: none;
 }
 
 .decision-coach:empty {
@@ -1004,30 +1001,29 @@ input[type="range"] {
 
 .saan-iq-main {
   display: grid;
-  grid-template-columns: 92px minmax(0, 1fr) auto;
+  grid-template-columns: 62px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
-  border: 1px solid rgba(255, 207, 67, 0.28);
-  border-radius: 14px 14px 8px 8px;
-  padding: 14px;
-  background:
-    linear-gradient(135deg, rgba(246, 241, 231, 0.12), rgba(0, 117, 78, 0.16)),
-    rgba(246, 241, 231, 0.06);
-  box-shadow: inset 0 -3px 0 rgba(255, 207, 67, 0.18);
+  border: 1px solid rgba(246, 241, 231, 0.14);
+  border-radius: 12px;
+  padding: 12px;
+  background: rgba(246, 241, 231, 0.08);
+  box-shadow: none;
 }
 
 .saan-iq-ring {
-  width: 86px;
-  height: 86px;
+  width: 58px;
+  height: 58px;
   display: grid;
   place-items: center;
-  border-radius: 999px;
-  color: var(--cream);
+  border: 1px solid rgba(246, 241, 231, 0.18);
+  border-radius: 14px;
+  color: var(--green);
   background:
-    radial-gradient(circle at center, #052f2b 55%, transparent 57%),
-    conic-gradient(var(--yellow) var(--score-pct), rgba(246, 241, 231, 0.13) 0);
-  box-shadow: 0 14px 26px rgba(0, 0, 0, 0.22);
+    linear-gradient(var(--cream), var(--cream)) padding-box,
+    conic-gradient(var(--yellow) var(--score-pct), rgba(246, 241, 231, 0.22) 0) border-box;
+  box-shadow: none;
 }
 
 .saan-iq-ring strong,
@@ -1036,24 +1032,24 @@ input[type="range"] {
 }
 
 .saan-iq-ring strong {
-  margin-top: -8px;
+  margin-top: -6px;
   font-family: Outfit, Inter, sans-serif;
-  font-size: 1.65rem;
+  font-size: 1.18rem;
   line-height: 1;
 }
 
 .saan-iq-ring span {
   align-self: end;
-  margin-bottom: 18px;
-  color: var(--mint);
-  font-size: 0.58rem;
+  margin-bottom: 10px;
+  color: #557269;
+  font-size: 0.5rem;
   font-weight: 950;
   text-transform: uppercase;
 }
 
 .saan-iq-copy {
   display: grid;
-  gap: 7px;
+  gap: 5px;
   min-width: 0;
 }
 
@@ -1061,7 +1057,7 @@ input[type="range"] {
 .saan-iq-alt-heading span,
 .saan-iq-stat span {
   color: var(--mint);
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   font-weight: 950;
   text-transform: uppercase;
 }
@@ -1070,8 +1066,8 @@ input[type="range"] {
   overflow: hidden;
   color: var(--cream);
   font-family: Outfit, Inter, sans-serif;
-  font-size: clamp(1.25rem, 2.6vw, 2rem);
-  line-height: 0.95;
+  font-size: clamp(1.02rem, 2vw, 1.34rem);
+  line-height: 1.02;
   text-overflow: ellipsis;
   text-transform: uppercase;
   white-space: nowrap;
@@ -1081,8 +1077,8 @@ input[type="range"] {
 .saan-iq-stat p,
 .saan-iq-alt p {
   margin: 0;
-  color: rgba(246, 241, 231, 0.78);
-  font-size: 0.82rem;
+  color: rgba(246, 241, 231, 0.7);
+  font-size: 0.76rem;
   font-weight: 800;
   line-height: 1.35;
 }
@@ -1090,22 +1086,29 @@ input[type="range"] {
 .saan-iq-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
 }
 
 .saan-iq-chips span {
-  border-radius: 999px;
-  padding: 6px 9px;
-  color: var(--ink);
-  background: var(--cream);
-  font-size: 0.66rem;
-  font-weight: 950;
+  border: 1px solid rgba(246, 241, 231, 0.12);
+  border-radius: 8px;
+  padding: 4px 7px;
+  color: rgba(246, 241, 231, 0.84);
+  background: rgba(246, 241, 231, 0.08);
+  font-size: 0.58rem;
+  font-weight: 900;
   text-transform: uppercase;
 }
 
 .saan-iq-main .secondary-button {
-  align-self: stretch;
-  min-width: 86px;
+  align-self: center;
+  justify-self: end;
+  min-width: 82px;
+  min-height: 38px;
+  border-radius: 10px 10px 6px 6px;
+  color: var(--ink);
+  background: var(--cream);
+  box-shadow: inset 0 -3px 0 rgba(0, 138, 84, 0.2);
   justify-content: center;
 }
 
@@ -1118,21 +1121,21 @@ input[type="range"] {
 .saan-iq-stat {
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr);
-  gap: 9px;
+  gap: 8px;
   align-items: start;
   border: 1px solid rgba(246, 241, 231, 0.12);
-  border-radius: 12px 12px 6px 6px;
-  padding: 10px;
-  background: rgba(246, 241, 231, 0.07);
+  border-radius: 12px;
+  padding: 9px;
+  background: rgba(246, 241, 231, 0.06);
 }
 
 .saan-iq-stat > svg {
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: 10px;
-  padding: 8px;
-  color: var(--ink);
-  background: var(--cream);
+  padding: 7px;
+  color: var(--cream);
+  background: rgba(246, 241, 231, 0.12);
 }
 
 .saan-iq-stat div {
@@ -1144,6 +1147,7 @@ input[type="range"] {
   overflow: hidden;
   margin: 2px 0 3px;
   color: var(--cream);
+  font-size: 0.9rem;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1151,7 +1155,7 @@ input[type="range"] {
 .saan-iq-alt {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: auto repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(118px, 0.42fr) repeat(2, minmax(0, 1fr));
   gap: 8px;
   align-items: stretch;
 }
@@ -1159,20 +1163,20 @@ input[type="range"] {
 .saan-iq-alt-heading,
 .saan-iq-alt button {
   border: 1px solid rgba(246, 241, 231, 0.12);
-  border-radius: 999px;
-  padding: 9px 11px;
-  background: rgba(246, 241, 231, 0.07);
+  border-radius: 12px;
+  padding: 9px 10px;
+  background: rgba(246, 241, 231, 0.055);
 }
 
 .saan-iq-alt-heading {
   display: grid;
   align-content: center;
-  min-width: 150px;
+  min-width: 0;
 }
 
 .saan-iq-alt-heading b {
-  color: var(--yellow);
-  font-size: 0.8rem;
+  color: rgba(246, 241, 231, 0.86);
+  font-size: 0.72rem;
   text-transform: uppercase;
 }
 
@@ -1187,8 +1191,8 @@ input[type="range"] {
 }
 
 .saan-iq-alt button:hover {
-  border-color: rgba(255, 207, 67, 0.34);
-  background: rgba(246, 241, 231, 0.11);
+  border-color: rgba(246, 241, 231, 0.22);
+  background: rgba(246, 241, 231, 0.09);
 }
 
 .saan-iq-alt button strong,
@@ -1199,13 +1203,13 @@ input[type="range"] {
 }
 
 .saan-iq-alt button strong {
-  font-size: 0.84rem;
+  font-size: 0.76rem;
   text-transform: uppercase;
 }
 
 .saan-iq-alt button span {
-  color: var(--mint);
-  font-size: 0.72rem;
+  color: rgba(246, 241, 231, 0.62);
+  font-size: 0.68rem;
   font-weight: 850;
 }
 
@@ -4284,6 +4288,7 @@ input[type="range"] {
   }
 
   .saan-iq-main .secondary-button {
+    justify-self: start;
     min-height: 42px;
   }
 
