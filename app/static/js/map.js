@@ -1,8 +1,8 @@
 const MAP_BOUNDS = {
-  minLat: 14.6018,
-  maxLat: 14.6057,
-  minLng: 120.9870,
-  maxLng: 120.9908,
+  minLat: 14.60245,
+  maxLat: 14.60525,
+  minLng: 120.98735,
+  maxLng: 120.99015,
 };
 
 const MAP_ANCHORS = [
@@ -34,11 +34,11 @@ function initSaanMap() {
 
   map.className = "campus-map";
   map.innerHTML = `
+    <div class="campus-orbit orbit-outer"></div>
+    <div class="campus-orbit orbit-inner"></div>
     <div class="map-street street-lerma"><span>Lerma</span></div>
     <div class="map-street street-campa"><span>P. Campa</span></div>
     <div class="map-street street-morayta"><span>Morayta</span></div>
-    <div class="map-zone zone-campus">Campus Core</div>
-    <div class="map-zone zone-food">Food Streets</div>
     <div id="mapAnchors"></div>
     <div id="mapFoodMarkers"></div>
     <div id="mapSummary" class="map-summary">Loading nearby picks...</div>
@@ -77,7 +77,7 @@ function updateMap(foods, campusKey) {
     `;
   }).join("");
 
-  summary.textContent = `${visibleFoods.length} shown near ${campusKey === "feu_manila" ? "FEU Manila" : "FEU Tech"}`;
+  summary.textContent = `${visibleFoods.length} nearby picks`;
 
   markerLayer.querySelectorAll("[data-food-target]").forEach((button) => {
     button.addEventListener("click", () => {

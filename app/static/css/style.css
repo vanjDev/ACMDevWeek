@@ -912,15 +912,16 @@ input[type="range"] {
 #map,
 .campus-map {
   position: relative;
-  height: 330px;
-  min-height: 330px;
+  height: 285px;
+  min-height: 285px;
   margin: 0 14px 14px;
   overflow: hidden;
   border-radius: 22px;
   background:
-    linear-gradient(115deg, rgba(0, 138, 84, 0.18), transparent 48%),
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 34px),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.035) 0 1px, transparent 1px 34px),
+    radial-gradient(circle at 52% 50%, rgba(246, 241, 231, 0.2), transparent 7rem),
+    radial-gradient(circle at 52% 50%, rgba(0, 166, 100, 0.28), transparent 11rem),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 34px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0 1px, transparent 1px 34px),
     #082b28;
 }
 
@@ -932,13 +933,35 @@ input[type="range"] {
   border-radius: 28px;
 }
 
+.campus-orbit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.orbit-outer {
+  width: 78%;
+  height: 74%;
+  border: 1px dashed rgba(246, 241, 231, 0.22);
+}
+
+.orbit-inner {
+  width: 48%;
+  height: 44%;
+  background: rgba(0, 138, 84, 0.14);
+  border: 1px solid rgba(0, 166, 100, 0.28);
+}
+
 .map-street {
   position: absolute;
-  height: 24px;
+  height: 18px;
   border-radius: 999px;
-  background: rgba(246, 241, 231, 0.78);
+  background: rgba(246, 241, 231, 0.62);
   color: var(--ink);
-  font-size: 0.64rem;
+  font-size: 0.55rem;
   font-weight: 900;
   text-transform: uppercase;
   transform-origin: center;
@@ -947,52 +970,30 @@ input[type="range"] {
 
 .map-street span {
   display: block;
-  padding: 5px 14px;
+  padding: 4px 12px;
 }
 
 .street-lerma {
-  top: 36%;
-  left: -6%;
-  width: 112%;
-  transform: rotate(-7deg);
+  top: 48%;
+  left: 0;
+  width: 100%;
+  transform: rotate(-6deg);
 }
 
 .street-campa {
-  top: 56%;
-  left: 12%;
-  width: 82%;
-  transform: rotate(16deg);
+  top: 63%;
+  left: 9%;
+  width: 84%;
+  transform: rotate(15deg);
 }
 
 .street-morayta {
-  top: 18%;
-  left: 2%;
-  width: 92%;
-  transform: rotate(2deg);
+  top: 34%;
+  left: 6%;
+  width: 88%;
+  transform: rotate(1deg);
   background: var(--green);
   color: var(--cream);
-}
-
-.map-zone {
-  position: absolute;
-  border: 1px solid rgba(246, 241, 231, 0.2);
-  border-radius: 999px;
-  padding: 8px 12px;
-  color: rgba(246, 241, 231, 0.8);
-  background: rgba(255, 255, 255, 0.055);
-  font-size: 0.68rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.zone-campus {
-  right: 8%;
-  top: 12%;
-}
-
-.zone-food {
-  left: 8%;
-  bottom: 12%;
 }
 
 .map-anchor,
@@ -1005,12 +1006,12 @@ input[type="range"] {
 
 .map-anchor {
   z-index: 4;
-  min-width: 72px;
-  min-height: 34px;
+  min-width: 66px;
+  min-height: 30px;
   border-radius: 999px;
   color: var(--ink);
   background: var(--cream);
-  font-size: 0.7rem;
+  font-size: 0.64rem;
   font-weight: 900;
   box-shadow: 0 0 0 6px rgba(246, 241, 231, 0.12), 0 16px 24px rgba(0, 0, 0, 0.24);
 }
@@ -1023,14 +1024,14 @@ input[type="range"] {
 
 .map-food-dot {
   z-index: 5;
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   display: grid;
   place-items: center;
   border-radius: 999px;
   color: var(--ink);
   background: var(--cream);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 900;
   box-shadow: 0 0 0 5px rgba(0, 138, 84, 0.35), 0 12px 18px rgba(0, 0, 0, 0.24);
   animation: mapPop 0.2s ease both;
@@ -1047,15 +1048,17 @@ input[type="range"] {
 
 .map-summary {
   position: absolute;
-  left: 14px;
-  right: 14px;
-  bottom: 14px;
+  left: 50%;
+  right: auto;
+  bottom: 12px;
+  transform: translateX(-50%);
+  min-width: 190px;
   z-index: 6;
   border-radius: 999px;
-  padding: 9px 12px;
+  padding: 8px 12px;
   color: var(--cream);
   background: rgba(4, 31, 29, 0.78);
-  font-size: 0.74rem;
+  font-size: 0.7rem;
   font-weight: 900;
   text-align: center;
   text-transform: uppercase;
