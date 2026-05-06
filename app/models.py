@@ -15,6 +15,8 @@ class Store(Base):
     area: Mapped[str] = mapped_column(String(100), index=True)
     rating: Mapped[float] = mapped_column(Float, default=4.0)
     image_url: Mapped[str] = mapped_column(String(500), nullable=True)
+    opens_at: Mapped[str] = mapped_column(String(5), default="08:00")
+    closes_at: Mapped[str] = mapped_column(String(5), default="21:00")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -70,6 +72,18 @@ class StoreRating(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     store_key: Mapped[str] = mapped_column(String(140), index=True)
     store_name: Mapped[str] = mapped_column(String(120), index=True)
+    score: Mapped[int] = mapped_column(Integer)
+    reason: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+
+class FoodRating(Base):
+    __tablename__ = "food_ratings"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    food_id: Mapped[int] = mapped_column(Integer, index=True)
+    food_name: Mapped[str] = mapped_column(String(120), index=True)
+    restaurant: Mapped[str] = mapped_column(String(120), index=True)
     score: Mapped[int] = mapped_column(Integer)
     reason: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)

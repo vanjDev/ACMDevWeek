@@ -17,6 +17,8 @@ class FoodSpotResponse(BaseModel):
     area: str
     rating: float
     image_url: str | None = None
+    opens_at: str | None = None
+    closes_at: str | None = None
     description: str
     distance_m: float | None = None
     walking_minutes: int | None = None
@@ -42,6 +44,8 @@ class AdminFoodSpotPayload(BaseModel):
     area: str = Field(..., min_length=1, max_length=100)
     rating: float = Field(default=4.0, ge=0, le=5)
     image_url: str | None = Field(default=None, max_length=500)
+    opens_at: str = Field(default="08:00", pattern=r"^\d{2}:\d{2}$")
+    closes_at: str = Field(default="21:00", pattern=r"^\d{2}:\d{2}$")
     description: str = Field(..., min_length=1)
     is_active: bool = True
 
@@ -60,6 +64,8 @@ class AdminFoodSpotResponse(BaseModel):
     area: str
     rating: float
     image_url: str | None = None
+    opens_at: str | None = None
+    closes_at: str | None = None
     description: str
     is_active: bool
 
@@ -142,3 +148,11 @@ class StoreRatingSummary(BaseModel):
     average: float
     count: int
     reasons: list[StoreRatingReason] = Field(default_factory=list)
+
+
+class FoodRatingPayload(BaseModel):
+    food_id: int = Field(..., ge=1)
+    food_name: str = Field(..., min_length=1, max_length=120)
+    restaurant: str = Field(..., min_length=1, max_length=120)
+    score: int = Field(..., ge=1, le=5)
+    reason: str = Field(..., min_length=1, max_length=240)

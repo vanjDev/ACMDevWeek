@@ -8,13 +8,14 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.database import get_db
-from app.models import FoodSpot, SavedFood, Store, StoreRating, User, UserPreference
+from app.models import FoodRating, FoodSpot, SavedFood, Store, StoreRating, User, UserPreference
 from app.schemas import (
     AdminFoodSpotPayload,
     AdminFoodSpotResponse,
     AuthRequest,
     AuthResponse,
     BookmarkPayload,
+    FoodRatingPayload,
     GoogleAuthRequest,
     PublicConfigResponse,
     StoreRatingPayload,
@@ -56,13 +57,26 @@ def user_response(user: User) -> UserResponse:
 
 
 def admin_food_response(food: FoodSpot) -> AdminFoodSpotResponse:
-    return AdminFoodSpotResponse.model_validate(food)
+    response = AdminFoodSpotResponse.model_validate(food)
+    if food.store:
+        response.opens_at = food.store.opens_at
+        response.closes_at = food.store.closes_at
+    return response
 
 
 def safe_upload_stem(filename: str) -> str:
     stem = Path(filename or "food-image").stem.lower()
     stem = re.sub(r"[^a-z0-9]+", "-", stem).strip("-")
     return stem[:48] or "food-image"
+
+
+def validate_time_value(value: str, field_name: str) -> str:
+    if not re.match(r"^\d{2}:\d{2}$", value or ""):
+        raise HTTPException(status_code=422, detail=f"{field_name} must use HH:MM format.")
+    hour, minute = [int(part) for part in value.split(":", 1)]
+    if hour > 23 or minute > 59:
+        raise HTTPException(status_code=422, detail=f"{field_name} must be a valid time.")
+    return value
 
 
 def get_or_create_store(db: Session, payload: AdminFoodSpotPayload) -> Store:
@@ -81,6 +95,8 @@ def get_or_create_store(db: Session, payload: AdminFoodSpotPayload) -> Store:
     store.area = payload.area.strip()
     store.rating = payload.rating
     store.image_url = payload.image_url.strip() if payload.image_url else None
+    store.opens_at = validate_time_value(payload.opens_at, "Opens")
+    store.closes_at = validate_time_value(payload.closes_at, "Closes")
     store.is_active = payload.is_active
     return store
 
@@ -154,6 +170,62 @@ def create_store_rating(payload: StoreRatingPayload, db: Session = Depends(get_d
     db.add(rating)
     db.commit()
     rows = db.query(StoreRating).filter(StoreRating.store_key == rating.store_key).order_by(StoreRating.created_at.desc()).all()
+    average = round(sum(row.score for row in rows) / len(rows), 1)
+    return {
+        "average": average,
+        "count": len(rows),
+        "reasons": [
+            {
+                "score": row.score,
+                "reason": row.reason,
+                "created_at": row.created_at.isoformat(),
+            }
+            for row in rows[:3]
+        ],
+    }
+
+
+@router.get("/food-ratings", response_model=dict[int, StoreRatingSummary])
+def list_food_ratings(db: Session = Depends(get_db)):
+    rows = db.query(FoodRating).order_by(FoodRating.created_at.desc()).limit(500).all()
+    grouped: dict[int, list[FoodRating]] = {}
+    for row in rows:
+        grouped.setdefault(row.food_id, []).append(row)
+
+    summaries = {}
+    for food_id, ratings in grouped.items():
+        average = round(sum(row.score for row in ratings) / len(ratings), 1)
+        summaries[food_id] = {
+            "average": average,
+            "count": len(ratings),
+            "reasons": [
+                {
+                    "score": row.score,
+                    "reason": row.reason,
+                    "created_at": row.created_at.isoformat(),
+                }
+                for row in ratings[:3]
+            ],
+        }
+    return summaries
+
+
+@router.post("/food-ratings", response_model=StoreRatingSummary)
+def create_food_rating(payload: FoodRatingPayload, db: Session = Depends(get_db)):
+    reason = payload.reason.strip()
+    if not reason:
+        raise HTTPException(status_code=422, detail="Rating reason is required.")
+
+    rating = FoodRating(
+        food_id=payload.food_id,
+        food_name=payload.food_name.strip(),
+        restaurant=payload.restaurant.strip(),
+        score=payload.score,
+        reason=reason,
+    )
+    db.add(rating)
+    db.commit()
+    rows = db.query(FoodRating).filter(FoodRating.food_id == rating.food_id).order_by(FoodRating.created_at.desc()).all()
     average = round(sum(row.score for row in rows) / len(rows), 1)
     return {
         "average": average,

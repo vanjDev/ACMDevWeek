@@ -293,14 +293,17 @@ button {
 
 #googleSignInButton {
   width: 100%;
-  display: grid;
-  justify-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
 }
 
 #googleSignInButton iframe,
 #googleSignInButton > div {
   max-width: 100%;
   border-radius: 999px;
+  margin-inline: auto !important;
 }
 
 #googleAuthHint {
@@ -1318,6 +1321,51 @@ input[type="range"] {
   height: 11px;
   fill: currentColor;
   vertical-align: -1px;
+}
+
+.open-status {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 12px;
+  padding: 8px 10px;
+  color: #315f56;
+  background: rgba(0, 138, 84, 0.1);
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.open-status svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+
+.open-status strong {
+  color: var(--green);
+  text-transform: uppercase;
+}
+
+.open-status span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.open-status.closed {
+  color: #7a3b35;
+  background: rgba(255, 141, 128, 0.2);
+}
+
+.open-status.closed strong {
+  color: #9d2b1f;
+}
+
+.detail-open-status {
+  width: fit-content;
+  margin-top: 7px;
 }
 
 .rating-panel {

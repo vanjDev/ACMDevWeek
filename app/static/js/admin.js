@@ -96,6 +96,8 @@ function foodPayloadFromForm() {
     latitude: Number(document.getElementById("adminLatitude").value),
     longitude: Number(document.getElementById("adminLongitude").value),
     image_url: document.getElementById("adminImageUrl").value.trim() || null,
+    opens_at: document.getElementById("adminOpensAt").value || "08:00",
+    closes_at: document.getElementById("adminClosesAt").value || "21:00",
     description: document.getElementById("adminDescription").value.trim(),
     is_active: document.getElementById("adminIsActive").checked,
   };
@@ -106,6 +108,8 @@ function resetAdminForm() {
   document.getElementById("adminFoodId").value = "";
   document.getElementById("adminStoreId").value = "";
   document.getElementById("adminRating").value = "4.0";
+  document.getElementById("adminOpensAt").value = "08:00";
+  document.getElementById("adminClosesAt").value = "21:00";
   document.getElementById("adminIsActive").checked = true;
   document.getElementById("adminFormMode").textContent = "New item";
   document.getElementById("adminFormTitle").textContent = "Add food spot";
@@ -129,6 +133,8 @@ function fillAdminForm(food) {
   document.getElementById("adminLatitude").value = food.latitude;
   document.getElementById("adminLongitude").value = food.longitude;
   document.getElementById("adminImageUrl").value = food.image_url || "";
+  document.getElementById("adminOpensAt").value = food.opens_at || "08:00";
+  document.getElementById("adminClosesAt").value = food.closes_at || "21:00";
   document.getElementById("adminImageHint").textContent = food.image_url ? "Current image is saved with this item." : "Uploads are saved to app/static/uploads/foods.";
   setImagePreview(food.image_url || "");
   document.getElementById("adminDescription").value = food.description;
@@ -182,11 +188,12 @@ function setupAdminMap() {
 }
 
 function adminFoodRow(food) {
+  const hours = `${food.opens_at || "08:00"}-${food.closes_at || "21:00"}`;
   return `
     <article class="admin-food-row ${food.is_active ? "" : "is-inactive"}" data-admin-food-id="${food.id}">
       <div>
         <strong>${food.name}</strong>
-        <span>${food.restaurant} - ${formatLabel(food.area)} - ${formatLabel(food.category)}</span>
+        <span>${food.restaurant} - ${formatLabel(food.area)} - ${formatLabel(food.category)} - ${hours}</span>
       </div>
       <b>PHP ${food.price_min}-${food.price_max}</b>
       <small>${food.is_active ? "Active" : "Hidden"}</small>

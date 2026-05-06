@@ -116,6 +116,8 @@ def serialize_food(
     data.area = food_area
     data.rating = food_rating
     data.image_url = food.image_url or (store.image_url if store else None)
+    data.opens_at = store.opens_at if store else None
+    data.closes_at = store.closes_at if store else None
     data.distance_m = round(distance, 1)
     data.walking_minutes = walking_minutes(distance)
     text = _haystack(food)
@@ -167,7 +169,9 @@ def serialize_food(
         feature_tags.append("study")
     if food_area == "inside_campus" or _matches_any(food, AIRCON_TERMS):
         feature_tags.append("aircon")
-    if food.mood == "late_night" or _matches_any(food, OPEN_LATE_TERMS):
+    closes_at = store.closes_at if store else None
+    closes_hour = int(closes_at.split(":", 1)[0]) if closes_at and ":" in closes_at else 0
+    if food.mood == "late_night" or _matches_any(food, OPEN_LATE_TERMS) or closes_hour >= 22 or closes_hour <= 4:
         feature_tags.append("open_late")
     data.feature_tags = feature_tags
     return data

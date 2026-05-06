@@ -156,8 +156,13 @@ async function renderGoogleButton() {
 
   hint.hidden = true;
   button.hidden = false;
-  if (!window.google?.accounts?.id || button.dataset.rendered === "true") return;
+  if (!window.google?.accounts?.id) return;
 
+  const targetWidth = Math.max(280, Math.min(380, Math.floor((button.getBoundingClientRect().width || button.clientWidth || 380) - 2)));
+  const renderedWidth = Number(button.dataset.renderedWidth || 0);
+  if (button.dataset.rendered === "true" && Math.abs(renderedWidth - targetWidth) <= 4) return;
+
+  button.innerHTML = "";
   window.google.accounts.id.initialize({
     client_id: clientId,
     callback: handleGoogleCredential,
@@ -169,9 +174,10 @@ async function renderGoogleButton() {
     shape: "pill",
     text: "signin_with",
     locale: "en",
-    width: Math.min(380, button.clientWidth || 380),
+    width: targetWidth,
   });
   button.dataset.rendered = "true";
+  button.dataset.renderedWidth = String(targetWidth);
 }
 
 async function refreshAuth({ mergeGuest = false } = {}) {
@@ -216,7 +222,9 @@ function setupAuthControls() {
   document.getElementById("openAuth")?.addEventListener("click", () => {
     message.textContent = "Continue as guest anytime. Sign in only if you want bookmarks saved across devices.";
     dialog.showModal();
-    void renderGoogleButton();
+    window.requestAnimationFrame(() => {
+      void renderGoogleButton();
+    });
   });
 
   document.getElementById("closeAuth")?.addEventListener("click", () => dialog.close());
@@ -268,3 +276,6 @@ window.SaanAuth = SaanAuth;
 
 document.addEventListener("DOMContentLoaded", setupAuthControls);
 window.addEventListener("load", () => void renderGoogleButton());
+window.addEventListener("resize", () => {
+  if (document.getElementById("authDialog")?.open) void renderGoogleButton();
+});

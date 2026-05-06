@@ -7,6 +7,7 @@ const state = {
   selectedStoreId: null,
   userLocation: null,
   publicStoreRatings: {},
+  publicFoodRatings: {},
 };
 
 const DEFAULT_RADIUS = 1200;
@@ -419,13 +420,27 @@ function publicRatingReason(storeId) {
   return summary?.reasons?.[0]?.reason || "";
 }
 
+function publicRatingForFood(foodId) {
+  return state.publicFoodRatings[String(foodId)] || null;
+}
+
+function publicFoodRatingReason(foodId) {
+  const summary = publicRatingForFood(foodId);
+  return summary?.reasons?.[0]?.reason || "";
+}
+
 async function loadPublicStoreRatings() {
   try {
-    const response = await fetch("/api/store-ratings");
-    if (!response.ok) throw new Error("Ratings failed to load.");
-    state.publicStoreRatings = await response.json();
+    const [storeResponse, foodResponse] = await Promise.all([
+      fetch("/api/store-ratings"),
+      fetch("/api/food-ratings"),
+    ]);
+    if (!storeResponse.ok || !foodResponse.ok) throw new Error("Ratings failed to load.");
+    state.publicStoreRatings = await storeResponse.json();
+    state.publicFoodRatings = await foodResponse.json();
   } catch {
     state.publicStoreRatings = {};
+    state.publicFoodRatings = {};
   }
 }
 
@@ -444,6 +459,25 @@ async function submitPublicStoreRating(store, rating, reason) {
   state.publicStoreRatings = {
     ...state.publicStoreRatings,
     [store.id]: await response.json(),
+  };
+}
+
+async function submitPublicFoodRating(food, rating, reason) {
+  const response = await fetch("/api/food-ratings", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      food_id: food.id,
+      food_name: food.name,
+      restaurant: food.restaurant,
+      score: rating,
+      reason,
+    }),
+  });
+  if (!response.ok) throw new Error("Rating failed to save.");
+  state.publicFoodRatings = {
+    ...state.publicFoodRatings,
+    [food.id]: await response.json(),
   };
 }
 
@@ -525,6 +559,44 @@ function storeIdFor(name) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
+function timeToMinutes(value) {
+  const [hourText, minuteText] = String(value || "").split(":");
+  const hour = Number(hourText);
+  const minute = Number(minuteText);
+  if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
+  return hour * 60 + minute;
+}
+
+function formatHourLabel(value) {
+  const minutes = timeToMinutes(value);
+  if (minutes === null) return "";
+  const hour = Math.floor(minutes / 60);
+  const minute = minutes % 60;
+  const period = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${String(minute).padStart(2, "0")} ${period}`;
+}
+
+function openStatusFor(hours) {
+  const opens = timeToMinutes(hours?.opens_at);
+  const closes = timeToMinutes(hours?.closes_at);
+  if (opens === null || closes === null) {
+    return { isOpen: null, label: "Hours unavailable", detail: "No hours set", className: "unknown" };
+  }
+
+  const now = timeToMinutes(manilaParts().time);
+  const isAllDay = opens === 0 && closes >= 1439;
+  const isOvernight = closes <= opens;
+  const isOpen = isAllDay || (isOvernight ? now >= opens || now < closes : now >= opens && now < closes);
+  const nextTime = isOpen ? formatHourLabel(hours.closes_at) : formatHourLabel(hours.opens_at);
+  return {
+    isOpen,
+    label: isOpen ? "Open now" : "Closed now",
+    detail: isOpen ? `Closes ${nextTime}` : `Opens ${nextTime}`,
+    className: isOpen ? "open" : "closed",
+  };
+}
+
 function groupFoodsByStore(foods) {
   const grouped = new Map();
   foods.forEach((food) => {
@@ -551,6 +623,8 @@ function groupFoodsByStore(foods) {
         weather_tags: [],
         shareable: false,
         image_url: food.image_url,
+        opens_at: food.opens_at,
+        closes_at: food.closes_at,
       });
     }
 
@@ -559,6 +633,8 @@ function groupFoodsByStore(foods) {
     store.price_min = Math.min(store.price_min, food.price_min);
     store.price_max = Math.max(store.price_max, food.price_max);
     store.rating = Math.max(store.rating, food.rating);
+    store.opens_at = store.opens_at || food.opens_at;
+    store.closes_at = store.closes_at || food.closes_at;
     if ((food.distance_m || 0) < (store.distance_m || Infinity)) {
       store.latitude = food.latitude;
       store.longitude = food.longitude;
@@ -605,6 +681,9 @@ function foodFrames(food) {
 
 function storeFrames(store) {
   const frames = [...(store.frames || [])];
+  const openStatus = openStatusFor(store);
+  if (openStatus.isOpen === true) frames.unshift("Open now");
+  if (openStatus.isOpen === false) frames.push("Closed now");
   if (getStoreBookmarks().includes(store.id)) frames.unshift("Favorite restaurant");
   if (store.menu.some((food) => getBookmarks().includes(food.id))) frames.unshift("Has saved item");
   if (store.menu.some((food) => antiRepeatIds().includes(food.id))) frames.unshift("Recently tried");
@@ -659,6 +738,8 @@ function detailMenuItemTemplate(food) {
   const eatenToday = Boolean(foodLog && foodLog.phDate === manilaParts().date);
   const userRatingEntry = getUserFoodRatingEntry(food.id);
   const userRating = userRatingEntry.score;
+  const publicRating = publicRatingForFood(food.id);
+  const publicReason = publicFoodRatingReason(food.id);
   return `
     <article class="detail-menu-item" data-menu-food-id="${food.id}">
       <img src="${foodImageFor(food)}" alt="">
@@ -670,12 +751,13 @@ function detailMenuItemTemplate(food) {
           </div>
           <strong>${food.name}</strong>
           <p>${food.description}</p>
+          ${publicRating ? `<p class="rating-reason"><i data-lucide="star"></i> ${publicRating.average.toFixed(1)} from ${publicRating.count} food rating${publicRating.count === 1 ? "" : "s"} - ${publicReason}</p>` : ""}
         </div>
         <div class="detail-menu-meta">
           <div class="rating-panel compact-rating">
             <span>${userRating ? `Your food rating: ${userRating}/5` : "Rate food"}</span>
             ${ratingStarsTemplate({ id: food.id, type: "food", value: userRating, label: `Rate ${food.name}` })}
-            <p class="rating-reason">${ratingReasonText(userRatingEntry, "Add why: taste, serving, price, or sulit factor.")}</p>
+            <p class="rating-reason">${ratingReasonText(userRatingEntry, publicReason || "Add why: taste, serving, price, or sulit factor.")}</p>
           </div>
           <button class="icon-button ate-button ${eatenToday ? "active" : ""}" type="button" data-ate="${food.id}" aria-label="${eatenToday ? "Edit meal log for" : "Log"} ${food.name}" aria-pressed="${eatenToday}" title="${eatenToday ? `Logged PHP ${foodLog.price} today` : "Log eaten"}">
             <i data-lucide="utensils"></i>
@@ -701,6 +783,7 @@ function storeCardTemplate(store) {
   const publicRating = publicRatingForStore(store.id);
   const displayRating = publicRating?.average || store.rating;
   const displayRatingLabel = publicRating ? `${publicRating.count} rating${publicRating.count === 1 ? "" : "s"}` : "Store data";
+  const openStatus = openStatusFor(store);
   return `
     <article class="food-card store-card ${isOpen ? "open" : ""}" data-store-id="${store.id}">
       <div class="food-image">
@@ -719,6 +802,11 @@ function storeCardTemplate(store) {
           <span><small>Menu</small>${store.menu.length} items</span>
           <span><small>Walk</small>${store.walking_minutes} min</span>
           <span><small>${displayRatingLabel}</small><i data-lucide="star"></i> ${displayRating.toFixed(1)}</span>
+        </div>
+        <div class="open-status ${openStatus.className}">
+          <i data-lucide="${openStatus.isOpen ? "door-open" : "door-closed"}"></i>
+          <strong>${openStatus.label}</strong>
+          <span>${openStatus.detail}</span>
         </div>
         <div class="rating-panel store-card-rating">
           <span>${userRating ? `Your rating: ${userRating}/5` : "Rate store"}</span>
@@ -754,14 +842,16 @@ function menuDetailTemplate(store) {
   const displayRating = userRating || publicRating?.average || store.rating;
   const ratingSource = userRating ? "Your rating" : publicRating ? `${publicRating.count} public rating${publicRating.count === 1 ? "" : "s"}` : "Store data rating";
   const publicReason = publicRatingReason(store.id);
+  const openStatus = openStatusFor(store);
   return `
     <div class="menu-detail-header">
       <img src="${foodImageFor(store)}" alt="">
       <div>
         <span>${formatLabel(store.area)}</span>
         <strong>${store.name}</strong>
-        <p>${store.menu.length} menu items - ${store.walking_minutes} min walk - ${ratingSource.toLowerCase()} ${displayRating.toFixed(1)}/5</p>
+        <p>${store.menu.length} menu items - ${store.walking_minutes} min walk - ${openStatus.label.toLowerCase()} - ${ratingSource.toLowerCase()} ${displayRating.toFixed(1)}/5</p>
         <b class="detail-price-range">PHP ${store.price_min}-${store.price_max}</b>
+        <b class="open-status detail-open-status ${openStatus.className}"><i data-lucide="${openStatus.isOpen ? "door-open" : "door-closed"}"></i> ${openStatus.label} - ${openStatus.detail}</b>
       </div>
       <div class="menu-detail-header-actions">
         <button class="store-save-dot ${storeSaved ? "active" : ""}" type="button" data-store-bookmark="${store.id}" title="${storeSaved ? "Saved restaurant" : "Save restaurant"}" aria-label="${storeSaved ? "Remove restaurant bookmark for" : "Bookmark restaurant"} ${store.name}" aria-pressed="${storeSaved}">
@@ -821,6 +911,9 @@ function applyClientRanking(foods) {
       let total = food.rating * 8 - (food.walking_minutes || 0);
       total += normalizedRatingEntry(foodRatings[String(food.id)]).score * 8;
       total += normalizedRatingEntry(storeRatings[storeIdFor(food.restaurant)]).score * 5;
+      const openStatus = openStatusFor(food);
+      if (openStatus.isOpen === true) total += 10;
+      if (openStatus.isOpen === false) total -= 18;
       if (favorites.includes(food.category)) total += 12;
       if (hotMood) total -= food.price_max / 16;
       if (treatMood) total += food.price_min >= 100 ? 8 : 0;
@@ -1348,7 +1441,12 @@ function setupFilters() {
         return;
       }
       setUserRating(USER_FOOD_RATINGS_KEY, id, rating, reason);
-      showToast(`Rated ${food.name} ${rating}/5 with reason.`);
+      try {
+        await submitPublicFoodRating(food, rating, reason.trim());
+        showToast(`Rated ${food.name} ${rating}/5 with reason.`);
+      } catch {
+        showToast("Saved your food rating locally. Public rating sync failed.");
+      }
       renderFoods(state.foods);
       return;
     }

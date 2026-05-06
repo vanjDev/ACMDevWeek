@@ -50,6 +50,135 @@ FOOD_SPOTS = [
     ("Tuna Melt", "Study Nook Cafe", 135, 210, "snacks", "study_fuel", 14.6050, 120.9872, "near_feu_tech", 4.2, "Filling enough for work mode without feeling too heavy."),
 ]
 
+STORE_HOURS = {
+    "FEU Tech Canteen": ("07:00", "19:00"),
+    "FEU Manila Canteen": ("07:00", "19:00"),
+    "Jollibee Morayta": ("07:00", "23:00"),
+    "McDonald's Morayta": ("00:00", "23:59"),
+    "Hepa Lane Street Food": ("10:00", "23:30"),
+    "Paresan sa Lerma": ("09:00", "23:59"),
+    "P. Campa Sisigan": ("10:00", "23:00"),
+    "Morayta Wings Hub": ("11:00", "23:00"),
+}
+
+
+def hours_for_store(name: str, mood: str) -> tuple[str, str]:
+    if name in STORE_HOURS:
+        return STORE_HOURS[name]
+    if mood == "late_night":
+        return ("10:00", "23:00")
+    if "Cafe" in name or "Kopi" in name:
+        return ("08:00", "22:00")
+    return ("08:00", "21:00")
+
+
+OBSCURE_CAFE = {
+    "restaurant": "Obscure Cafe",
+    "latitude": 14.6025,
+    "longitude": 120.9901,
+    "area": "p_campa",
+    "rating": 4.3,
+}
+
+OBSCURE_CAFE_MENU = [
+    ("Hot Espresso", 90, 90, "coffee_drinks", "study_fuel", "Hot Coffee"),
+    ("Hot Americano", 110, 120, "coffee_drinks", "study_fuel", "Hot Coffee"),
+    ("Hot Lotus Oreo Latte", 155, 165, "coffee_drinks", "chill_hangout", "Hot Coffee"),
+    ("Hot Flat White", 115, 125, "coffee_drinks", "study_fuel", "Hot Coffee"),
+    ("Hot Latte", 140, 150, "coffee_drinks", "study_fuel", "Hot Coffee"),
+    ("Hot Cappuccino", 140, 150, "coffee_drinks", "study_fuel", "Hot Coffee"),
+    ("Hot Caramel Latte", 155, 165, "coffee_drinks", "chill_hangout", "Hot Coffee"),
+    ("Hot Tiramisu Latte", 155, 165, "coffee_drinks", "chill_hangout", "Hot Coffee"),
+    ("Hot Mocha Hazelnut Latte", 160, 165, "coffee_drinks", "chill_hangout", "Hot Coffee"),
+    ("Hot Spanish Latte", 155, 170, "coffee_drinks", "study_fuel", "Hot Coffee"),
+    ("Hot Creamy Vanilla Latte", 155, 165, "coffee_drinks", "chill_hangout", "Hot Coffee"),
+    ("Hot Creamy Matcha Latte", 155, 165, "coffee_drinks", "study_fuel", "Hot Coffee"),
+    ("Hot Tsokolate", 140, 150, "coffee_drinks", "chill_hangout", "Hot Coffee"),
+    ("Hot White Mocha Latte", 140, 150, "coffee_drinks", "chill_hangout", "Hot Coffee"),
+    ("Iced Americano", 120, 120, "coffee_drinks", "study_fuel", "Iced Coffee"),
+    ("Iced Latte", 150, 150, "coffee_drinks", "study_fuel", "Iced Coffee"),
+    ("Iced Affogato", 160, 160, "coffee_drinks", "chill_hangout", "Iced Coffee"),
+    ("Iced Caramel Latte", 165, 165, "coffee_drinks", "chill_hangout", "Iced Coffee"),
+    ("Iced Salted Caramel Latte", 165, 165, "coffee_drinks", "chill_hangout", "Iced Coffee"),
+    ("Iced Tiramisu Latte", 165, 165, "coffee_drinks", "chill_hangout", "Iced Coffee"),
+    ("Iced Mocha Hazelnut Latte", 170, 170, "coffee_drinks", "chill_hangout", "Iced Coffee"),
+    ("Iced Creamy Vanilla Latte", 170, 170, "coffee_drinks", "chill_hangout", "Iced Coffee"),
+    ("Iced Creamy Matcha", 165, 165, "coffee_drinks", "study_fuel", "Iced Coffee"),
+    ("Iced Tsokolate", 150, 150, "coffee_drinks", "chill_hangout", "Iced Coffee"),
+    ("Iced Spanish Latte", 170, 170, "coffee_drinks", "study_fuel", "Iced Coffee"),
+    ("Avo Latte", 180, 180, "coffee_drinks", "chill_hangout", "Iced Coffee"),
+    ("Cold Brew", 140, 140, "coffee_drinks", "study_fuel", "Iced Coffee"),
+    ("Coffee Jelly", 185, 185, "coffee_drinks", "chill_hangout", "Iced Coffee"),
+    ("Iced White Mocha Latte", 165, 165, "coffee_drinks", "chill_hangout", "Iced Coffee"),
+    ("Caramel Cereal Float", 195, 195, "coffee_drinks", "chill_hangout", "Summer Treats"),
+    ("Creamy Ube Float", 195, 195, "coffee_drinks", "chill_hangout", "Summer Treats"),
+    ("Oreo Float", 195, 195, "coffee_drinks", "chill_hangout", "Summer Treats"),
+    ("Java Chip Frappe", 175, 175, "coffee_drinks", "chill_hangout", "Frappe - Coffee"),
+    ("White Chocolate Frappe", 175, 175, "coffee_drinks", "chill_hangout", "Frappe - Coffee"),
+    ("Caramel Frappe", 175, 175, "coffee_drinks", "chill_hangout", "Frappe - Coffee"),
+    ("Salted Caramel Frappe", 175, 175, "coffee_drinks", "chill_hangout", "Frappe - Coffee"),
+    ("Mocha Frappe", 175, 175, "coffee_drinks", "chill_hangout", "Frappe - Coffee"),
+    ("Caramel Cream Frappe", 155, 155, "coffee_drinks", "chill_hangout", "Frappe - Coffee Free"),
+    ("Salted Caramel Cream Frappe", 155, 155, "coffee_drinks", "chill_hangout", "Frappe - Coffee Free"),
+    ("Chocolate Cream Frappe", 155, 155, "coffee_drinks", "chill_hangout", "Frappe - Coffee Free"),
+    ("Matcha Cream Frappe", 175, 175, "coffee_drinks", "study_fuel", "Frappe - Coffee Free"),
+    ("Citron Iced Tea", 150, 150, "coffee_drinks", "chill_hangout", "Iced Tea"),
+    ("Jasmine Peach Iced Tea", 150, 150, "coffee_drinks", "chill_hangout", "Iced Tea"),
+    ("Passion Fruit Iced Tea", 150, 150, "coffee_drinks", "chill_hangout", "Iced Tea"),
+    ("Honey Ginger Lemon Iced Tea", 150, 150, "coffee_drinks", "chill_hangout", "Iced Tea"),
+    ("Strawberry Banana Smoothie", 165, 165, "coffee_drinks", "chill_hangout", "Smoothie"),
+    ("Mixed Berry Smoothie", 165, 165, "coffee_drinks", "chill_hangout", "Smoothie"),
+    ("Peanut Butter Banana Smoothie", 160, 160, "coffee_drinks", "chill_hangout", "Smoothie"),
+    ("Avocado Smoothie", 185, 185, "coffee_drinks", "chill_hangout", "Smoothie"),
+    ("Lemon Bobba", 150, 150, "coffee_drinks", "chill_hangout", "Juices & Mocktails"),
+    ("Strawberry Lemonade", 150, 150, "coffee_drinks", "chill_hangout", "Juices & Mocktails"),
+    ("Mango Mint Bobba", 160, 160, "coffee_drinks", "chill_hangout", "Juices & Mocktails"),
+    ("Very Mint Peach", 160, 160, "coffee_drinks", "chill_hangout", "Juices & Mocktails"),
+    ("Peach Mojito", 170, 170, "coffee_drinks", "chill_hangout", "Juices & Mocktails"),
+    ("Strawberry Mojito", 170, 170, "coffee_drinks", "chill_hangout", "Juices & Mocktails"),
+    ("Bacon & Mushroom Pasta", 255, 255, "snacks", "chill_hangout", "Pasta"),
+    ("Creamy Chicken Pesto Pasta", 235, 235, "chicken", "chill_hangout", "Pasta"),
+    ("Linguine Pomodoro", 225, 225, "snacks", "chill_hangout", "Pasta"),
+    ("Aglio Olio Vegan Pasta", 190, 190, "snacks", "study_fuel", "Pasta"),
+    ("Avocado Toast", 210, 210, "snacks", "study_fuel", "Sandwich"),
+    ("BLT Sandwich", 199, 199, "snacks", "chill_hangout", "Sandwich"),
+    ("Chicken Fajitas", 200, 200, "chicken", "chill_hangout", "Sandwich"),
+    ("Obscure Ultimate Sandwich", 220, 220, "snacks", "chill_hangout", "Sandwich"),
+    ("Mookies", 70, 70, "snacks", "quick_lunch", "Pastries"),
+    ("Revel Bar", 80, 80, "snacks", "quick_lunch", "Pastries"),
+    ("Blueberry Cheesecake", 165, 165, "snacks", "chill_hangout", "Pastries"),
+    ("Oreo Cheesecake", 165, 165, "snacks", "chill_hangout", "Pastries"),
+    ("Red Velvet Cake", 145, 145, "snacks", "chill_hangout", "Pastries"),
+    ("All-Cheese Cheesecake", 160, 160, "snacks", "chill_hangout", "Pastries"),
+    ("Carrot Cake", 180, 180, "snacks", "chill_hangout", "Pastries"),
+    ("Tiramisu", 160, 160, "snacks", "chill_hangout", "Pastries"),
+    ("Classic Egg Tart", 40, 40, "snacks", "quick_lunch", "Pastries"),
+    ("Assorted Balls w/ Sweet n Sour", 150, 150, "street_food", "group_meal", "Pica-Pica"),
+    ("Classic Hong Kong Egg Waffle", 140, 140, "snacks", "chill_hangout", "Hong Kong Egg Waffle"),
+    ("Banana Split Egg Waffle", 175, 175, "snacks", "chill_hangout", "Hong Kong Egg Waffle"),
+    ("Cookies and Cream Egg Waffle", 170, 170, "snacks", "chill_hangout", "Hong Kong Egg Waffle"),
+    ("Cereal and Cream Egg Waffle", 170, 170, "snacks", "chill_hangout", "Hong Kong Egg Waffle"),
+]
+
+STORE_HOURS[OBSCURE_CAFE["restaurant"]] = ("08:00", "22:00")
+FOOD_SPOTS = [item for item in FOOD_SPOTS if item[1] != OBSCURE_CAFE["restaurant"]]
+FOOD_SPOTS.extend(
+    (
+        name,
+        OBSCURE_CAFE["restaurant"],
+        price_min,
+        price_max,
+        category,
+        mood,
+        OBSCURE_CAFE["latitude"],
+        OBSCURE_CAFE["longitude"],
+        OBSCURE_CAFE["area"],
+        OBSCURE_CAFE["rating"],
+        f"{section} item from Obscure Cafe. Open 8 AM - 10 PM.",
+    )
+    for name, price_min, price_max, category, mood, section in OBSCURE_CAFE_MENU
+)
+
 
 def seed() -> None:
     init_db()
@@ -63,6 +192,7 @@ def seed() -> None:
         for item in FOOD_SPOTS:
             store = stores.get(item[1])
             if not store:
+                opens_at, closes_at = hours_for_store(item[1], item[5])
                 store = Store(
                     name=item[1],
                     latitude=item[6],
@@ -70,6 +200,8 @@ def seed() -> None:
                     area=item[8],
                     rating=item[9],
                     image_url=None,
+                    opens_at=opens_at,
+                    closes_at=closes_at,
                     is_active=True,
                 )
                 stores[item[1]] = store

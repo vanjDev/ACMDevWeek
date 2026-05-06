@@ -128,6 +128,17 @@
         </label>
       </div>
 
+      <div class="budget-row">
+        <label>
+          Opens
+          <input id="adminOpensAt" name="opens_at" type="time" value="08:00" required>
+        </label>
+        <label>
+          Closes
+          <input id="adminClosesAt" name="closes_at" type="time" value="21:00" required>
+        </label>
+      </div>
+
       <section class="admin-image-card">
         <div>
           <label>
@@ -185,5 +196,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', path='/js/admin.js') }}?v=image-upload-20260506"></script>
+<script src="{{ url_for('static', path='/js/admin.js') }}?v=opening-hours-20260506"></script>
 {% endblock %}
