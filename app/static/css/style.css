@@ -867,6 +867,61 @@ input[type="range"] {
   text-transform: uppercase;
 }
 
+.tracker-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 18px;
+}
+
+.tracker-card {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 18px 18px 8px 8px;
+  padding: 16px;
+  background: rgba(4, 31, 29, 0.82);
+  box-shadow: var(--shadow);
+}
+
+.tracker-card-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tracker-card-heading div {
+  display: grid;
+  gap: 4px;
+}
+
+.tracker-card-heading span {
+  color: var(--mint);
+  font-size: 0.7rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.tracker-card-heading strong {
+  color: var(--white);
+  font-family: Outfit, Inter, sans-serif;
+  font-size: 1.12rem;
+  text-transform: uppercase;
+}
+
+.tracker-card #budgetInsight {
+  margin: 0;
+  color: var(--mint);
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.tracker-history-card .weekly-history {
+  min-height: 120px;
+  align-content: start;
+}
+
 .meal-log-dialog {
   width: min(460px, calc(100% - 28px));
 }
@@ -2624,6 +2679,10 @@ input[type="range"] {
     grid-template-columns: 1fr;
   }
 
+  .tracker-panel {
+    grid-template-columns: 1fr;
+  }
+
   .hero-board {
     padding: 38px 24px;
   }
@@ -2833,6 +2892,11 @@ body.menu-detail-open {
 
   .habit-strip {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .tracker-panel,
+  .budget-row {
+    grid-template-columns: 1fr;
   }
 
   .weekly-history-header,
