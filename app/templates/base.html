@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }} | {{ app_name }}</title>
+    <meta name="description" content="Find student-friendly food near FEU Tech and FEU Manila.">
+    <meta property="og:title" content="{{ app_name }} - {{ title }}">
+    <meta property="og:description" content="A food decision tool for FEU students.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/">
+        <span class="brand-mark">?</span>
+        <span>Saan?</span>
+      </a>
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="/">Discover</a>
+        <a href="/timer">Timer</a>
+        <a href="/about">About</a>
+      </nav>
+    </header>
+
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <span>Saan? for ACM Dev Week</span>
+      <span>FEU Tech and Morayta food finder</span>
+    </footer>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    {% block scripts %}{% endblock %}
+    <script>
+      if (window.lucide) window.lucide.createIcons();
+    </script>
+  </body>
+</html>

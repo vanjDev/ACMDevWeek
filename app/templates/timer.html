@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="timer-layout">
+  <div class="timer-copy">
+    <h1>Can I Make It?</h1>
+    <p>Pick your class window and get food spots that fit the walk, meal, and return trip.</p>
+  </div>
+
+  <form id="timerForm" class="timer-card">
+    <label>
+      Leave at
+      <input type="time" name="departure_time" required>
+    </label>
+    <label>
+      Back by
+      <input type="time" name="arrival_time" required>
+    </label>
+    <label>
+      Campus
+      <select name="campus">
+        <option value="feu_tech">FEU Tech</option>
+        <option value="feu_manila">FEU Manila</option>
+      </select>
+    </label>
+    <label>
+      Meal time
+      <input type="number" name="meal_minutes" min="5" max="90" value="20">
+    </label>
+    <label>
+      Max budget
+      <input type="number" name="budget_max" min="1" placeholder="Any">
+    </label>
+    <button class="primary-button" type="submit">
+      <i data-lucide="timer"></i>
+      Check
+    </button>
+  </form>
+
+  <section id="timerResult" class="timer-result" aria-live="polite"></section>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', path='/js/timer.js') }}"></script>
+{% endblock %}

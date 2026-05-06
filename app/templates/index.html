@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="app-shell">
+  <aside class="filter-panel" aria-label="Food filters">
+    <div class="panel-title">
+      <h1>Saan tayo kakain?</h1>
+      <button id="resetFilters" class="icon-button" type="button" aria-label="Reset filters" title="Reset filters">
+        <i data-lucide="rotate-ccw"></i>
+      </button>
+    </div>
+
+    <form id="filters" class="filters">
+      <label>
+        Campus
+        <select name="campus" id="campus">
+          <option value="feu_tech">FEU Tech</option>
+          <option value="feu_manila">FEU Manila</option>
+        </select>
+      </label>
+
+      <label>
+        Budget
+        <select name="budget" id="budget">
+          <option value="">Any budget</option>
+          <option value="0-50">Under PHP 50</option>
+          <option value="50-100">PHP 50-100</option>
+          <option value="100-200">PHP 100-200</option>
+          <option value="200-500">PHP 200+</option>
+        </select>
+      </label>
+
+      <label>
+        Area
+        <select name="area" id="area">
+          <option value="all">All areas</option>
+          <option value="near_feu_tech">Near FEU Tech</option>
+          <option value="near_feu_manila">Near FEU Manila</option>
+          <option value="lerma">Lerma St</option>
+          <option value="p_campa">P. Campa</option>
+          <option value="hepa_lane">Hepa Lane</option>
+          <option value="inside_campus">Inside Campus</option>
+        </select>
+      </label>
+
+      <label>
+        Sort
+        <select name="sort" id="sort">
+          <option value="distance">Distance</option>
+          <option value="price">Price</option>
+          <option value="rating">Rating</option>
+        </select>
+      </label>
+
+      <div>
+        <span class="field-label">Food type</span>
+        <div class="chip-grid" data-filter="category">
+          <button type="button" class="chip" data-value="chicken">Chicken</button>
+          <button type="button" class="chip" data-value="rice_meals">Rice Meals</button>
+          <button type="button" class="chip" data-value="street_food">Street Food</button>
+          <button type="button" class="chip" data-value="dimsum">Dimsum</button>
+          <button type="button" class="chip" data-value="coffee_drinks">Coffee/Drinks</button>
+          <button type="button" class="chip" data-value="burgers">Burgers</button>
+          <button type="button" class="chip" data-value="unli_rice">Unli-Rice</button>
+          <button type="button" class="chip" data-value="snacks">Snacks</button>
+        </div>
+      </div>
+
+      <div>
+        <span class="field-label">Mood</span>
+        <div class="chip-grid" data-filter="mood">
+          <button type="button" class="chip mood-chip" data-value="quick_lunch"><i data-lucide="zap"></i> Quick</button>
+          <button type="button" class="chip mood-chip" data-value="chill_hangout"><i data-lucide="coffee"></i> Chill</button>
+          <button type="button" class="chip mood-chip" data-value="study_fuel"><i data-lucide="book-open"></i> Study</button>
+          <button type="button" class="chip mood-chip" data-value="late_night"><i data-lucide="moon"></i> Late</button>
+          <button type="button" class="chip mood-chip" data-value="group_meal"><i data-lucide="users"></i> Group</button>
+        </div>
+      </div>
+
+      <label>
+        Radius <output id="radiusValue">1200m</output>
+        <input type="range" id="radius" name="radius" min="200" max="2000" step="100" value="1200">
+      </label>
+    </form>
+  </aside>
+
+  <section class="main-pane">
+    <div class="action-strip">
+      <button id="pickForMe" class="primary-button" type="button">
+        <i data-lucide="dice-5"></i>
+        Pick for Me
+      </button>
+      <button id="showBookmarks" class="secondary-button" type="button">
+        <i data-lucide="heart"></i>
+        Bookmarks
+      </button>
+      <div id="resultCount" class="result-count">Loading...</div>
+    </div>
+
+    <section id="pickResult" class="pick-result" hidden></section>
+
+    <div class="content-grid">
+      <section id="results" class="results-grid" aria-live="polite"></section>
+      <section class="map-wrap" aria-label="Food map">
+        <div id="map"></div>
+      </section>
+    </div>
+  </section>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.SAAN_CAMPUSES = {{ campuses | tojson }};
+</script>
+<script src="{{ url_for('static', path='/js/map.js') }}"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}"></script>
+<script src="{{ url_for('static', path='/js/pickforme.js') }}"></script>
+{% endblock %}
