@@ -22,9 +22,9 @@
         <span>Saan?</span>
       </a>
       <nav class="nav-links" aria-label="Main navigation">
-        <a class="active" href="/">Home</a>
-        <a href="/timer">Timer</a>
-        <a href="/about">About</a>
+        <a class="{{ 'active' if active_page == 'home' else '' }}" href="/">Home</a>
+        <a class="{{ 'active' if active_page == 'timer' else '' }}" href="/timer">Timer</a>
+        <a class="{{ 'active' if active_page == 'about' else '' }}" href="/about">About</a>
       </nav>
       <div class="auth-controls">
         <span id="authStatus">Guest mode</span>
@@ -92,7 +92,7 @@
       window.SAAN_GOOGLE_CLIENT_ID = {{ google_client_id | tojson }};
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="{{ url_for('static', path='/js/auth.js') }}?v=auth-config-20260506"></script>
+    <script src="{{ url_for('static', path='/js/auth.js') }}?v=bookmarkfix-20260506"></script>
     {% block scripts %}{% endblock %}
     <script>
       if (window.lucide) window.lucide.createIcons();

@@ -7,11 +7,12 @@ templates = Jinja2Templates(directory="app/templates")
 router = APIRouter(tags=["pages"])
 
 
-def context(request: Request, title: str) -> dict[str, object]:
+def context(request: Request, title: str, active_page: str) -> dict[str, object]:
     settings = get_settings()
     return {
         "request": request,
         "title": title,
+        "active_page": active_page,
         "app_name": settings.app_name,
         "campuses": settings.campuses,
         "google_client_id": settings.google_client_id,
@@ -20,14 +21,14 @@ def context(request: Request, title: str) -> dict[str, object]:
 
 @router.get("/")
 def home(request: Request):
-    return templates.TemplateResponse("index.html", context(request, "Find food near FEU"))
+    return templates.TemplateResponse("index.html", context(request, "Find food near FEU", "home"))
 
 
 @router.get("/timer")
 def timer(request: Request):
-    return templates.TemplateResponse("timer.html", context(request, "Can I Make It?"))
+    return templates.TemplateResponse("timer.html", context(request, "Can I Make It?", "timer"))
 
 
 @router.get("/about")
 def about(request: Request):
-    return templates.TemplateResponse("about.html", context(request, "About"))
+    return templates.TemplateResponse("about.html", context(request, "About", "about"))

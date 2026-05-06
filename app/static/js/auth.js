@@ -6,11 +6,13 @@ const SaanAuth = {
 };
 
 function readGuestBookmarks() {
-  return JSON.parse(localStorage.getItem("saanBookmarks") || "[]");
+  return JSON.parse(localStorage.getItem("saanBookmarks") || "[]")
+    .map((id) => Number(id))
+    .filter(Number.isFinite);
 }
 
 function writeGuestBookmarks(ids) {
-  localStorage.setItem("saanBookmarks", JSON.stringify([...new Set(ids)]));
+  localStorage.setItem("saanBookmarks", JSON.stringify([...new Set((ids || []).map((id) => Number(id)).filter(Number.isFinite))]));
 }
 
 function readGuestData() {

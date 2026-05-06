@@ -92,15 +92,17 @@ function setBudgetState() {
 }
 
 function getBookmarks() {
-  return window.SaanAuth ? window.SaanAuth.getBookmarks() : JSON.parse(localStorage.getItem("saanBookmarks") || "[]");
+  const raw = window.SaanAuth ? window.SaanAuth.getBookmarks() : JSON.parse(localStorage.getItem("saanBookmarks") || "[]");
+  return [...new Set((raw || []).map((id) => Number(id)).filter(Number.isFinite))];
 }
 
 async function setBookmarks(ids) {
+  const normalized = [...new Set((ids || []).map((id) => Number(id)).filter(Number.isFinite))];
   if (window.SaanAuth) {
-    await window.SaanAuth.setBookmarks(ids);
+    await window.SaanAuth.setBookmarks(normalized);
     return;
   }
-  localStorage.setItem("saanBookmarks", JSON.stringify(ids));
+  localStorage.setItem("saanBookmarks", JSON.stringify(normalized));
 }
 
 function antiRepeatIds() {
@@ -253,7 +255,6 @@ function applyClientRanking(foods) {
     const score = (food) => {
       let total = food.rating * 8 - (food.walking_minutes || 0);
       if (favorites.includes(food.category)) total += 12;
-      if (getBookmarks().includes(food.id)) total += 8;
       if (hotMood) total -= food.price_max / 16;
       if (treatMood) total += food.price_min >= 100 ? 8 : 0;
       if (rushMood) total -= (food.walking_minutes || 0) * 2;
@@ -465,12 +466,14 @@ function setupFilters() {
     const ateButton = event.target.closest("[data-ate]");
     const card = event.target.closest("[data-food-id]");
     if (bookmarkButton) {
-      const id = Number(bookmarkButton.dataset.bookmark);
+      const id = Number(card?.dataset.foodId || bookmarkButton.dataset.bookmark);
+      if (!Number.isFinite(id)) return;
       const bookmarks = getBookmarks();
       const next = bookmarks.includes(id) ? bookmarks.filter((item) => item !== id) : [...bookmarks, id];
       await setBookmarks(next);
       showToast(next.includes(id) ? "Saved to bookmarks." : "Removed from bookmarks.");
       renderFoods(state.foods);
+      return;
     }
     if (ateButton) {
       const food = state.foods.find((item) => item.id === Number(ateButton.dataset.ate));
