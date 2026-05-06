@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}?v=poster-green-20260506">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}?v=wide-20260506">
   </head>
   <body>
     <header class="site-header">
@@ -24,11 +24,56 @@
         <a href="/timer">Timer</a>
         <a href="/about">Credits</a>
       </nav>
+      <div class="auth-controls">
+        <span id="authStatus">Guest mode</span>
+        <button id="openAuth" class="secondary-button compact-button" type="button">
+          <i data-lucide="log-in"></i>
+          Login
+        </button>
+        <button id="logoutAuth" class="icon-button" type="button" aria-label="Logout" title="Logout" hidden>
+          <i data-lucide="log-out"></i>
+        </button>
+      </div>
     </header>
 
     <main>
       {% block content %}{% endblock %}
     </main>
+
+    <dialog id="authDialog" class="auth-dialog">
+      <form id="authForm" class="auth-card" method="dialog">
+        <div class="auth-card-heading">
+          <div>
+            <p>Optional account</p>
+            <h2>Save your picks</h2>
+          </div>
+          <button class="icon-button" value="cancel" type="submit" aria-label="Close login" title="Close">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="auth-tabs" role="tablist" aria-label="Account action">
+          <button class="active" type="button" data-auth-mode="login">Login</button>
+          <button type="button" data-auth-mode="register">Sign up</button>
+        </div>
+        <label id="authNameField">
+          Name
+          <input id="authName" name="name" autocomplete="name" placeholder="Your name">
+        </label>
+        <label>
+          Email
+          <input id="authEmail" name="email" type="email" autocomplete="email" placeholder="you@feu.edu.ph" required>
+        </label>
+        <label>
+          Password
+          <input id="authPassword" name="password" type="password" autocomplete="current-password" minlength="6" required>
+        </label>
+        <p id="authMessage" class="auth-message">Continue as guest anytime. Login only if you want bookmarks saved across devices.</p>
+        <button id="authSubmit" class="primary-button" type="submit">
+          <i data-lucide="save"></i>
+          Login and save
+        </button>
+      </form>
+    </dialog>
 
     <footer class="site-footer">
       <strong>Saan?</strong>
@@ -37,6 +82,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="{{ url_for('static', path='/js/auth.js') }}?v=auth-20260506"></script>
     {% block scripts %}{% endblock %}
     <script>
       if (window.lucide) window.lucide.createIcons();

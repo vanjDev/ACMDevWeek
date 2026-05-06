@@ -1,7 +1,7 @@
 import random
 from collections.abc import Sequence
 
-from sqlalchemy import Select, select
+from sqlalchemy import Select, or_, select
 from sqlalchemy.orm import Session
 
 from app.models import FoodSpot
@@ -35,6 +35,7 @@ def filter_foods(
     category: str | None = None,
     mood: str | None = None,
     area: str | None = None,
+    q: str | None = None,
     campus: str = "feu_tech",
     radius: int | None = None,
     sort: str = "distance",
@@ -59,6 +60,18 @@ def filter_foods(
     if areas and "all" not in areas:
         query = query.where(FoodSpot.area.in_(areas))
 
+    if q:
+        term = f"%{q.strip()}%"
+        query = query.where(
+            or_(
+                FoodSpot.name.ilike(term),
+                FoodSpot.restaurant.ilike(term),
+                FoodSpot.category.ilike(term),
+                FoodSpot.area.ilike(term),
+                FoodSpot.description.ilike(term),
+            )
+        )
+
     foods = [serialize_food(food, campus) for food in db.scalars(query).all()]
 
     if radius:
@@ -71,7 +84,7 @@ def filter_foods(
     else:
         foods.sort(key=lambda food: (food.distance_m or 0, -food.rating))
 
-    return foods[: max(1, min(limit, 100))]
+    return foods[: max(1, min(limit, 250))]
 
 
 def random_food(db: Session, **filters: object) -> FoodSpotResponse | None:

@@ -1,5 +1,6 @@
 :root {
   color-scheme: dark;
+  --page-width: min(1680px, calc(100vw - 48px));
   --ink: #041f1d;
   --ink-2: #07302c;
   --green: #008a54;
@@ -68,7 +69,7 @@ button {
 .brand-ribbon,
 .app-shell,
 .contact-band {
-  width: min(1120px, calc(100% - 32px));
+  width: var(--page-width);
   margin-inline: auto;
 }
 
@@ -134,15 +135,107 @@ button {
   color: var(--white);
 }
 
+.auth-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--mint);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.compact-button {
+  min-height: 40px;
+  padding-inline: 14px;
+}
+
+.auth-dialog {
+  width: min(430px, calc(100% - 28px));
+  border: 0;
+  padding: 0;
+  color: var(--white);
+  background: transparent;
+}
+
+.auth-dialog::backdrop {
+  background: rgba(3, 27, 25, 0.76);
+  backdrop-filter: blur(6px);
+}
+
+.auth-card {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 24px 24px 8px 8px;
+  padding: 20px;
+  background: rgba(4, 31, 29, 0.96);
+  box-shadow: var(--shadow);
+}
+
+.auth-card-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.auth-card-heading p,
+.auth-message {
+  margin: 0;
+  color: var(--mint);
+}
+
+.auth-card-heading p {
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.auth-card-heading h2 {
+  margin-top: 4px;
+  font-size: 2rem;
+  text-transform: uppercase;
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.auth-tabs button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--mint);
+  background: transparent;
+  font-weight: 900;
+}
+
+.auth-tabs button.active {
+  color: var(--ink);
+  background: var(--cream);
+}
+
+.auth-message {
+  min-height: 42px;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
 .hero-board {
   position: relative;
-  min-height: 430px;
+  min-height: clamp(430px, 46vw, 650px);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 410px;
-  gap: 20px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(420px, 0.9fr);
+  gap: clamp(20px, 4vw, 72px);
   overflow: hidden;
   border-radius: 0;
-  padding: 54px 42px;
+  padding: clamp(42px, 5vw, 86px);
   background:
     linear-gradient(100deg, rgba(4, 31, 29, 0.98) 0%, rgba(4, 31, 29, 0.94) 52%, rgba(0, 138, 84, 0.94) 52%, rgba(0, 138, 84, 0.98) 100%),
     url("https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1500&q=80") center / cover;
@@ -192,8 +285,8 @@ h3 {
 }
 
 .hero-copy h1 {
-  max-width: 560px;
-  font-size: clamp(3rem, 8vw, 6.6rem);
+  max-width: 720px;
+  font-size: clamp(3.4rem, 7vw, 8.4rem);
   font-weight: 800;
   line-height: 0.9;
   text-transform: uppercase;
@@ -213,7 +306,7 @@ h3 {
 }
 
 .hero-visual img {
-  width: min(330px, 80%);
+  width: min(430px, 78%);
   aspect-ratio: 1;
   object-fit: cover;
   border: 14px solid var(--cream);
@@ -223,10 +316,10 @@ h3 {
 
 .vertical-word {
   position: absolute;
-  right: -18px;
+  right: clamp(-18px, 2vw, 24px);
   color: rgba(255, 255, 255, 0.9);
   font-family: Outfit, Inter, sans-serif;
-  font-size: clamp(2.4rem, 5vw, 4.3rem);
+  font-size: clamp(3rem, 5vw, 5.6rem);
   font-weight: 800;
   letter-spacing: 0.04em;
   writing-mode: vertical-rl;
@@ -255,8 +348,8 @@ h3 {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 310px minmax(0, 1fr);
-  gap: 22px;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: clamp(22px, 2vw, 34px);
   margin-top: 52px;
 }
 
@@ -464,15 +557,40 @@ input[type="range"] {
 
 .content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 390px;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(390px, 32vw);
+  gap: clamp(18px, 2vw, 30px);
   align-items: start;
 }
 
 .results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(205px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 22px 18px;
+}
+
+.load-more {
+  width: min(280px, 100%);
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 28px auto 0;
+  border: 0;
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--cream);
+  font-weight: 900;
+  box-shadow: inset 0 -4px 0 rgba(0, 138, 84, 0.24);
+}
+
+.load-more[hidden] {
+  display: none;
+}
+
+.load-more svg {
+  width: 18px;
+  height: 18px;
 }
 
 .food-card {
@@ -899,7 +1017,7 @@ input[type="range"] {
   .app-shell,
   .brand-ribbon,
   .contact-band {
-    width: min(100% - 20px, 1120px);
+    width: min(100% - 20px, 1680px);
   }
 
   .hero-visual {

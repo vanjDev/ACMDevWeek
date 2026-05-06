@@ -42,3 +42,25 @@ class TimerResponse(BaseModel):
     status: str
     message: str
     recommendations: list[TimerRecommendation]
+
+
+class AuthRequest(BaseModel):
+    email: str
+    password: str = Field(..., min_length=6)
+    name: str | None = None
+
+
+class UserResponse(BaseModel):
+    id: int
+    name: str
+    email: str
+
+    model_config = {"from_attributes": True}
+
+
+class AuthResponse(BaseModel):
+    user: UserResponse
+
+
+class BookmarkPayload(BaseModel):
+    food_ids: list[int] = Field(default_factory=list)

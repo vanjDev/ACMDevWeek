@@ -1,7 +1,10 @@
 const state = {
   foods: [],
   showingBookmarks: false,
+  visibleLimit: 12,
 };
+
+const DEFAULT_RADIUS = 1200;
 
 const categoryImages = {
   chicken: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=900&q=80",
@@ -19,10 +22,14 @@ function selectedValues(filterName) {
 }
 
 function getBookmarks() {
-  return JSON.parse(localStorage.getItem("saanBookmarks") || "[]");
+  return window.SaanAuth ? window.SaanAuth.getBookmarks() : JSON.parse(localStorage.getItem("saanBookmarks") || "[]");
 }
 
-function setBookmarks(ids) {
+async function setBookmarks(ids) {
+  if (window.SaanAuth) {
+    await window.SaanAuth.setBookmarks(ids);
+    return;
+  }
   localStorage.setItem("saanBookmarks", JSON.stringify(ids));
 }
 
@@ -30,11 +37,14 @@ function buildParams() {
   const params = new URLSearchParams();
   const budget = document.getElementById("budget").value;
   const area = document.getElementById("area").value;
+  const q = document.getElementById("foodSearch").value.trim();
 
   params.set("campus", document.getElementById("campus").value);
-  params.set("radius", document.getElementById("radius").value);
+  params.set("radius", String(DEFAULT_RADIUS));
   params.set("sort", document.getElementById("sort").value);
+  params.set("limit", "250");
 
+  if (q) params.set("q", q);
   if (budget) {
     const [min, max] = budget.split("-");
     params.set("budget_min", min);
@@ -89,7 +99,7 @@ function cardTemplate(food) {
           <span><small>Rating</small>${food.rating.toFixed(1)}</span>
         </div>
         <div class="card-actions">
-          <span class="pill">${Math.round(food.distance_m)}m · ${formatLabel(food.area)}</span>
+          <span class="pill">${Math.round(food.distance_m)}m - ${formatLabel(food.area)}</span>
           <button class="icon-button bookmark ${active ? "active" : ""}" type="button" data-bookmark="${food.id}" aria-label="Bookmark ${food.name}" title="Bookmark">
             <i data-lucide="heart"></i>
           </button>
@@ -104,14 +114,17 @@ function renderFoods(foods) {
   const visible = state.showingBookmarks
     ? foods.filter((food) => getBookmarks().includes(food.id))
     : foods;
+  const paged = visible.slice(0, state.visibleLimit);
 
-  results.innerHTML = visible.length
-    ? visible.map(cardTemplate).join("")
+  results.innerHTML = paged.length
+    ? paged.map(cardTemplate).join("")
     : `<div class="pick-result"><h2>No matches yet</h2><p>Adjust the filters or clear bookmarks.</p></div>`;
 
-  document.getElementById("resultCount").textContent = `${visible.length} spot${visible.length === 1 ? "" : "s"}`;
+  document.getElementById("resultCount").textContent = `${Math.min(state.visibleLimit, visible.length)} of ${visible.length} spot${visible.length === 1 ? "" : "s"}`;
+  const loadMore = document.getElementById("loadMore");
+  loadMore.hidden = state.visibleLimit >= visible.length;
   if (window.lucide) window.lucide.createIcons();
-  updateMap(visible, document.getElementById("campus").value, document.getElementById("radius").value);
+  updateMap(paged, document.getElementById("campus").value, DEFAULT_RADIUS);
 }
 
 async function loadFoods() {
@@ -126,6 +139,7 @@ function setupFilters() {
     chip.addEventListener("click", () => {
       chip.classList.toggle("active");
       state.showingBookmarks = false;
+      state.visibleLimit = 12;
       loadFoods();
     });
   });
@@ -133,26 +147,37 @@ function setupFilters() {
   ["campus", "budget", "area", "sort"].forEach((id) => {
     document.getElementById(id).addEventListener("change", () => {
       state.showingBookmarks = false;
+      state.visibleLimit = 12;
       loadFoods();
     });
   });
 
-  document.getElementById("radius").addEventListener("input", (event) => {
-    document.getElementById("radiusValue").textContent = `${event.target.value}m`;
-    state.showingBookmarks = false;
-    loadFoods();
+  let searchTimer;
+  document.getElementById("foodSearch").addEventListener("input", () => {
+    window.clearTimeout(searchTimer);
+    searchTimer = window.setTimeout(() => {
+      state.showingBookmarks = false;
+      state.visibleLimit = 12;
+      loadFoods();
+    }, 220);
   });
 
   document.getElementById("resetFilters").addEventListener("click", () => {
     document.getElementById("filters").reset();
     document.querySelectorAll(".chip.active").forEach((chip) => chip.classList.remove("active"));
-    document.getElementById("radiusValue").textContent = "1200m";
     state.showingBookmarks = false;
+    state.visibleLimit = 12;
     loadFoods();
   });
 
   document.getElementById("showBookmarks").addEventListener("click", () => {
     state.showingBookmarks = !state.showingBookmarks;
+    state.visibleLimit = 12;
+    renderFoods(state.foods);
+  });
+
+  document.getElementById("loadMore").addEventListener("click", () => {
+    state.visibleLimit += 12;
     renderFoods(state.foods);
   });
 
@@ -167,12 +192,15 @@ function setupFilters() {
     const id = Number(button.dataset.bookmark);
     const bookmarks = getBookmarks();
     const next = bookmarks.includes(id) ? bookmarks.filter((item) => item !== id) : [...bookmarks, id];
-    setBookmarks(next);
+    await setBookmarks(next);
     renderFoods(state.foods);
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("saan:auth-changed", () => renderFoods(state.foods));
+
+document.addEventListener("DOMContentLoaded", async () => {
+  await window.SaanAuth?.ready;
   setupFilters();
   loadFoods();
 });

@@ -35,6 +35,11 @@
     </div>
 
     <form id="filters" class="filters">
+      <label class="search-field">
+        Search
+        <input type="search" id="foodSearch" name="q" placeholder="Try siomai, coffee, Lerma">
+      </label>
+
       <label>
         Campus
         <select name="campus" id="campus">
@@ -101,10 +106,6 @@
         </div>
       </div>
 
-      <label>
-        Radius <output id="radiusValue">1200m</output>
-        <input type="range" id="radius" name="radius" min="200" max="2000" step="100" value="1200">
-      </label>
     </form>
   </aside>
 
@@ -129,10 +130,16 @@
     <section id="pickResult" class="pick-result" hidden></section>
 
     <div class="content-grid">
-      <section id="results" class="results-grid" aria-live="polite"></section>
+      <section>
+        <div id="results" class="results-grid" aria-live="polite"></div>
+        <button id="loadMore" class="load-more" type="button" hidden>
+          <i data-lucide="chevrons-down"></i>
+          Show More
+        </button>
+      </section>
       <section class="map-wrap" aria-label="Food map">
         <div class="map-heading">
-          <span>Radius Map</span>
+          <span>FEU Map</span>
           <strong>Campus Walk Check</strong>
         </div>
         <div id="map"></div>
@@ -156,7 +163,7 @@
 <script>
   window.SAAN_CAMPUSES = {{ campuses | tojson }};
 </script>
-<script src="{{ url_for('static', path='/js/map.js') }}"></script>
-<script src="{{ url_for('static', path='/js/app.js') }}"></script>
-<script src="{{ url_for('static', path='/js/pickforme.js') }}"></script>
+<script src="{{ url_for('static', path='/js/map.js') }}?v=no-radius-20260506"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}?v=no-radius-20260506"></script>
+<script src="{{ url_for('static', path='/js/pickforme.js') }}?v=no-radius-20260506"></script>
 {% endblock %}
