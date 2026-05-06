@@ -25,7 +25,7 @@ function mapPoint(lat, lng) {
 }
 
 function markerLabel(food) {
-  return `${food.name} - ${food.restaurant} - PHP ${food.price_min}-${food.price_max}`;
+  return `${food.name} - PHP ${food.price_min}-${food.price_max}`;
 }
 
 function formatMapArea(value) {
@@ -64,15 +64,15 @@ function selectedMapMarkup(food, index) {
   return `
     <span>Selected Shop</span>
     <strong>${index + 1}. ${food.name}</strong>
-    <p>${food.restaurant} - PHP ${food.price_min}-${food.price_max} - ${food.walking_minutes} min walk</p>
+    <p>${food.menu.length} menu items - PHP ${food.price_min}-${food.price_max} - ${food.walking_minutes} min walk</p>
     <button class="primary-button compact-button" type="button" data-map-view="${food.id}">
-      View shop
+      View menu
     </button>
   `;
 }
 
 function selectFoodOnMap(foodId, shouldScroll = false) {
-  const target = document.querySelector(`[data-food-id="${foodId}"]`);
+  const target = document.querySelector(`[data-store-id="${foodId}"]`);
   const foods = window.SaanMapFoods || [];
   const foodIndex = foods.findIndex((food) => String(food.id) === String(foodId));
   const selectedPanel = document.getElementById("mapSelected");
@@ -83,7 +83,7 @@ function selectFoodOnMap(foodId, shouldScroll = false) {
 
   document.querySelectorAll(".map-food-dot.active").forEach((pin) => pin.classList.remove("active"));
   document.querySelector(`[data-food-target="${foodId}"]`)?.classList.add("active");
-  document.querySelectorAll(".food-card.map-selected-card").forEach((card) => card.classList.remove("map-selected-card"));
+  document.querySelectorAll(".store-card.map-selected-card").forEach((card) => card.classList.remove("map-selected-card"));
 
   if (target) {
     target.classList.add("map-selected-card");
@@ -138,6 +138,7 @@ function updateMap(foods, campusKey) {
     const button = event.target.closest("[data-map-view]");
     if (!button) return;
     selectFoodOnMap(button.dataset.mapView, true);
+    window.dispatchEvent(new CustomEvent("saan:store-open", { detail: { storeId: button.dataset.mapView } }));
   };
 }
 

@@ -4,6 +4,7 @@ const state = {
   visibleLimit: 12,
   weatherMode: "auto",
   isLoading: false,
+  selectedStoreId: null,
 };
 
 const DEFAULT_RADIUS = 1200;
@@ -175,6 +176,64 @@ function categoryLabel(value) {
   return labels[value] || formatLabel(value);
 }
 
+function storeIdFor(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+}
+
+function groupFoodsByStore(foods) {
+  const grouped = new Map();
+  foods.forEach((food) => {
+    const id = storeIdFor(food.restaurant);
+    if (!grouped.has(id)) {
+      grouped.set(id, {
+        id,
+        name: food.restaurant,
+        restaurant: food.restaurant,
+        menu: [],
+        latitude: food.latitude,
+        longitude: food.longitude,
+        area: food.area,
+        distance_m: food.distance_m,
+        walking_minutes: food.walking_minutes,
+        price_min: food.price_min,
+        price_max: food.price_max,
+        rating: food.rating,
+        category: food.category,
+        mood: food.mood,
+        frames: [],
+        feature_tags: [],
+        diet_tags: [],
+        weather_tags: [],
+        shareable: false,
+        image_url: food.image_url,
+      });
+    }
+
+    const store = grouped.get(id);
+    store.menu.push(food);
+    store.price_min = Math.min(store.price_min, food.price_min);
+    store.price_max = Math.max(store.price_max, food.price_max);
+    store.rating = Math.max(store.rating, food.rating);
+    if ((food.distance_m || 0) < (store.distance_m || Infinity)) {
+      store.latitude = food.latitude;
+      store.longitude = food.longitude;
+      store.area = food.area;
+      store.distance_m = food.distance_m;
+      store.walking_minutes = food.walking_minutes;
+    }
+    store.frames = [...new Set([...store.frames, ...(food.frames || [])])].slice(0, 5);
+    store.feature_tags = [...new Set([...store.feature_tags, ...(food.feature_tags || [])])];
+    store.diet_tags = [...new Set([...store.diet_tags, ...(food.diet_tags || [])])];
+    store.weather_tags = [...new Set([...store.weather_tags, ...(food.weather_tags || [])])];
+    store.shareable = store.shareable || food.shareable;
+  });
+
+  return [...grouped.values()].map((store) => {
+    store.menu.sort((a, b) => a.price_min - b.price_min || b.rating - a.rating);
+    return store;
+  });
+}
+
 function averagePrice(food) {
   return Math.round((food.price_min + food.price_max) / 2);
 }
@@ -199,45 +258,72 @@ function foodFrames(food) {
   return [...new Set(frames)].slice(0, 5);
 }
 
-function cardTemplate(food) {
-  const bookmarks = getBookmarks();
-  const active = bookmarks.includes(food.id);
-  const image = food.image_url || categoryImages[food.category] || categoryImages.snacks;
-  const frames = foodFrames(food);
-  const dietTags = food.diet_tags || [];
-  const featureTags = food.feature_tags || [];
+function storeFrames(store) {
+  const frames = [...(store.frames || [])];
+  if (store.menu.some((food) => getBookmarks().includes(food.id))) frames.unshift("Has saved item");
+  if (store.menu.some((food) => antiRepeatIds().includes(food.id))) frames.unshift("Recently tried");
+  if (store.feature_tags?.includes("open_late")) frames.push("Open late");
+  if (store.feature_tags?.includes("aircon")) frames.push("Aircon");
+  return [...new Set(frames)].slice(0, 5);
+}
+
+function menuItemTemplate(food) {
+  const active = getBookmarks().includes(food.id);
   return `
-    <article class="food-card" data-food-id="${food.id}">
+    <li class="menu-item" data-menu-food-id="${food.id}">
+      <div>
+        <strong>${food.name}</strong>
+        <p>${food.description}</p>
+      </div>
+      <span>PHP ${food.price_min}-${food.price_max}</span>
+      <button class="icon-button ate-button" type="button" data-ate="${food.id}" aria-label="Log ${food.name}" title="Log eaten">
+        <i data-lucide="utensils"></i>
+      </button>
+      <button class="icon-button bookmark ${active ? "active" : ""}" type="button" data-bookmark="${food.id}" aria-label="Bookmark ${food.name}" title="Bookmark">
+        <i data-lucide="heart"></i>
+      </button>
+    </li>
+  `;
+}
+
+function storeCardTemplate(store) {
+  const bookmarks = getBookmarks();
+  const active = store.menu.some((food) => bookmarks.includes(food.id));
+  const image = store.image_url || categoryImages[store.category] || categoryImages.snacks;
+  const frames = storeFrames(store);
+  const isOpen = state.selectedStoreId === store.id;
+  return `
+    <article class="food-card store-card ${isOpen ? "open" : ""}" data-store-id="${store.id}">
       <div class="food-image">
         <img src="${image}" alt="">
-        <span>${categoryLabel(food.category)}</span>
+        <span>${store.menu.length} items</span>
       </div>
       <div class="food-body">
         <div>
-          <h3>${food.name}</h3>
-          <p>${food.restaurant}</p>
+          <h3>${store.name}</h3>
+          <p>${formatLabel(store.area)} - ${store.menu.map((food) => categoryLabel(food.category)).slice(0, 2).join(", ")}</p>
         </div>
         <div class="food-frames">
           ${frames.map((frame) => `<span>${frame}</span>`).join("")}
-          ${dietTags.includes("pork") ? `<span class="warning-frame">Pork</span>` : ""}
-          ${dietTags.includes("halal_friendly") ? `<span class="halal-frame">Halal-friendly</span>` : ""}
-          ${featureTags.includes("open_late") ? `<span>Open late</span>` : ""}
-          ${featureTags.includes("aircon") ? `<span>Aircon</span>` : ""}
         </div>
         <div class="food-meta">
-          <span><small>Price</small>PHP ${food.price_min}-${food.price_max}</span>
-          <span><small>Walk</small>${food.walking_minutes} min</span>
-          <span><small>Rating</small>${food.rating.toFixed(1)}</span>
+          <span><small>Menu</small>${store.menu.length} items</span>
+          <span><small>Walk</small>${store.walking_minutes} min</span>
+          <span><small>Rating</small>${store.rating.toFixed(1)}</span>
         </div>
         <div class="card-actions">
-          <span class="pill">${Math.round(food.distance_m)}m - ${formatLabel(food.area)}</span>
-          <button class="icon-button ate-button" type="button" data-ate="${food.id}" aria-label="Log ${food.name}" title="Log eaten">
-            <i data-lucide="utensils"></i>
+          <span class="pill">PHP ${store.price_min}-${store.price_max}</span>
+          <button class="secondary-button compact-button" type="button" data-store-toggle="${store.id}">
+            <i data-lucide="${isOpen ? "chevron-up" : "utensils"}"></i>
+            ${isOpen ? "Hide menu" : "View menu"}
           </button>
-          <button class="icon-button bookmark ${active ? "active" : ""}" type="button" data-bookmark="${food.id}" aria-label="Bookmark ${food.name}" title="Bookmark">
+          <span class="store-save-dot ${active ? "active" : ""}" title="${active ? "Has saved menu item" : "No saved menu items"}">
             <i data-lucide="heart"></i>
-          </button>
+          </span>
         </div>
+        <ul class="store-menu" ${isOpen ? "" : "hidden"}>
+          ${store.menu.map(menuItemTemplate).join("")}
+        </ul>
       </div>
     </article>
   `;
@@ -277,18 +363,19 @@ function renderFoods(foods) {
   const visible = state.showingBookmarks
     ? ranked.filter((food) => getBookmarks().includes(food.id))
     : ranked;
-  const paged = visible.slice(0, state.visibleLimit);
+  const stores = groupFoodsByStore(visible);
+  const paged = stores.slice(0, state.visibleLimit);
 
   results.innerHTML = paged.length
-    ? paged.map(cardTemplate).join("")
+    ? paged.map(storeCardTemplate).join("")
     : `<div class="pick-result"><h2>No matches yet</h2><p>Adjust the filters, time window, budget, or anti-repeat setting.</p></div>`;
 
-  document.getElementById("resultCount").textContent = `${Math.min(state.visibleLimit, visible.length)} of ${visible.length} spot${visible.length === 1 ? "" : "s"}`;
+  document.getElementById("resultCount").textContent = `${Math.min(state.visibleLimit, stores.length)} of ${stores.length} store${stores.length === 1 ? "" : "s"}`;
   const loadMore = document.getElementById("loadMore");
-  loadMore.hidden = state.visibleLimit >= visible.length;
+  loadMore.hidden = state.visibleLimit >= stores.length;
   if (window.lucide) window.lucide.createIcons();
   updateMap(paged, document.getElementById("campus").value, DEFAULT_RADIUS);
-  updateBudgetInsight(paged[0]);
+  updateBudgetInsight(paged[0]?.menu?.[0]);
 }
 
 async function loadFoods() {
@@ -464,9 +551,10 @@ function setupFilters() {
   document.getElementById("results").addEventListener("click", async (event) => {
     const bookmarkButton = event.target.closest("[data-bookmark]");
     const ateButton = event.target.closest("[data-ate]");
-    const card = event.target.closest("[data-food-id]");
+    const toggleButton = event.target.closest("[data-store-toggle]");
+    const card = event.target.closest("[data-store-id]");
     if (bookmarkButton) {
-      const id = Number(card?.dataset.foodId || bookmarkButton.dataset.bookmark);
+      const id = Number(bookmarkButton.dataset.bookmark);
       if (!Number.isFinite(id)) return;
       const bookmarks = getBookmarks();
       const next = bookmarks.includes(id) ? bookmarks.filter((item) => item !== id) : [...bookmarks, id];
@@ -475,11 +563,19 @@ function setupFilters() {
       renderFoods(state.foods);
       return;
     }
+    if (toggleButton) {
+      state.selectedStoreId = state.selectedStoreId === toggleButton.dataset.storeToggle ? null : toggleButton.dataset.storeToggle;
+      renderFoods(state.foods);
+      window.selectFoodOnMap?.(toggleButton.dataset.storeToggle, false);
+      return;
+    }
     if (ateButton) {
       const food = state.foods.find((item) => item.id === Number(ateButton.dataset.ate));
       if (food) logFood(food);
     } else if (card) {
-      window.selectFoodOnMap?.(card.dataset.foodId, false);
+      state.selectedStoreId = card.dataset.storeId;
+      renderFoods(state.foods);
+      window.selectFoodOnMap?.(card.dataset.storeId, false);
     }
   });
 }
@@ -507,6 +603,12 @@ window.addEventListener("saan:auth-changed", () => {
   restorePreferences();
   renderHabitStrip();
   renderFoods(state.foods);
+});
+
+window.addEventListener("saan:store-open", (event) => {
+  state.selectedStoreId = event.detail?.storeId || null;
+  renderFoods(state.foods);
+  window.selectFoodOnMap?.(state.selectedStoreId, true);
 });
 
 document.addEventListener("DOMContentLoaded", async () => {

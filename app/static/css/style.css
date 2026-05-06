@@ -938,6 +938,91 @@ input[type="range"] {
   gap: 8px;
 }
 
+.card-actions .secondary-button {
+  min-height: 36px;
+  padding-inline: 12px;
+  font-size: 0.68rem;
+}
+
+.store-card.open {
+  min-height: 0;
+}
+
+.store-menu {
+  display: grid;
+  gap: 8px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.store-menu[hidden] {
+  display: none;
+}
+
+.menu-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 9px;
+  background: rgba(0, 138, 84, 0.1);
+}
+
+.menu-item strong {
+  display: block;
+  color: var(--ink);
+  font-family: Outfit, Inter, sans-serif;
+  font-size: 0.78rem;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.menu-item p {
+  display: -webkit-box;
+  margin: 3px 0 0;
+  overflow: hidden;
+  color: #4f726b;
+  font-size: 0.64rem;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.menu-item > span {
+  color: var(--green);
+  font-size: 0.68rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.menu-item .icon-button {
+  width: 34px;
+  min-height: 34px;
+}
+
+.store-save-dot {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--green);
+  background: var(--white);
+}
+
+.store-save-dot.active {
+  color: var(--white);
+  background: var(--green);
+}
+
+.store-save-dot svg {
+  width: 17px;
+  height: 17px;
+}
+
 .bookmark {
   flex: 0 0 auto;
   color: var(--green);
