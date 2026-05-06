@@ -494,21 +494,6 @@ h3 {
   gap: 8px;
 }
 
-.filter-toggle {
-  display: none;
-  width: auto;
-  min-width: 0;
-  gap: 6px;
-  padding-inline: 12px;
-  border-radius: 999px;
-}
-
-.filter-toggle span {
-  font-size: 0.68rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
 .filters {
   display: grid;
   gap: 16px;
@@ -3788,20 +3773,6 @@ body.menu-detail-open {
   .filter-panel {
     padding: 12px;
     border-radius: 8px;
-  }
-
-  .filter-toggle {
-    display: inline-flex;
-  }
-
-  .filter-panel.is-collapsed .filters {
-    display: none;
-  }
-
-  .filter-panel.is-collapsed {
-    position: sticky;
-    top: 8px;
-    z-index: 20;
   }
 
   .filter-panel.is-collapsed .panel-title h1 {

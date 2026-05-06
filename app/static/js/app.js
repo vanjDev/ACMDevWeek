@@ -1226,35 +1226,7 @@ function restorePreferences() {
   updateFavoriteTypesButton();
 }
 
-function setupFilterToggle() {
-  const panel = document.querySelector(".filter-panel");
-  const button = document.getElementById("toggleFilters");
-  if (!panel || !button) return;
-
-  const compactQuery = window.matchMedia("(max-width: 860px)");
-  const setCollapsed = (collapsed) => {
-    panel.classList.toggle("is-collapsed", collapsed);
-    button.setAttribute("aria-expanded", String(!collapsed));
-    button.setAttribute("aria-label", collapsed ? "Show filters" : "Hide filters");
-    button.title = collapsed ? "Show filters" : "Hide filters";
-    button.innerHTML = collapsed
-      ? `<i data-lucide="panel-left-open"></i><span>Show filters</span>`
-      : `<i data-lucide="panel-left-close"></i><span>Hide filters</span>`;
-    if (window.lucide) window.lucide.createIcons();
-  };
-  const syncForViewport = () => setCollapsed(compactQuery.matches);
-
-  syncForViewport();
-  compactQuery.addEventListener?.("change", syncForViewport);
-  button.addEventListener("click", () => {
-    setCollapsed(!panel.classList.contains("is-collapsed"));
-    if (window.lucide) window.lucide.createIcons();
-  });
-}
-
 function setupFilters() {
-  setupFilterToggle();
-
   document.querySelectorAll(".chip").forEach((chip) => {
     chip.setAttribute("aria-pressed", String(chip.classList.contains("active")));
     chip.addEventListener("click", () => {

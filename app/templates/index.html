@@ -30,10 +30,6 @@
     <div class="panel-title">
       <h1>Saan tayo kakain?</h1>
       <div class="panel-title-actions">
-        <button id="toggleFilters" class="filter-toggle icon-button" type="button" aria-expanded="true" aria-controls="filters" aria-label="Hide filters" title="Show or hide filters">
-          <i data-lucide="panel-left-close"></i>
-          <span>Hide filters</span>
-        </button>
         <button id="resetFilters" class="icon-button" type="button" aria-label="Reset filters" title="Reset filters">
           <i data-lucide="rotate-ccw"></i>
         </button>
@@ -362,6 +358,6 @@
   window.SAAN_CAMPUSES = {{ campuses | tojson }};
 </script>
 <script src="{{ url_for('static', path='/js/map.js') }}?v=pedestrian-graph-20260506"></script>
-<script src="{{ url_for('static', path='/js/app.js') }}?v=filter-toggle-label-20260506"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}?v=filter-toggle-removed-20260506"></script>
 <script src="{{ url_for('static', path='/js/pickforme.js') }}?v=price-emphasis-20260506"></script>
 {% endblock %}
