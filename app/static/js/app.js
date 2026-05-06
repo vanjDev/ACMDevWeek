@@ -562,7 +562,10 @@ function storeCardTemplate(store) {
           <span><small>Rating</small>${store.rating.toFixed(1)}</span>
         </div>
         <div class="card-actions">
-          <span class="pill">PHP ${store.price_min}-${store.price_max}</span>
+          <span class="pill price-pill">
+            <small>Price</small>
+            <strong>PHP ${store.price_min}-${store.price_max}</strong>
+          </span>
           <button class="secondary-button compact-button" type="button" data-store-toggle="${store.id}" aria-expanded="${isOpen}" aria-label="${isOpen ? "Hide menu for" : "View menu for"} ${store.name}">
             <i data-lucide="${isOpen ? "panel-right-open" : "utensils"}"></i>
             ${isOpen ? "Viewing" : "View menu"}

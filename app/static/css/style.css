@@ -1200,17 +1200,18 @@ input[type="range"] {
 .food-frames {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 4px;
 }
 
 .food-frames span {
   border-radius: 999px;
-  padding: 5px 8px;
+  padding: 3px 7px;
   color: var(--green);
   background: rgba(0, 138, 84, 0.14);
-  font-size: 0.6rem;
+  font-size: 0.53rem;
   font-weight: 900;
   text-transform: uppercase;
+  letter-spacing: 0;
 }
 
 .food-frames .warning-frame {
@@ -1252,6 +1253,31 @@ input[type="range"] {
   font-weight: 900;
 }
 
+.price-pill {
+  min-width: 96px;
+  display: grid;
+  gap: 1px;
+  justify-items: start;
+  padding: 8px 12px 9px;
+  background: linear-gradient(135deg, #00a664 0%, #007845 100%);
+  box-shadow: inset 0 -3px 0 rgba(246, 241, 231, 0.16), 0 10px 18px rgba(0, 138, 84, 0.22);
+}
+
+.price-pill small {
+  color: rgba(246, 241, 231, 0.78);
+  font-size: 0.52rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.price-pill strong {
+  color: var(--white);
+  font-family: Outfit, Inter, sans-serif;
+  font-size: 0.96rem;
+  line-height: 0.95;
+  letter-spacing: 0;
+}
+
 .card-actions {
   justify-content: space-between;
   gap: 8px;
@@ -1261,6 +1287,10 @@ input[type="range"] {
   min-height: 36px;
   padding-inline: 12px;
   font-size: 0.72rem;
+}
+
+.card-actions .secondary-button.compact-button {
+  flex: 1 1 auto;
 }
 
 .store-menu {
@@ -3211,8 +3241,8 @@ body.menu-detail-open {
   }
 
   .food-frames span {
-    padding: 4px 7px;
-    font-size: 0.56rem;
+    padding: 3px 6px;
+    font-size: 0.5rem;
   }
 
   .food-frames span:nth-child(n + 4) {
@@ -3231,6 +3261,19 @@ body.menu-detail-open {
   .pill {
     padding: 6px 8px;
     font-size: 0.62rem;
+  }
+
+  .price-pill {
+    min-width: 82px;
+    padding: 7px 10px 8px;
+  }
+
+  .price-pill small {
+    font-size: 0.48rem;
+  }
+
+  .price-pill strong {
+    font-size: 0.82rem;
   }
 
   .card-actions {

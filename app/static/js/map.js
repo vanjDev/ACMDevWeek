@@ -1,7 +1,7 @@
 const MAP_ANCHORS = [
   { key: "feu_tech", label: "FEU Tech", lat: 14.6042, lng: 120.9882 },
   { key: "feu_manila", label: "FEU Manila", lat: 14.6033, lng: 120.9892 },
-  { key: "enb", label: "Engineering", lat: 14.6047, lng: 120.9885 },
+  { key: "enb", label: "ENB", lat: 14.60417, lng: 120.98722 },
 ];
 
 const ROUTE_API = "https://router.project-osrm.org/route/v1/foot";
