@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import FoodSpot, SavedFood, User
+from app.models import FoodSpot, SavedFood, User, UserPreference
 from app.schemas import (
     AuthRequest,
     AuthResponse,
@@ -14,6 +14,7 @@ from app.schemas import (
     TimerRecommendation,
     TimerRequest,
     TimerResponse,
+    UserDataPayload,
     UserResponse,
 )
 from app.services.auth_service import (
@@ -126,6 +127,24 @@ def save_bookmarks(payload: BookmarkPayload, user: User = Depends(require_user),
     return {"food_ids": [food_id for food_id in food_ids if food_id in valid_ids]}
 
 
+@router.get("/me/data")
+def read_user_data(user: User = Depends(require_user), db: Session = Depends(get_db)):
+    preference = db.query(UserPreference).filter(UserPreference.user_id == user.id).first()
+    return {"data": preference.data if preference else {}}
+
+
+@router.put("/me/data")
+def save_user_data(payload: UserDataPayload, user: User = Depends(require_user), db: Session = Depends(get_db)):
+    preference = db.query(UserPreference).filter(UserPreference.user_id == user.id).first()
+    if preference:
+        preference.data = payload.data
+    else:
+        preference = UserPreference(user_id=user.id, data=payload.data)
+        db.add(preference)
+    db.commit()
+    return {"data": preference.data}
+
+
 @router.get("/foods")
 def list_foods(
     budget_min: int | None = None,
@@ -135,6 +154,9 @@ def list_foods(
     dish: str | None = None,
     dining: str | None = None,
     weather: str | None = None,
+    feature: str | None = None,
+    time_max: int | None = Query(default=None, ge=10, le=180),
+    meal_minutes: int = Query(default=20, ge=5, le=90),
     avoid_ids: str | None = None,
     area: str | None = None,
     q: str | None = None,
@@ -144,7 +166,26 @@ def list_foods(
     limit: int = Query(default=100, ge=1, le=250),
     db: Session = Depends(get_db),
 ):
-    return filter_foods(db, budget_min, budget_max, category, mood, area, q, dish, dining, weather, avoid_ids, campus, radius, sort, limit)
+    return filter_foods(
+        db,
+        budget_min,
+        budget_max,
+        category,
+        mood,
+        area,
+        q,
+        dish,
+        dining,
+        weather,
+        avoid_ids,
+        campus,
+        radius,
+        sort,
+        limit,
+        feature,
+        time_max,
+        meal_minutes,
+    )
 
 
 @router.get("/foods/random")
@@ -156,6 +197,9 @@ def pick_random_food(
     dish: str | None = None,
     dining: str | None = None,
     weather: str | None = None,
+    feature: str | None = None,
+    time_max: int | None = Query(default=None, ge=10, le=180),
+    meal_minutes: int = Query(default=20, ge=5, le=90),
     avoid_ids: str | None = None,
     area: str | None = None,
     q: str | None = None,
@@ -173,6 +217,9 @@ def pick_random_food(
         dish=dish,
         dining=dining,
         weather=weather,
+        feature=feature,
+        time_max=time_max,
+        meal_minutes=meal_minutes,
         avoid_ids=avoid_ids,
         area=area,
         q=q,

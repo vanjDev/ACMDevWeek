@@ -24,6 +24,9 @@ BEEF_TERMS = ("beef", "pares", "tapa", "tapsilog", "burger steak", "shawarma")
 HOT_WEATHER_TERMS = ("iced", "milk tea", "soda", "fruit", "fries", "takoyaki", "corn dog")
 RAINY_WEATHER_TERMS = ("mami", "pares", "coffee", "americano", "rice", "lugaw", "noodles", "canton")
 SHAREABLE_TERMS = ("unli", "wings", "nachos", "takoyaki", "fries", "balls")
+AIRCON_TERMS = ("canteen", "coffee", "cafe", "milk tea", "mcdonald", "jollibee")
+STUDY_TERMS = ("coffee", "cafe", "study", "quiet", "drinks")
+OPEN_LATE_TERMS = ("late", "24", "mcdonald", "jollibee", "pares", "street")
 
 
 def _haystack(food: FoodSpot | FoodSpotResponse) -> str:
@@ -75,6 +78,13 @@ def _dining_matches(food: FoodSpotResponse, dining: str | None) -> bool:
     return True
 
 
+def _feature_matches(food: FoodSpotResponse, features: list[str]) -> bool:
+    if not features:
+        return True
+    tags = set(food.feature_tags)
+    return all(feature in tags for feature in features)
+
+
 def serialize_food(food: FoodSpot, campus: str = "feu_tech") -> FoodSpotResponse:
     lat, lng = campus_coordinates(campus)
     distance = haversine_meters(lat, lng, food.latitude, food.longitude)
@@ -118,6 +128,21 @@ def serialize_food(food: FoodSpot, campus: str = "feu_tech") -> FoodSpotResponse
         weather_tags.append("rainy_day")
     data.weather_tags = weather_tags
     data.shareable = food.mood == "group_meal" or _matches_any(food, SHAREABLE_TERMS)
+
+    feature_tags: list[str] = []
+    if data.walking_minutes is not None and data.walking_minutes <= 5:
+        feature_tags.append("quick")
+    if food.price_max <= 100:
+        feature_tags.append("budget")
+    if data.shareable or food.mood in {"group_meal", "chill_hangout"}:
+        feature_tags.append("group")
+    if food.mood == "study_fuel" or _matches_any(food, STUDY_TERMS):
+        feature_tags.append("study")
+    if food.area == "inside_campus" or _matches_any(food, AIRCON_TERMS):
+        feature_tags.append("aircon")
+    if food.mood == "late_night" or _matches_any(food, OPEN_LATE_TERMS):
+        feature_tags.append("open_late")
+    data.feature_tags = feature_tags
     return data
 
 
@@ -137,6 +162,9 @@ def filter_foods(
     radius: int | None = None,
     sort: str = "distance",
     limit: int = 50,
+    feature: str | None = None,
+    time_max: int | None = None,
+    meal_minutes: int = 20,
 ) -> list[FoodSpotResponse]:
     query = _base_query()
 
@@ -187,6 +215,17 @@ def filter_foods(
 
     if weather:
         foods = [food for food in foods if _weather_matches(food, weather)]
+
+    features = _split_csv(feature)
+    if features:
+        foods = [food for food in foods if _feature_matches(food, features)]
+
+    if time_max:
+        foods = [
+            food
+            for food in foods
+            if ((food.walking_minutes or 0) * 2 + meal_minutes) <= time_max
+        ]
 
     if sort == "price":
         foods.sort(key=lambda food: (food.price_min, food.price_max))

@@ -7,21 +7,24 @@
     <meta name="description" content="Find student-friendly food near FEU Tech and FEU Manila.">
     <meta property="og:title" content="{{ app_name }} - {{ title }}">
     <meta property="og:description" content="A food decision tool for FEU students.">
+    <link rel="icon" href="{{ url_for('static', path='/img/saan-mark.svg') }}" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}?v=zoomedmap-20260506">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}?v=logo-20260506">
   </head>
   <body>
     <header class="site-header">
       <a class="brand" href="/">
-        <span class="brand-mark">S</span>
+        <span class="brand-mark">
+          <img src="{{ url_for('static', path='/img/saan-mark.svg') }}" alt="">
+        </span>
         <span>Saan?</span>
       </a>
       <nav class="nav-links" aria-label="Main navigation">
         <a class="active" href="/">Home</a>
         <a href="/timer">Timer</a>
-        <a href="/about">Credits</a>
+        <a href="/about">About</a>
       </nav>
       <div class="auth-controls">
         <span id="authStatus">Guest mode</span>
@@ -80,7 +83,7 @@
     </dialog>
 
     <footer class="site-footer">
-      <strong>Saan?</strong>
+      <img class="footer-logo" src="{{ url_for('static', path='/img/saan-logo.svg') }}" alt="Saan?">
       <span>FEU Tech and Morayta food finder</span>
     </footer>
 

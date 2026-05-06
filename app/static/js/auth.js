@@ -1,6 +1,7 @@
 const SaanAuth = {
   user: null,
   bookmarks: null,
+  data: null,
   ready: null,
 };
 
@@ -10,6 +11,18 @@ function readGuestBookmarks() {
 
 function writeGuestBookmarks(ids) {
   localStorage.setItem("saanBookmarks", JSON.stringify([...new Set(ids)]));
+}
+
+function readGuestData() {
+  try {
+    return JSON.parse(localStorage.getItem("saanUserData") || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function writeGuestData(data) {
+  localStorage.setItem("saanUserData", JSON.stringify(data || {}));
 }
 
 async function authFetch(url, options = {}) {
@@ -38,6 +51,23 @@ async function saveAccountBookmarks(ids) {
   SaanAuth.bookmarks = data.food_ids;
   writeGuestBookmarks(data.food_ids);
   return data.food_ids;
+}
+
+async function saveAccountData(data) {
+  const next = { ...(data || {}) };
+  writeGuestData(next);
+  if (!SaanAuth.user) {
+    SaanAuth.data = next;
+    return next;
+  }
+
+  const response = await authFetch("/api/me/data", {
+    method: "PUT",
+    body: JSON.stringify({ data: next }),
+  });
+  SaanAuth.data = response.data;
+  writeGuestData(response.data);
+  return response.data;
 }
 
 async function handleGoogleCredential(response) {
@@ -111,12 +141,16 @@ async function refreshAuth({ mergeGuest = false } = {}) {
     const session = await authFetch("/api/auth/me");
     SaanAuth.user = session.user;
     const saved = await authFetch("/api/me/bookmarks");
+    const accountData = await authFetch("/api/me/data");
     const merged = mergeGuest ? [...saved.food_ids, ...readGuestBookmarks()] : saved.food_ids;
     SaanAuth.bookmarks = [...new Set(merged)];
+    SaanAuth.data = mergeGuest ? { ...accountData.data, ...readGuestData() } : accountData.data;
     if (mergeGuest) await saveAccountBookmarks(SaanAuth.bookmarks);
+    if (mergeGuest) await saveAccountData(SaanAuth.data);
   } catch {
     SaanAuth.user = null;
     SaanAuth.bookmarks = null;
+    SaanAuth.data = readGuestData();
   }
 
   updateAuthUi();
@@ -151,6 +185,7 @@ function setupAuthControls() {
     await authFetch("/api/auth/logout", { method: "POST", body: "{}" });
     SaanAuth.user = null;
     SaanAuth.bookmarks = null;
+    SaanAuth.data = readGuestData();
     updateAuthUi();
     window.dispatchEvent(new CustomEvent("saan:auth-changed"));
   });
@@ -185,6 +220,8 @@ function setupAuthControls() {
 
 SaanAuth.getBookmarks = () => (SaanAuth.user ? SaanAuth.bookmarks || [] : readGuestBookmarks());
 SaanAuth.setBookmarks = saveAccountBookmarks;
+SaanAuth.getData = () => SaanAuth.data || readGuestData();
+SaanAuth.setData = saveAccountData;
 SaanAuth.ready = refreshAuth();
 window.SaanAuth = SaanAuth;
 

@@ -1,16 +1,24 @@
 # Saan?
 
-Food decision tool for FEU Tech and FEU Manila students who keep asking, "Saan tayo kakain?"
+Saan? is a simple food finder for FEU Tech and FEU Manila students. It helps users decide where to eat around Morayta based on their budget, cravings, mood, distance, and available class break time.
 
-The app filters nearby food spots by budget, area, food type, mood, radius, and campus. It also includes a Leaflet map, bookmark storage in `localStorage`, a random "Pick for Me" button, and a "Can I Make It?" timer for class-break planning.
+## What The System Does
+
+- Shows nearby food spots around FEU Tech and FEU Manila
+- Filters food places by budget, campus, area, category, mood, and distance
+- Displays locations on an interactive map
+- Lets users bookmark food spots
+- Randomly suggests a place through the "Pick for Me" feature
+- Checks if a student can make it back on time using the "Can I Make It?" timer
+- Supports guest use, email/password accounts, and optional Google sign in
 
 ## Tech Stack
 
-- FastAPI and Uvicorn
-- Jinja2 server-rendered pages
-- SQLite with SQLAlchemy
-- Vanilla JavaScript and CSS
-- Leaflet with OpenStreetMap tiles
+- Backend: FastAPI with Uvicorn
+- Frontend: Jinja2 templates, vanilla JavaScript, HTML, and CSS
+- Database: SQLite with SQLAlchemy
+- Map: Leaflet with OpenStreetMap
+- Authentication: Email/password login with optional Google Sign-In
 
 ## Setup
 

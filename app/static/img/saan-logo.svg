@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 430 128" role="img" aria-labelledby="title desc">
+  <title id="title">Saan? logo</title>
+  <desc id="desc">Saan wordmark with a Tamaraw-inspired green and yellow logo mark.</desc>
+  <defs>
+    <linearGradient id="plate" x1="14" y1="10" x2="114" y2="120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f6f1e7"/>
+      <stop offset="1" stop-color="#dff8ed"/>
+    </linearGradient>
+    <linearGradient id="face" x1="40" y1="26" x2="86" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffdf35"/>
+      <stop offset="1" stop-color="#f7c900"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <circle cx="64" cy="64" r="60" fill="#041f1d"/>
+    <circle cx="64" cy="64" r="52" fill="url(#plate)"/>
+    <path d="M37 18c-15 18-20 42-16 66 3 16 10 27 21 34-6-20 0-34 11-48-16-14-21-32-16-52Z" fill="#006b2f"/>
+    <path d="M91 18c15 18 20 42 16 66-3 16-10 27-21 34 6-20 0-34-11-48 16-14 21-32 16-52Z" fill="#006b2f"/>
+    <path d="M45 34c5 22 14 34 28 43 13-9 22-21 28-43-1 31-9 48-24 62l-4 13c-1 4-7 4-8 0l-4-13C46 82 38 65 45 34Z" fill="url(#face)"/>
+    <path d="M42 64c8 1 14 5 17 13-10 1-17-3-17-13Z" fill="#f6f1e7"/>
+    <path d="M86 64c-8 1-14 5-17 13 10 1 17-3 17-13Z" fill="#f6f1e7"/>
+    <path d="M47 84c11 5 19 13 23 26-8-11-17-16-26-22l3-4Z" fill="#006b2f"/>
+    <path d="M81 84c-11 5-19 13-23 26 8-11 17-16 26-22l-3-4Z" fill="#006b2f"/>
+    <path d="M57 99h14l2 12c-4 5-14 5-18 0l2-12Z" fill="#006b2f"/>
+    <circle cx="92" cy="35" r="19" fill="#008a54"/>
+    <text x="92" y="44" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="900" fill="#f6f1e7">?</text>
+  </g>
+  <text x="148" y="70" font-family="Outfit, Inter, Arial, sans-serif" font-size="58" font-weight="900" fill="#f6f1e7">Saan?</text>
+  <text x="150" y="96" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="800" letter-spacing="1.6" fill="#dff8ed">FEU FOOD FINDER</text>
+  <path d="M149 106h194" stroke="#008a54" stroke-width="8" stroke-linecap="round"/>
+  <path d="M352 106h24" stroke="#ffdf35" stroke-width="8" stroke-linecap="round"/>
+</svg>

@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 
@@ -20,6 +22,7 @@ class FoodSpotResponse(BaseModel):
     diet_tags: list[str] = Field(default_factory=list)
     frames: list[str] = Field(default_factory=list)
     weather_tags: list[str] = Field(default_factory=list)
+    feature_tags: list[str] = Field(default_factory=list)
     shareable: bool = False
 
     model_config = {"from_attributes": True}
@@ -72,3 +75,7 @@ class GoogleAuthRequest(BaseModel):
 
 class BookmarkPayload(BaseModel):
     food_ids: list[int] = Field(default_factory=list)
+
+
+class UserDataPayload(BaseModel):
+    data: dict[str, Any] = Field(default_factory=dict)

@@ -3,6 +3,7 @@ const state = {
   showingBookmarks: false,
   visibleLimit: 12,
   weatherMode: "auto",
+  isLoading: false,
 };
 
 const DEFAULT_RADIUS = 1200;
@@ -34,6 +35,8 @@ function selectedValues(filterName) {
 
 function getJson(key, fallback) {
   try {
+    const synced = window.SaanAuth?.getData?.() || {};
+    if (Object.prototype.hasOwnProperty.call(synced, key)) return synced[key];
     return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
   } catch {
     return fallback;
@@ -42,6 +45,29 @@ function getJson(key, fallback) {
 
 function setJson(key, value) {
   localStorage.setItem(key, JSON.stringify(value));
+  const data = { ...(window.SaanAuth?.getData?.() || {}) };
+  data[key] = value;
+  updateSaveStatus("Saving...");
+  window.SaanAuth?.setData?.(data)
+    .then(() => updateSaveStatus())
+    .catch(() => showToast("Could not sync saved data. Keeping it on this device."));
+}
+
+function showToast(message) {
+  const toast = document.getElementById("toast");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.hidden = false;
+  window.clearTimeout(showToast.timer);
+  showToast.timer = window.setTimeout(() => {
+    toast.hidden = true;
+  }, 2600);
+}
+
+function updateSaveStatus(label = null) {
+  const status = document.getElementById("saveStatus");
+  if (!status) return;
+  status.textContent = label || (window.SaanAuth?.user ? "Syncing saves to your account" : "Guest saves stay on this device");
 }
 
 function getHistory() {
@@ -94,8 +120,11 @@ function buildParams() {
   const area = document.getElementById("area").value;
   const q = document.getElementById("foodSearch").value.trim();
   const dining = selectedValues("dining")[0];
+  const features = selectedValues("feature");
   const weather = state.weatherMode || document.getElementById("weather").value;
   const antiRepeat = antiRepeatIds();
+  const timeMax = document.getElementById("timeAvailable").value;
+  const mealMinutes = document.getElementById("mealMinutes").value;
 
   params.set("campus", document.getElementById("campus").value);
   params.set("radius", String(DEFAULT_RADIUS));
@@ -110,8 +139,11 @@ function buildParams() {
   }
   if (area && area !== "all") params.set("area", area);
   if (dining) params.set("dining", dining);
+  if (features.length) params.set("feature", features.join(","));
   if (weather && weather !== "any") params.set("weather", weather);
   if (antiRepeat.length) params.set("avoid_ids", antiRepeat.join(","));
+  if (timeMax) params.set("time_max", timeMax);
+  if (mealMinutes) params.set("meal_minutes", mealMinutes);
 
   const categories = selectedValues("category");
   const moods = effectiveMoodValues();
@@ -171,6 +203,7 @@ function cardTemplate(food) {
   const image = food.image_url || categoryImages[food.category] || categoryImages.snacks;
   const frames = foodFrames(food);
   const dietTags = food.diet_tags || [];
+  const featureTags = food.feature_tags || [];
   return `
     <article class="food-card" data-food-id="${food.id}">
       <div class="food-image">
@@ -186,6 +219,8 @@ function cardTemplate(food) {
           ${frames.map((frame) => `<span>${frame}</span>`).join("")}
           ${dietTags.includes("pork") ? `<span class="warning-frame">Pork</span>` : ""}
           ${dietTags.includes("halal_friendly") ? `<span class="halal-frame">Halal-friendly</span>` : ""}
+          ${featureTags.includes("open_late") ? `<span>Open late</span>` : ""}
+          ${featureTags.includes("aircon") ? `<span>Aircon</span>` : ""}
         </div>
         <div class="food-meta">
           <span><small>Price</small>PHP ${food.price_min}-${food.price_max}</span>
@@ -231,6 +266,12 @@ function applyClientRanking(foods) {
 
 function renderFoods(foods) {
   const results = document.getElementById("results");
+  if (state.isLoading) {
+    results.innerHTML = Array.from({ length: 6 }, () => `<div class="food-card skeleton-card"></div>`).join("");
+    document.getElementById("resultCount").textContent = "Loading...";
+    return;
+  }
+
   const ranked = applyClientRanking(foods);
   const visible = state.showingBookmarks
     ? ranked.filter((food) => getBookmarks().includes(food.id))
@@ -239,7 +280,7 @@ function renderFoods(foods) {
 
   results.innerHTML = paged.length
     ? paged.map(cardTemplate).join("")
-    : `<div class="pick-result"><h2>No matches yet</h2><p>Adjust the filters, budget, or anti-repeat setting.</p></div>`;
+    : `<div class="pick-result"><h2>No matches yet</h2><p>Adjust the filters, time window, budget, or anti-repeat setting.</p></div>`;
 
   document.getElementById("resultCount").textContent = `${Math.min(state.visibleLimit, visible.length)} of ${visible.length} spot${visible.length === 1 ? "" : "s"}`;
   const loadMore = document.getElementById("loadMore");
@@ -251,9 +292,18 @@ function renderFoods(foods) {
 
 async function loadFoods() {
   const params = buildParams();
-  const response = await fetch(`/api/foods?${params.toString()}`);
-  state.foods = await response.json();
+  state.isLoading = true;
   renderFoods(state.foods);
+  try {
+    const response = await fetch(`/api/foods?${params.toString()}`);
+    if (!response.ok) throw new Error("Food list failed to load.");
+    state.foods = await response.json();
+  } catch {
+    showToast("Could not load food spots. Check the server and try again.");
+  } finally {
+    state.isLoading = false;
+    renderFoods(state.foods);
+  }
 }
 
 function logFood(food) {
@@ -293,6 +343,7 @@ function renderHabitStrip() {
   const history = getHistory();
   document.getElementById("streakCount").textContent = `${streakDays()} day${streakDays() === 1 ? "" : "s"}`;
   document.getElementById("lastAte").textContent = history[0] ? `${history[0].name} at ${history[0].restaurant}` : "Nothing logged yet";
+  updateSaveStatus();
 }
 
 function updateBudgetInsight(food = null) {
@@ -319,6 +370,8 @@ function restorePreferences() {
   const budget = getBudgetState();
   document.getElementById("weeklyBudget").value = budget.weekly || "";
   document.getElementById("weeklySpent").value = budget.spent || "";
+  document.getElementById("timeAvailable").value = getJson("saanTimeAvailable", "");
+  document.getElementById("mealMinutes").value = getJson("saanMealMinutes", "20");
   getJson(FAVORITES_KEY, []).forEach((category) => {
     document.querySelector(`[data-filter="category"] [data-value="${category}"]`)?.classList.add("active");
   });
@@ -343,9 +396,11 @@ function setupFilters() {
     });
   });
 
-  ["campus", "budget", "area", "sort", "weather", "antiRepeat"].forEach((id) => {
+  ["campus", "budget", "area", "sort", "weather", "antiRepeat", "timeAvailable", "mealMinutes"].forEach((id) => {
     document.getElementById(id).addEventListener("change", () => {
       state.weatherMode = document.getElementById("weather").value;
+      if (id === "timeAvailable") setJson("saanTimeAvailable", document.getElementById("timeAvailable").value);
+      if (id === "mealMinutes") setJson("saanMealMinutes", document.getElementById("mealMinutes").value);
       state.showingBookmarks = false;
       state.visibleLimit = 12;
       loadFoods();
@@ -409,6 +464,7 @@ function setupFilters() {
       const bookmarks = getBookmarks();
       const next = bookmarks.includes(id) ? bookmarks.filter((item) => item !== id) : [...bookmarks, id];
       await setBookmarks(next);
+      showToast(next.includes(id) ? "Saved to bookmarks." : "Removed from bookmarks.");
       renderFoods(state.foods);
     }
     if (ateButton) {
@@ -437,7 +493,11 @@ async function detectWeather() {
   }
 }
 
-window.addEventListener("saan:auth-changed", () => renderFoods(state.foods));
+window.addEventListener("saan:auth-changed", () => {
+  restorePreferences();
+  renderHabitStrip();
+  renderFoods(state.foods);
+});
 
 document.addEventListener("DOMContentLoaded", async () => {
   await window.SaanAuth?.ready;
