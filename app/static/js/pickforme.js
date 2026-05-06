@@ -4,27 +4,38 @@ function currentStoresForWheel() {
 }
 
 function wheelSegments(stores) {
-  const labels = stores.length ? stores : [{ name: "Thinking..." }];
+  const labels = stores.length ? stores.slice(0, 8) : [{ name: "Ready?" }];
   return labels.map((store, index) => `
-    <span style="--i:${index};--total:${labels.length};">${store.name}</span>
+    <span style="--i:${index};--total:${labels.length};"><em>${index + 1}</em></span>
   `).join("");
 }
 
-function showWheelPanel(stores) {
+function showWheelPanel(stores, mode = "ready") {
   const panel = document.getElementById("pickResult");
   panel.hidden = false;
   panel.innerHTML = `
     <div class="wheel-layout">
-      <div class="pick-wheel" style="--segments:${Math.max(stores.length, 1)};">
+      <div class="pick-wheel ${mode === "spinning" ? "spinning" : ""}" style="--segments:${Math.max(stores.length, 1)};">
         ${wheelSegments(stores)}
         <strong>Saan?</strong>
       </div>
       <div class="wheel-copy">
-        <span>Randomizer</span>
-        <h2>Spinning...</h2>
-        <p>Checking your current filters and nearby FEU shops.</p>
+        <span>${mode === "spinning" ? "Randomizer" : "Undecided?"}</span>
+        <h2>${mode === "spinning" ? "Spinning..." : "Ready to pick?"}</h2>
+        <p>${mode === "spinning" ? "Checking your current filters and nearby FEU stores." : "Your filters are set. Press start when you want Saan? to choose."}</p>
+      </div>
+      <div class="wheel-store-list" aria-label="Stores in the randomizer">
+        ${stores.slice(0, 6).map((store, index) => `<span>${index + 1}. ${store.name}</span>`).join("")}
       </div>
     </div>
+    ${mode === "ready" ? `
+      <div class="wheel-actions">
+        <button id="startPickForMe" class="primary-button compact-button" type="button">
+          <i data-lucide="play"></i>
+          Start picking
+        </button>
+      </div>
+    ` : ""}
   `;
   if (window.lucide) window.lucide.createIcons();
   return panel;
@@ -55,8 +66,7 @@ async function pickForMe() {
   });
 
   const stores = currentStoresForWheel();
-  const panel = showWheelPanel(stores);
-  panel.scrollIntoView({ behavior: "smooth", block: "center" });
+  const panel = showWheelPanel(stores, "spinning");
 
   const wheel = panel.querySelector(".pick-wheel");
   const heading = panel.querySelector(".wheel-copy h2");
@@ -111,9 +121,17 @@ async function pickForMe() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.getElementById("pickForMe")?.addEventListener("click", pickForMe);
-  document.getElementById("footerPickForMe")?.addEventListener("click", pickForMe);
+  const openPicker = () => {
+    const panel = showWheelPanel(currentStoresForWheel(), "ready");
+    panel.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+  document.getElementById("pickForMe")?.addEventListener("click", openPicker);
+  document.getElementById("footerPickForMe")?.addEventListener("click", openPicker);
   document.getElementById("pickResult")?.addEventListener("click", (event) => {
+    if (event.target.closest("#startPickForMe")) {
+      pickForMe();
+      return;
+    }
     const ateButton = event.target.closest("[data-picked-ate]");
     const storeButton = event.target.closest("[data-picked-store]");
     if (ateButton) {

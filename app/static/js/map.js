@@ -6,15 +6,19 @@ const MAP_BOUNDS = {
 };
 
 const MAP_ANCHORS = [
-  { key: "feu_tech", label: "FEU Tech", lat: 14.6042, lng: 120.9882 },
-  { key: "feu_manila", label: "FEU Manila", lat: 14.6033, lng: 120.9892 },
-  { key: "enb", label: "ENB", lat: 14.6047, lng: 120.9885 },
+  { key: "feu_tech", label: "FEU Tech", lat: 14.6042, lng: 120.9882, x: 18, y: 73 },
+  { key: "feu_manila", label: "FEU Manila", lat: 14.6033, lng: 120.9892, x: 44, y: 42 },
+  { key: "enb", label: "Engineering", lat: 14.6047, lng: 120.9885, x: 57, y: 38 },
 ];
 
 const MAP_ROADS = [
-  { className: "road-morayta", label: "Morayta", note: "main food strip" },
-  { className: "road-lerma", label: "Lerma", note: "quick walk" },
-  { className: "road-campa", label: "P. Campa", note: "budget row" },
+  { className: "road-quezon-west", label: "Quezon Blvd." },
+  { className: "road-quezon-east", label: "Quezon Blvd." },
+  { className: "road-recto", label: "Claro M. Recto" },
+  { className: "road-nicanor", label: "Nicanor Reyes St." },
+  { className: "road-lerma", label: "Lerma" },
+  { className: "road-paredes", label: "P. Paredes St." },
+  { className: "road-papa", label: "R. Papa St." },
 ];
 
 function clamp(value, min, max) {
@@ -27,6 +31,13 @@ function mapPoint(lat, lng) {
   return {
     x: clamp(x, 6, 94),
     y: clamp(y, 8, 92),
+  };
+}
+
+function mapAnchorPoint(anchor) {
+  return {
+    x: anchor.x ?? mapPoint(anchor.lat, anchor.lng).x,
+    y: anchor.y ?? mapPoint(anchor.lat, anchor.lng).y,
   };
 }
 
@@ -48,7 +59,7 @@ function areaClass(value = "") {
 
 function currentCampusPoint() {
   const campus = MAP_ANCHORS.find((anchor) => anchor.key === window.SaanMapCampus) || MAP_ANCHORS[0];
-  return mapPoint(campus.lat, campus.lng);
+  return mapAnchorPoint(campus);
 }
 
 function renderWalkingRoute(food = null) {
@@ -87,18 +98,22 @@ function initSaanMap() {
     <div class="map-compass" aria-hidden="true">N</div>
     <div class="walk-ring walk-ring-near"><span>3-5 min</span></div>
     <div class="walk-ring walk-ring-far"><span>8-12 min</span></div>
+    <div class="reference-landmarks" aria-hidden="true">
+      <div class="landmark landmark-isetan">Isetann<br>Recto</div>
+      <div class="landmark landmark-ever">Ever Gotesco<br>Manila</div>
+      <div class="landmark landmark-gym">FEU Gym</div>
+    </div>
+    <div class="campus-block feu-main-block" aria-hidden="true"><span>FEU Manila</span></div>
     <div class="map-roads" aria-hidden="true">
       ${MAP_ROADS.map((road) => `
         <div class="map-road ${road.className}">
           <strong>${road.label}</strong>
-          <span>${road.note}</span>
         </div>
       `).join("")}
     </div>
     <div class="map-route" id="mapRoute" hidden></div>
     <div id="mapAnchors"></div>
     <div id="mapFoodMarkers"></div>
-    <aside id="mapSelected" class="map-selected" hidden></aside>
     <div class="map-legend" aria-hidden="true">
       <span><i class="legend-campus"></i>Campus</span>
       <span><i class="legend-pin"></i>Food spot</span>
@@ -106,14 +121,15 @@ function initSaanMap() {
     </div>
     <div id="mapSummary" class="map-summary">Loading nearby stores...</div>
   `;
+  map.insertAdjacentHTML("afterend", `<aside id="mapSelected" class="map-selected" hidden></aside>`);
 
   const anchors = document.getElementById("mapAnchors");
   anchors.innerHTML = MAP_ANCHORS.map((anchor) => {
-    const point = mapPoint(anchor.lat, anchor.lng);
+    const point = mapAnchorPoint(anchor);
     return `
       <button class="map-anchor ${anchor.key}" type="button" style="left:${point.x}%;top:${point.y}%;" title="${anchor.label}">
         <span>${anchor.label}</span>
-        <small>${anchor.key === "enb" ? "landmark" : "start point"}</small>
+        <small>${anchor.key === "enb" ? "building" : "start point"}</small>
       </button>
     `;
   }).join("");

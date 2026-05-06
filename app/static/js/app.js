@@ -10,6 +10,7 @@ const state = {
 const DEFAULT_RADIUS = 1200;
 const HISTORY_KEY = "saanFoodHistory";
 const FAVORITES_KEY = "saanFavoriteTypes";
+const STORE_BOOKMARKS_KEY = "bookmarkedStores";
 const BUDGET_KEY = "saanWeeklyBudget";
 
 const categoryImages = {
@@ -135,6 +136,22 @@ async function setBookmarks(ids) {
     return;
   }
   localStorage.setItem("saanBookmarks", JSON.stringify(normalized));
+}
+
+function getStoreBookmarks() {
+  const data = window.SaanAuth ? window.SaanAuth.getData() : getJson("saanUserData", {});
+  return [...new Set((data?.[STORE_BOOKMARKS_KEY] || []).map((id) => String(id)).filter(Boolean))];
+}
+
+async function setStoreBookmarks(ids) {
+  const normalized = [...new Set((ids || []).map((id) => String(id)).filter(Boolean))];
+  const data = window.SaanAuth ? window.SaanAuth.getData() : getJson("saanUserData", {});
+  const next = { ...(data || {}), [STORE_BOOKMARKS_KEY]: normalized };
+  if (window.SaanAuth) {
+    await window.SaanAuth.setData(next);
+    return;
+  }
+  setJson("saanUserData", next);
 }
 
 function antiRepeatIds() {
@@ -291,6 +308,7 @@ function foodFrames(food) {
 
 function storeFrames(store) {
   const frames = [...(store.frames || [])];
+  if (getStoreBookmarks().includes(store.id)) frames.unshift("Favorite restaurant");
   if (store.menu.some((food) => getBookmarks().includes(food.id))) frames.unshift("Has saved item");
   if (store.menu.some((food) => antiRepeatIds().includes(food.id))) frames.unshift("Recently tried");
   if (store.feature_tags?.includes("open_late")) frames.push("Open late");
@@ -322,7 +340,8 @@ function menuItemTemplate(food) {
 
 function storeCardTemplate(store) {
   const bookmarks = getBookmarks();
-  const active = store.menu.some((food) => bookmarks.includes(food.id));
+  const hasSavedFood = store.menu.some((food) => bookmarks.includes(food.id));
+  const storeSaved = getStoreBookmarks().includes(store.id);
   const image = store.image_url || categoryImages[store.category] || categoryImages.snacks;
   const frames = storeFrames(store);
   const isOpen = state.selectedStoreId === store.id;
@@ -351,10 +370,11 @@ function storeCardTemplate(store) {
             <i data-lucide="${isOpen ? "chevron-up" : "utensils"}"></i>
             ${isOpen ? "Hide menu" : "View menu"}
           </button>
-          <span class="store-save-dot ${active ? "active" : ""}" title="${active ? "Has saved menu item" : "No saved menu items"}" aria-label="${active ? "Has saved menu item" : "No saved menu items"}">
+          <button class="store-save-dot ${storeSaved ? "active" : ""}" type="button" data-store-bookmark="${store.id}" title="${storeSaved ? "Saved restaurant" : "Save restaurant"}" aria-label="${storeSaved ? "Remove restaurant bookmark for" : "Bookmark restaurant"} ${store.name}" aria-pressed="${storeSaved}">
             <i data-lucide="heart"></i>
-          </span>
+          </button>
         </div>
+        ${hasSavedFood ? `<p class="store-saved-note">Has saved food item</p>` : ""}
         <ul class="store-menu" ${isOpen ? "" : "hidden"}>
           ${store.menu.map(menuItemTemplate).join("")}
         </ul>
@@ -394,8 +414,10 @@ function renderFoods(foods) {
   }
 
   const ranked = applyClientRanking(foods);
+  const foodBookmarks = getBookmarks();
+  const storeBookmarks = getStoreBookmarks();
   const visible = state.showingBookmarks
-    ? ranked.filter((food) => getBookmarks().includes(food.id))
+    ? ranked.filter((food) => foodBookmarks.includes(food.id) || storeBookmarks.includes(storeIdFor(food.restaurant)))
     : ranked;
   const stores = groupFoodsByStore(visible);
   const paged = stores.slice(0, state.visibleLimit);
@@ -567,8 +589,16 @@ function setupFilters() {
   });
 
   document.getElementById("clearHistory").addEventListener("click", () => {
+    const hasHistory = getHistory().length > 0;
+    if (!hasHistory) {
+      showToast("No food history to clear yet.");
+      return;
+    }
+    const confirmed = window.confirm("Clear your food history? This will reset your streak and last eaten record.");
+    if (!confirmed) return;
     saveHistory([]);
     renderFoods(state.foods);
+    showToast("Food history cleared.");
   });
 
   document.getElementById("scrollToMap").addEventListener("click", () => {
@@ -582,6 +612,7 @@ function setupFilters() {
 
   document.getElementById("results").addEventListener("click", async (event) => {
     const bookmarkButton = event.target.closest("[data-bookmark]");
+    const storeBookmarkButton = event.target.closest("[data-store-bookmark]");
     const ateButton = event.target.closest("[data-ate]");
     const toggleButton = event.target.closest("[data-store-toggle]");
     const card = event.target.closest("[data-store-id]");
@@ -592,6 +623,16 @@ function setupFilters() {
       const next = bookmarks.includes(id) ? bookmarks.filter((item) => item !== id) : [...bookmarks, id];
       await setBookmarks(next);
       showToast(next.includes(id) ? "Saved to bookmarks." : "Removed from bookmarks.");
+      renderFoods(state.foods);
+      return;
+    }
+    if (storeBookmarkButton) {
+      const id = String(storeBookmarkButton.dataset.storeBookmark || "");
+      if (!id) return;
+      const bookmarks = getStoreBookmarks();
+      const next = bookmarks.includes(id) ? bookmarks.filter((item) => item !== id) : [...bookmarks, id];
+      await setStoreBookmarks(next);
+      showToast(next.includes(id) ? "Saved restaurant." : "Removed restaurant.");
       renderFoods(state.foods);
       return;
     }
