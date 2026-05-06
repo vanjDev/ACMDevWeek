@@ -11,6 +11,7 @@ const state = {
   publicFoodRatings: {},
   ratingDraft: null,
   customComboIds: [],
+  menuFilter: "all",
 };
 
 const DEFAULT_RADIUS = 1200;
@@ -88,6 +89,14 @@ function updateFavoriteTypesButton() {
     ? `<i data-lucide="star"></i> ${count} favorite type${count === 1 ? "" : "s"} saved`
     : `<i data-lucide="star"></i> Save selected types`;
   if (window.lucide) window.lucide.createIcons();
+}
+
+function updateCategoryResetState() {
+  const resetButton = document.querySelector("[data-category-clear]");
+  if (!resetButton) return;
+  const hasActiveCategory = document.querySelectorAll('[data-filter="category"] .chip.active').length > 0;
+  resetButton.classList.toggle("active", !hasActiveCategory);
+  resetButton.setAttribute("aria-pressed", String(!hasActiveCategory));
 }
 
 function getJson(key, fallback) {
@@ -767,6 +776,26 @@ function comboRoleLabel(role) {
   }[role] || "Food";
 }
 
+function menuFilterMatches(food, filter = "all") {
+  if (filter === "all") return true;
+  return comboRole(food) === filter;
+}
+
+function menuFilterOptions(store) {
+  const roles = store.menu.reduce((counts, food) => {
+    const role = comboRole(food);
+    counts[role] = (counts[role] || 0) + 1;
+    return counts;
+  }, {});
+  return [
+    { value: "all", label: "All", icon: "layout-grid", count: store.menu.length },
+    { value: "meal", label: "Food", icon: "utensils", count: roles.meal || 0 },
+    { value: "drink", label: "Drinks", icon: "cup-soda", count: roles.drink || 0 },
+    { value: "coffee", label: "Coffee", icon: "coffee", count: roles.coffee || 0 },
+    { value: "snack", label: "Snacks", icon: "cookie", count: roles.snack || 0 },
+  ].filter((option) => option.value === "all" || option.count > 0);
+}
+
 function comboTypeFor(items) {
   const roles = items.map(comboRole);
   if (roles.includes("meal") && roles.some((role) => ["drink", "coffee"].includes(role))) return "Food + drink";
@@ -995,6 +1024,7 @@ function closeComboDialog() {
 
 function setFloatingMapOpen(open) {
   if (open) setSuggestionOpen(false);
+  if (open) setFilterPanelOpen(false);
   document.body.classList.toggle("map-helper-open", open);
   const button = document.getElementById("toggleMap");
   if (button) button.setAttribute("aria-expanded", String(open));
@@ -1007,8 +1037,19 @@ function setFloatingMapOpen(open) {
 
 function setSuggestionOpen(open) {
   if (open) setFloatingMapOpen(false);
+  if (open) setFilterPanelOpen(false);
   document.body.classList.toggle("suggestion-helper-open", open);
   const button = document.getElementById("toggleSuggestion");
+  if (button) button.setAttribute("aria-expanded", String(open));
+}
+
+function setFilterPanelOpen(open) {
+  if (open) {
+    setFloatingMapOpen(false);
+    setSuggestionOpen(false);
+  }
+  document.body.classList.toggle("filter-helper-open", open);
+  const button = document.getElementById("toggleFilters");
   if (button) button.setAttribute("aria-expanded", String(open));
 }
 
@@ -1653,11 +1694,16 @@ function menuDetailTemplate(store) {
   const breakInfo = breakDecisionFor(store);
   const nutrition = nutritionProfile(store.menu[0] || store);
   const openLabel = openStatus.isOpen ? openStatus.detail : openStatus.detail;
+  const activeFilter = menuFilterOptions(store).some((option) => option.value === state.menuFilter) ? state.menuFilter : "all";
+  const filteredMenu = store.menu.filter((food) => menuFilterMatches(food, activeFilter));
+  const cheapest = store.menu.reduce((best, food) => (food.price_min < best.price_min ? food : best), store.menu[0]);
+  const strongest = store.menu.reduce((best, food) => (nutritionProfile(food).calories > nutritionProfile(best).calories ? food : best), store.menu[0]);
+  const filterLabel = activeFilter === "all" ? "all items" : comboRoleLabel(activeFilter).toLowerCase();
   return `
     <div class="menu-detail-header">
       <img src="${foodImageFor(store)}" alt="">
-      <div>
-        <span>${formatLabel(store.area)}</span>
+      <div class="menu-detail-title">
+        <span class="menu-detail-area"><i data-lucide="map-pin"></i>${formatLabel(store.area)}</span>
         <strong>${store.name}</strong>
         <div class="menu-detail-stats">
           ${detailStatPill("utensils", "Menu", `${store.menu.length}`)}
@@ -1689,8 +1735,28 @@ function menuDetailTemplate(store) {
         ${ratingStarsTemplate({ id: store.id, type: "store", value: userRating, label: `Rate ${store.name}` })}
       </div>
     </div>
+    <div class="menu-info-grid">
+      ${detailStatPill("badge-peso", "Cheapest", cheapest ? `${cheapest.name} ${peso(cheapest.price_min)}` : "No data")}
+      ${detailStatPill("flame", "Most filling", strongest ? `${strongest.name} ${nutritionProfile(strongest).calories} cal` : "No data")}
+      ${detailStatPill("timer", "Break fit", breakInfo ? `${breakInfo.total} min total` : `${store.walking_minutes} min walk`)}
+    </div>
+    <div class="menu-filter-panel">
+      <div class="menu-filter-heading">
+        <span>Browse menu</span>
+        <strong>${filteredMenu.length} ${filterLabel}</strong>
+      </div>
+      <div class="menu-filter-row" role="group" aria-label="Filter this store menu">
+        ${menuFilterOptions(store).map((option) => `
+          <button class="menu-filter-chip ${activeFilter === option.value ? "active" : ""}" type="button" data-menu-filter="${option.value}" aria-pressed="${activeFilter === option.value}">
+            <i data-lucide="${option.icon}"></i>
+            <span>${option.label}</span>
+            <b>${option.count}</b>
+          </button>
+        `).join("")}
+      </div>
+    </div>
     <div class="detail-menu-list">
-      ${store.menu.map(detailMenuItemTemplate).join("")}
+      ${filteredMenu.map(detailMenuItemTemplate).join("") || `<p class="menu-filter-empty">No ${filterLabel} in this store yet.</p>`}
     </div>
   `;
 }
@@ -2068,6 +2134,7 @@ function restorePreferences() {
     if (chip) setChipActive(chip, true);
   });
   updateFavoriteTypesButton();
+  updateCategoryResetState();
 }
 
 function updateRailButtons(railId, buttonSelector) {
@@ -2113,8 +2180,17 @@ function setupFilters() {
 
       state.showingBookmarks = false;
       state.visibleLimit = 12;
+      updateCategoryResetState();
       loadFoods();
     });
+  });
+
+  document.querySelector("[data-category-clear]")?.addEventListener("click", () => {
+    document.querySelectorAll('[data-filter="category"] .chip').forEach((chip) => setChipActive(chip, false));
+    state.showingBookmarks = false;
+    state.visibleLimit = 12;
+    updateCategoryResetState();
+    loadFoods();
   });
 
   document.querySelectorAll("[data-weather-choice]").forEach((button) => {
@@ -2224,6 +2300,14 @@ function setupFilters() {
 
   document.getElementById("toggleSuggestion")?.addEventListener("click", () => {
     setSuggestionOpen(!document.body.classList.contains("suggestion-helper-open"));
+  });
+
+  document.getElementById("toggleFilters")?.addEventListener("click", () => {
+    setFilterPanelOpen(!document.body.classList.contains("filter-helper-open"));
+  });
+
+  document.getElementById("closeFilters")?.addEventListener("click", () => {
+    setFilterPanelOpen(false);
   });
 
   document.getElementById("decisionCoach")?.addEventListener("click", (event) => {
@@ -2416,6 +2500,7 @@ function setupFilters() {
     if (toggleButton) {
       const nextStoreId = toggleButton.dataset.storeToggle;
       const isClosing = state.selectedStoreId === nextStoreId;
+      if (!isClosing && state.selectedStoreId !== nextStoreId) state.menuFilter = "all";
       state.selectedStoreId = isClosing ? null : nextStoreId;
       renderFoods(state.foods);
       window.selectFoodOnMap?.(isClosing ? null : nextStoreId, false);
@@ -2436,6 +2521,7 @@ function setupFilters() {
     const storeBookmarkButton = event.target.closest("[data-store-bookmark]");
     const storeRatingButton = event.target.closest("[data-rate-store]");
     const foodRatingButton = event.target.closest("[data-rate-food]");
+    const menuFilterButton = event.target.closest("[data-menu-filter]");
     const ateButton = event.target.closest("[data-ate]");
     const closeButton = event.target.closest("[data-close-menu]");
     if (closeButton) {
@@ -2457,6 +2543,11 @@ function setupFilters() {
       const food = state.foods.find((item) => item.id === id);
       if (!food || !Number.isFinite(rating)) return;
       openRatingDialog({ type: "food", id, rating });
+      return;
+    }
+    if (menuFilterButton) {
+      state.menuFilter = menuFilterButton.dataset.menuFilter || "all";
+      renderMenuDetail(groupFoodsByStore(applyClientRanking(state.foods)));
       return;
     }
     if (bookmarkButton) {

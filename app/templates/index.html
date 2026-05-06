@@ -27,9 +27,12 @@
 
 <section class="app-shell">
   <aside class="filter-panel" aria-label="Food filters">
-    <div class="panel-title">
-      <h1>Saan tayo kakain?</h1>
-      <div class="panel-title-actions">
+      <div class="panel-title">
+        <h1>Saan tayo kakain?</h1>
+        <div class="panel-title-actions">
+        <button id="closeFilters" class="icon-button mobile-filter-close" type="button" aria-label="Close filters" title="Close filters">
+          <i data-lucide="x"></i>
+        </button>
         <button id="resetFilters" class="icon-button" type="button" aria-label="Reset filters" title="Reset filters">
           <i data-lucide="rotate-ccw"></i>
         </button>
@@ -255,6 +258,10 @@
             <i data-lucide="arrow-left"></i>
           </button>
           <div id="categoryRail" class="cuisine-rail cuisine-rail--filter" data-filter="category" aria-label="Filter by food type">
+            <button type="button" class="cuisine-chip category-reset-chip" data-category-clear aria-label="Show all food types">
+              <span class="cuisine-icon"><i data-lucide="layout-grid"></i></span>
+              <span>All Types</span>
+            </button>
             <button type="button" class="chip cuisine-chip" data-value="chicken">
               <img src="https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=220&q=80" alt="">
               <span>Chicken</span>
@@ -320,6 +327,10 @@
 </section>
 
 <div class="floating-tools" aria-label="Quick helpers">
+  <button id="toggleFilters" class="floating-tool-button filter-tool-button" type="button" aria-controls="filters" aria-expanded="false" title="Show filters">
+    <i data-lucide="sliders-horizontal"></i>
+    <span>Filters</span>
+  </button>
   <button id="toggleSuggestion" class="floating-tool-button" type="button" aria-controls="decisionCoach" aria-expanded="false" title="Show suggestion">
     <i data-lucide="sparkles"></i>
     <span>Suggest</span>
@@ -446,7 +457,7 @@
 <script>
   window.SAAN_CAMPUSES = {{ campuses | tojson }};
 </script>
-<script src="{{ url_for('static', path='/js/map.js') }}?v=loading-state-20260507"></script>
-<script src="{{ url_for('static', path='/js/app.js') }}?v=loading-state-20260507"></script>
+<script src="{{ url_for('static', path='/js/map.js') }}?v=category-rail-readable-20260507"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}?v=mobile-sheets-20260507"></script>
 <script src="{{ url_for('static', path='/js/pickforme.js') }}?v=picker-modes-20260507"></script>
 {% endblock %}
