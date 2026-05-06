@@ -1,5 +1,7 @@
 const HISTORY_KEY = "saanFoodHistory";
 const BUDGET_KEY = "saanWeeklyBudget";
+const MIN_SNACK_BUDGET = 50;
+const MIN_MEAL_BUDGET = 80;
 
 function getJson(key, fallback) {
   try {
@@ -196,11 +198,23 @@ function budgetCoachMessages(spent, weekly) {
       title: "Magtipid muna",
       body: `You are PHP ${Math.abs(remaining)} over budget. Prioritize canteen meals, street food, or packed snacks for the rest of the week.`,
     });
+  } else if (remaining < MIN_SNACK_BUDGET) {
+    messages.push({
+      tone: "danger",
+      title: "Not enough for a meal",
+      body: `PHP ${remaining} left is below a realistic food budget. Pack food, choose the cheapest canteen option, or raise your weekly target.`,
+    });
+  } else if (remaining < MIN_MEAL_BUDGET) {
+    messages.push({
+      tone: "warning",
+      title: "Snack-only budget",
+      body: `Only PHP ${remaining} left. Treat this as emergency or snack money, not a normal meal budget.`,
+    });
   } else if (percent >= 0.85) {
     messages.push({
       tone: "warning",
       title: "Tipid mode recommended",
-      body: `Only PHP ${remaining} left. Keep the next meals under PHP ${Math.max(50, Math.floor(remaining / 2))} if you still need budget buffer.`,
+      body: `Only PHP ${remaining} left. Keep the next meals under PHP ${Math.max(MIN_SNACK_BUDGET, Math.floor(remaining / 2))} if you still need budget buffer.`,
     });
   } else if (percent >= 0.6) {
     messages.push({
@@ -212,7 +226,7 @@ function budgetCoachMessages(spent, weekly) {
     messages.push({
       tone: "good",
       title: "Safe pa budget",
-      body: `PHP ${remaining} left this week. You can still eat normally, but keeping meals near PHP ${average || 100} protects the buffer.`,
+      body: `PHP ${remaining} left this week. Keep meals near PHP ${Math.min(average || 100, Math.max(MIN_MEAL_BUDGET, Math.floor(remaining / 3)))} to protect the buffer.`,
     });
   }
 
@@ -304,7 +318,11 @@ function budgetMessage(spent, weekly) {
       ? `You logged PHP ${spent} this week. Set a weekly budget to track what is left.`
       : "Set a weekly budget to see smarter spending notes.";
   }
-  const remaining = Math.max(0, weekly - spent);
+  const rawRemaining = weekly - spent;
+  const remaining = Math.max(0, rawRemaining);
+  if (rawRemaining < 0) return `You are PHP ${Math.abs(rawRemaining)} over budget this week.`;
+  if (remaining < MIN_SNACK_BUDGET) return `PHP ${remaining} left is below a realistic food budget.`;
+  if (remaining < MIN_MEAL_BUDGET) return `Only PHP ${remaining} left. Treat this as snack or emergency money.`;
   return `You have PHP ${remaining} left this week.`;
 }
 
@@ -376,7 +394,9 @@ function updateBudgetInsight() {
   if (bar) {
     const percent = weekly ? Math.min(100, Math.round((spent / weekly) * 100)) : 0;
     bar.style.width = `${percent}%`;
-    bar.style.background = percent >= 100 ? "#ff7d7d" : "linear-gradient(90deg, #00a664 0%, #f6f1e7 100%)";
+    const remaining = weekly - spent;
+    const isLowBudget = weekly > 0 && remaining < MIN_SNACK_BUDGET;
+    bar.style.background = percent >= 100 || isLowBudget ? "#ff7d7d" : "linear-gradient(90deg, #00a664 0%, #f6f1e7 100%)";
   }
   if (insight) insight.textContent = budgetMessage(spent, weekly);
   renderBudgetCoach(spent, weekly);

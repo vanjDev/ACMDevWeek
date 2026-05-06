@@ -20,6 +20,18 @@ const LOCATION_KEY = "saanPreciseLocation";
 const USER_STORE_RATINGS_KEY = "saanStoreRatings";
 const USER_FOOD_RATINGS_KEY = "saanFoodRatings";
 const COMBO_BUDGET_KEY = "saanComboBudget";
+const MIN_SNACK_BUDGET = 50;
+const MIN_MEAL_BUDGET = 80;
+const DECISION_WEIGHTS = {
+  budget: 0.25,
+  distance: 0.18,
+  rating: 0.15,
+  nutrition: 0.16,
+  time: 0.10,
+  freshness: 0.08,
+  preference: 0.05,
+  open: 0.03,
+};
 
 const categoryImages = {
   chicken: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=900&q=80",
@@ -251,13 +263,17 @@ function setBudgetState() {
 
 function normalizeHistoryEntry(item) {
   const phDate = item.phDate || item.date || "";
+  const phTime = item.phTime || "";
   return {
     ...item,
     entryId: item.entryId || item.loggedAt || `${item.id}-${phDate}-${item.phTime || "00:00"}`,
     phDate,
-    phTime: item.phTime || "",
+    phTime,
+    mealPeriod: item.mealPeriod || mealPeriodForTime(phTime),
     weekKey: item.weekKey || manilaWeekKey(phDate),
     price: Number(item.price || 0),
+    calories: Number(item.calories || 0),
+    healthLabel: item.healthLabel || "",
     note: item.note || "",
   };
 }
@@ -715,6 +731,10 @@ function averagePrice(food) {
   return Math.round((food.price_min + food.price_max) / 2);
 }
 
+function peso(amount) {
+  return `₱${Number(amount || 0).toLocaleString("en-PH")}`;
+}
+
 function comboPrice(food) {
   if (!food) return 0;
   return Number(food.price_min || averagePrice(food) || 0);
@@ -754,7 +774,7 @@ function comboTypeIcon(type) {
 }
 
 function comboItemLine(item) {
-  return `${item.name} <small>PHP ${comboPrice(item)}</small>`;
+  return `${item.name} <small>${peso(comboPrice(item))}</small>`;
 }
 
 function comboScore(combo, amount) {
@@ -828,14 +848,14 @@ function comboCardTemplate(combo, amount) {
     <article class="combo-card-result">
       <div class="combo-card-heading">
         <span><i data-lucide="${comboTypeIcon(combo.type)}"></i> ${combo.type}</span>
-        <strong>PHP ${combo.total}</strong>
+        <strong>${peso(combo.total)}</strong>
       </div>
       <h3>${combo.store.name}</h3>
       <p>${combo.items.map(comboItemLine).join(" + ")}</p>
       <div class="combo-meta-row">
         <span class="${openStatus.className}">${openStatus.label}</span>
         <span>${combo.store.walking_minutes || 0} min walk</span>
-        <span>${leftover ? `PHP ${leftover} left` : "Exact fit"}</span>
+        <span>${leftover ? `${peso(leftover)} left` : "Exact fit"}</span>
       </div>
       <button class="secondary-button compact-button" type="button" data-combo-store="${combo.store.id}">
         <i data-lucide="utensils"></i>
@@ -851,7 +871,7 @@ function singlePickTemplate(food) {
     <button class="combo-single" type="button" data-combo-food="${food.id}">
       <span>${comboRoleLabel(comboRole(food))}</span>
       <strong>${food.name}</strong>
-      <small>${food.restaurant} - PHP ${comboPrice(food)} - ${openStatus.label}</small>
+      <small>${food.restaurant} - ${peso(comboPrice(food))} - ${openStatus.label}</small>
     </button>
   `;
 }
@@ -860,7 +880,7 @@ function renderComboResults(amount) {
   const results = document.getElementById("comboResults");
   if (!results) return;
   if (!amount || amount < 1) {
-    results.innerHTML = `<p>Enter your cash and Saan will build affordable picks from the current menu list.</p>`;
+    results.innerHTML = `<p>Tell me what you have and I will build realistic, sulit combos from the menus showing now.</p>`;
     return;
   }
 
@@ -885,22 +905,22 @@ function renderComboResults(amount) {
 
   results.innerHTML = `
     <div class="combo-summary">
-      <span>PHP ${amount}</span>
-      <strong>${combos.length ? `${combos.length} combo ideas` : `${singles.length} affordable picks`}</strong>
-      <p>${combos.length ? "Built from the same store so ordering feels realistic." : "No same-store combo fits yet, but these items fit your cash."}</p>
+      <span>${peso(amount)} budget</span>
+      <strong>${combos.length ? `${combos.length} combo${combos.length === 1 ? "" : "s"} for you` : `${singles.length} pick${singles.length === 1 ? "" : "s"} for you`}</strong>
+      <p>${combos.length ? "I kept these same-store so ordering feels realistic, not random." : "No same-store combo fits yet, so I found the best single-item choices for your cash."}</p>
     </div>
     ${combos.length ? `
       <section class="combo-section">
         <div class="combo-section-heading">
-          <span>Same-store combos</span>
-          <strong>Best fits first</strong>
+          <span>Your combo options</span>
+          <strong>Most sulit first</strong>
         </div>
         <div class="combo-card-grid">
           ${combos.map((combo) => comboCardTemplate(combo, amount)).join("")}
         </div>
       </section>
     ` : ""}
-    ${roleSections || `<p class="combo-empty">No menu item fits PHP ${amount} with the current filters. Try a higher amount or loosen filters.</p>`}
+    ${roleSections || `<p class="combo-empty">Nothing fits ${peso(amount)} with the current filters. Try a little more budget or loosen the filters.</p>`}
   `;
   if (window.lucide) window.lucide.createIcons();
 }
@@ -949,12 +969,123 @@ function budgetHealth() {
   return { weekly, spent, remaining, percent };
 }
 
-function mealPeriodLabel() {
-  const hour = Number(manilaParts().time.split(":")[0]);
+function mealPeriodForHour(hour) {
+  if (hour < 5) return "late_night";
   if (hour < 10) return "breakfast";
   if (hour < 14) return "lunch";
   if (hour < 18) return "merienda";
-  return "dinner";
+  if (hour < 22) return "dinner";
+  return "late_night";
+}
+
+function mealPeriodForTime(time) {
+  const hour = Number(String(time || "").split(":")[0]);
+  return Number.isFinite(hour) ? mealPeriodForHour(hour) : "meal";
+}
+
+function mealPeriodLabel(period = mealPeriodForTime(manilaParts().time)) {
+  return {
+    late_night: "late-night",
+    breakfast: "breakfast",
+    lunch: "lunch",
+    merienda: "merienda",
+    dinner: "dinner",
+  }[period] || "meal";
+}
+
+function currentMealPeriod() {
+  return mealPeriodForTime(manilaParts().time);
+}
+
+function currentMealPeriodInfo() {
+  const parts = manilaParts();
+  const period = mealPeriodForTime(parts.time);
+  const label = mealPeriodLabel(period);
+  const displayTime = formatStoredMealTime(parts.time);
+  const advice = {
+    late_night: `It is ${displayTime}. Keep it light unless you really need food.`,
+    breakfast: `Good morning. Breakfast should be filling but not too heavy.`,
+    lunch: "Lunch mode. Prioritize real protein, rice or fiber, and enough budget for later.",
+    merienda: "Merienda mode. A lighter snack or drink is usually enough.",
+    dinner: "Dinner mode. Go balanced and avoid overspending if you already ate well today.",
+  }[period] || "Pick something balanced.";
+  return { ...parts, period, label, displayTime, advice };
+}
+
+function currentPeriodHistory() {
+  const today = manilaParts().date;
+  const period = currentMealPeriod();
+  return getHistory()
+    .map(normalizeHistoryEntry)
+    .filter((item) => item.phDate === today && item.mealPeriod === period);
+}
+
+function totalLoggedCalories(items = todayHistory()) {
+  return items.reduce((total, item) => total + Number(item.calories || 0), 0);
+}
+
+function nutritionProfile(food) {
+  const text = `${food.name || ""} ${food.restaurant || ""} ${food.description || ""} ${food.category || ""}`.toLowerCase();
+  const baseByCategory = {
+    coffee_drinks: { calories: 160, health: 66 },
+    snacks: { calories: 260, health: 58 },
+    street_food: { calories: 360, health: 50 },
+    dimsum: { calories: 420, health: 62 },
+    rice_meals: { calories: 560, health: 68 },
+    chicken: { calories: 620, health: 64 },
+    burgers: { calories: 720, health: 42 },
+    unli_rice: { calories: 780, health: 48 },
+  };
+  const base = baseByCategory[food.category] || { calories: 480, health: 58 };
+  let calories = base.calories;
+  let health = base.health;
+
+  [
+    [/salad|gulay|vegetable|caesar/, -120, 22],
+    [/grilled|inasal|teriyaki|plain rice|siomai/, -40, 10],
+    [/chicken|beef|egg|tuna/, 70, 7],
+    [/fried|fries|burger|liempo|porkchop|ribs|bacon|sisig/, 170, -18],
+    [/carbonara|mac|cheese|cream|cordon bleu/, 150, -14],
+    [/cookie|waffle|smores|oreo|chocolate|caramel|shake|frappe|soda/, 130, -16],
+    [/unli|party pack|jumbo/, 220, -12],
+  ].forEach(([pattern, calorieDelta, healthDelta]) => {
+    if (pattern.test(text)) {
+      calories += calorieDelta;
+      health += healthDelta;
+    }
+  });
+
+  const price = averagePrice(food);
+  if (price <= 80) health += 6;
+  if (price >= 150) health -= 5;
+  if ((food.diet_tags || []).includes("halal_friendly")) health += 4;
+  if ((food.diet_tags || []).includes("pork")) health -= 5;
+  if (food.shareable) calories += 80;
+
+  calories = Math.max(80, Math.round(calories / 20) * 20);
+  health = Math.round(clampNumber(health, 15, 96));
+  const label = health >= 78 ? "Healthy" : health >= 62 ? "Balanced" : health >= 45 ? "Heavy" : "Treat";
+  const diet = (food.diet_tags || []).includes("pork")
+    ? "contains pork"
+    : (food.diet_tags || []).includes("halal_friendly")
+      ? "halal-friendly"
+      : "check diet fit";
+  return { calories, health, label, diet };
+}
+
+function calorieScore(food) {
+  const { calories } = nutritionProfile(food);
+  const period = currentMealPeriod();
+  const target = {
+    late_night: [120, 420],
+    breakfast: [280, 560],
+    lunch: [450, 760],
+    merienda: [150, 430],
+    dinner: [420, 720],
+  }[period] || [250, 700];
+  if (calories >= target[0] && calories <= target[1]) return 96;
+  const distance = calories < target[0] ? target[0] - calories : calories - target[1];
+  return clampNumber(92 - distance / 7, 28, 92);
 }
 
 function recommendationReason(food) {
@@ -980,7 +1111,12 @@ function historyInsights() {
 }
 
 function mealPeriodScore(food) {
-  const period = mealPeriodLabel();
+  const period = currentMealPeriod();
+  if (period === "late_night") {
+    if (food.category === "coffee_drinks" || food.category === "snacks") return 84;
+    if (food.feature_tags?.includes("open_late")) return 78;
+    return 38;
+  }
   if (period === "breakfast") {
     if (food.category === "coffee_drinks") return 96;
     if (food.category === "snacks") return 82;
@@ -999,6 +1135,7 @@ function decisionProfile(food) {
   const health = budgetHealth();
   const insights = historyInsights();
   const price = averagePrice(food);
+  const nutrition = nutritionProfile(food);
   const remaining = health.weekly ? Math.max(0, health.remaining) : 0;
   const walk = Number(food.walking_minutes || 0);
   const openStatus = openStatusFor(food);
@@ -1009,11 +1146,16 @@ function decisionProfile(food) {
   const budgetScore = !health.weekly
     ? clampNumber(100 - price / 3, 45, 92)
     : remaining <= 0
-      ? (price <= 80 ? 60 : 18)
+      ? 0
+      : remaining < MIN_SNACK_BUDGET
+        ? (price <= remaining ? 40 : 4)
+        : remaining < MIN_MEAL_BUDGET && price > remaining
+          ? 12
       : clampNumber(100 - (price / Math.max(remaining, 1)) * 70, 12, 100);
   const distanceScore = clampNumber(106 - walk * 14, 18, 100);
   const ratingScore = clampNumber(((userFoodRating || publicRating || 4) / 5) * 100, 45, 100);
   const timeScore = mealPeriodScore(food);
+  const nutritionScore = (nutrition.health * 0.68) + (calorieScore(food) * 0.32);
   const freshnessScore = insights.recentIds.has(food.id) ? 18 : 88;
   const preferenceScore = favoriteTypes.includes(food.category)
     ? 96
@@ -1023,23 +1165,27 @@ function decisionProfile(food) {
   const openScore = openStatus.isOpen === false ? 20 : openStatus.isOpen === true ? 100 : 74;
 
   let total = (
-    budgetScore * 0.27
-    + distanceScore * 0.22
-    + ratingScore * 0.18
-    + timeScore * 0.13
-    + freshnessScore * 0.09
-    + preferenceScore * 0.07
-    + openScore * 0.04
+    budgetScore * DECISION_WEIGHTS.budget
+    + distanceScore * DECISION_WEIGHTS.distance
+    + ratingScore * DECISION_WEIGHTS.rating
+    + nutritionScore * DECISION_WEIGHTS.nutrition
+    + timeScore * DECISION_WEIGHTS.time
+    + freshnessScore * DECISION_WEIGHTS.freshness
+    + preferenceScore * DECISION_WEIGHTS.preference
+    + openScore * DECISION_WEIGHTS.open
   );
 
   const selectedMoods = selectedValues("mood");
   if (selectedMoods.includes("tipid")) total += price <= 100 ? 8 : -8;
   if (selectedMoods.includes("nagmamadali")) total += walk <= 3 ? 8 : -walk;
   if (antiRepeatIds().includes(food.id)) total -= 24;
+  if (currentMealPeriod() === "late_night" && nutrition.calories > 550) total -= 16;
   if (openStatus.isOpen === false) total -= 18;
 
   const reasonPool = [
     { key: "budget", score: budgetScore, label: health.weekly ? `leaves PHP ${Math.max(0, remaining - price)}` : `PHP ${price} average` },
+    { key: "health", score: nutritionScore, label: `${nutrition.label}, ~${nutrition.calories} cal` },
+    { key: "diet", score: nutrition.health, label: nutrition.diet },
     { key: "walk", score: distanceScore, label: walk <= 2 ? "super near" : `${walk} min walk` },
     { key: "rating", score: ratingScore, label: ratingScore >= 88 ? "trusted rating" : "decent rating" },
     { key: "time", score: timeScore, label: `fits ${mealPeriodLabel()}` },
@@ -1054,6 +1200,8 @@ function decisionProfile(food) {
     distanceScore: Math.round(distanceScore),
     ratingScore: Math.round(ratingScore),
     timeScore: Math.round(timeScore),
+    nutritionScore: Math.round(nutritionScore),
+    nutrition,
     price,
     walk,
     openStatus,
@@ -1070,6 +1218,15 @@ function breakDecisionFor(food) {
   const tone = spare >= 5 ? "safe" : spare >= 0 ? "tight" : "risky";
   const label = spare >= 5 ? "Safe before class" : spare >= 0 ? "Tight but doable" : "Risky for this break";
   return { available, mealMinutes, roundTrip, total, spare, tone, label };
+}
+
+function fitBreakdown(profile) {
+  return [
+    ["Budget", profile.budgetScore],
+    ["Walk", profile.distanceScore],
+    ["Rating", profile.ratingScore],
+    ["Health", profile.nutritionScore],
+  ].map(([label, score]) => `<span>${label} ${score}</span>`).join("");
 }
 
 function renderClassBreakBrief(stores) {
@@ -1097,6 +1254,59 @@ function renderDecisionCoach(stores) {
     return;
   }
   const health = budgetHealth();
+  const periodInfo = currentMealPeriodInfo();
+  const currentLogs = currentPeriodHistory();
+  const today = todayHistory();
+  const todayCalories = totalLoggedCalories(today);
+  if (currentLogs.length) {
+    const latest = currentLogs[0];
+    const loggedCalories = totalLoggedCalories(currentLogs);
+    const restLine = periodInfo.period === "late_night"
+      ? "You already logged food this late. Water and rest are the healthier move now."
+      : `You already logged ${mealPeriodLabel(latest.mealPeriod)}. Saan will stop nudging unless you choose to browse.`;
+    panel.innerHTML = `
+      <article class="saan-iq-main rested">
+        <div class="saan-iq-ring" style="--score-pct:100%;">
+          <strong><i data-lucide="check"></i></strong>
+          <span>DONE</span>
+        </div>
+        <div class="saan-iq-copy">
+          <span>${periodInfo.displayTime} assistant</span>
+          <strong>${mealPeriodLabel(latest.mealPeriod)} handled</strong>
+          <p>${restLine} Last log: ${latest.name} at ${latest.restaurant}.</p>
+          <div class="saan-iq-chips">
+            <span>PHP ${dailySpentTotal()} spent today</span>
+            ${loggedCalories ? `<span>~${loggedCalories} cal this ${mealPeriodLabel(latest.mealPeriod)}</span>` : ""}
+            ${todayCalories ? `<span>~${todayCalories} cal today</span>` : ""}
+          </div>
+        </div>
+        <a class="secondary-button compact-button" href="/tracker">
+          <i data-lucide="wallet"></i>
+          Tracker
+        </a>
+      </article>
+      <aside class="saan-iq-side">
+        <div class="saan-iq-stat">
+          <i data-lucide="heart-pulse"></i>
+          <div>
+            <span>Health signal</span>
+            <strong>No need to force it</strong>
+            <p>${periodInfo.advice}</p>
+          </div>
+        </div>
+        <div class="saan-iq-stat">
+          <i data-lucide="${health.weekly ? "wallet" : "badge-help"}"></i>
+          <div>
+            <span>Budget signal</span>
+            <strong>${health.weekly ? `PHP ${Math.max(0, health.remaining)} left` : "Set budget"}</strong>
+            <p>${health.weekly ? `You spent PHP ${health.spent} this week.` : "Set a weekly budget so Saan can protect your spending."}</p>
+          </div>
+        </div>
+      </aside>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+    return;
+  }
   const rankedStores = stores.map((store) => ({
     store,
     food: store.menu[0],
@@ -1106,21 +1316,41 @@ function renderDecisionCoach(stores) {
   const topStore = best.store;
   const topFood = best.food;
   const profile = best.profile;
+  const nutrition = profile.nutrition;
   const alternates = rankedStores.slice(1, 3);
   const breakInfo = breakDecisionFor(topStore);
   const average = averageMealSpend();
-  const today = todayHistory();
   const mode = health.weekly && (health.remaining <= 180 || health.percent >= 0.75) ? "tipid" : "normal";
+  const budgetSignalTitle = health.weekly
+    ? health.remaining < 0
+      ? "Over budget"
+      : health.remaining < MIN_SNACK_BUDGET
+        ? "Not enough"
+        : health.remaining < MIN_MEAL_BUDGET
+          ? "Snack-only"
+          : mode === "tipid"
+            ? "Tipid signal"
+            : "Budget signal"
+    : "Budget signal";
   const budgetLine = health.weekly
-    ? mode === "tipid"
+    ? health.remaining < 0
+      ? `You are PHP ${Math.abs(health.remaining)} over budget this week.`
+      : health.remaining < MIN_SNACK_BUDGET
+        ? `PHP ${Math.max(0, health.remaining)} left is below a realistic meal budget.`
+        : health.remaining < MIN_MEAL_BUDGET
+          ? `Only PHP ${health.remaining} left. Treat it as snack or emergency money.`
+          : mode === "tipid"
       ? `Magtipid-tipid muna. PHP ${Math.max(0, health.remaining)} left this week, so prioritize under PHP 100.`
       : `Safe pa. PHP ${Math.max(0, health.remaining)} left this week${average ? `, usual meal PHP ${average}` : ""}.`
     : "Set a weekly budget in Tracker so Saan can protect your spending.";
-  const breakLine = breakInfo
-    ? `${breakInfo.label}: ${topStore.name} needs about ${breakInfo.total} min total.`
-    : `Best now for ${mealPeriodLabel()}: ${topStore.name} because ${recommendationReason(topFood)}.`;
+  const canAffordTopFood = !health.weekly || (health.remaining - averagePrice(topFood)) >= 0;
+  const breakLine = health.weekly && !canAffordTopFood
+    ? `${topStore.name} fits your filters, but ${topFood.name} would exceed your remaining weekly budget.`
+    : breakInfo
+      ? `${breakInfo.label}: ${topStore.name} needs about ${breakInfo.total} min total.`
+      : `${periodInfo.advice} Best now for ${periodInfo.label}: ${topStore.name} because ${recommendationReason(topFood)}.`;
   const budgetPill = health.weekly ? `PHP ${Math.max(0, health.remaining)} left` : "Set budget";
-  const pickPill = `Match score ${profile.total}`;
+  const pickPill = `${nutrition.label} - ~${nutrition.calories} cal`;
   const todayPill = today.length ? `PHP ${dailySpentTotal()} spent` : "No logs";
   const reasonChips = profile.reasons.slice(0, 4).map((reason) => `<span>${reason.label}</span>`).join("");
 
@@ -1128,13 +1358,14 @@ function renderDecisionCoach(stores) {
     <article class="saan-iq-main ${mode}">
       <div class="saan-iq-ring" style="--score-pct:${profile.total}%;">
         <strong>${profile.total}</strong>
-        <span>IQ</span>
+        <span>Fit</span>
       </div>
       <div class="saan-iq-copy">
-        <span>Best match</span>
+        <span>${periodInfo.displayTime} best fit</span>
         <strong>${topStore.name}</strong>
         <p>${breakLine}</p>
         <div class="saan-iq-chips">${reasonChips}</div>
+        <div class="saan-fit-breakdown">${fitBreakdown(profile)}</div>
       </div>
       <button class="secondary-button compact-button" type="button" data-store-toggle="${topStore.id}">
         <i data-lucide="utensils"></i>
@@ -1143,9 +1374,17 @@ function renderDecisionCoach(stores) {
     </article>
     <aside class="saan-iq-side">
       <div class="saan-iq-stat">
-        <i data-lucide="${mode === "tipid" ? "wallet" : "badge-check"}"></i>
+        <i data-lucide="heart-pulse"></i>
         <div>
-          <span>${mode === "tipid" ? "Tipid signal" : "Budget signal"}</span>
+          <span>Health signal</span>
+          <strong>${nutrition.label}, ~${nutrition.calories} cal</strong>
+          <p>${nutrition.diet}. Health score ${nutrition.health}/100.</p>
+        </div>
+      </div>
+      <div class="saan-iq-stat">
+        <i data-lucide="${health.weekly && health.remaining < MIN_SNACK_BUDGET ? "badge-alert" : mode === "tipid" ? "wallet" : "badge-check"}"></i>
+        <div>
+          <span>${budgetSignalTitle}</span>
           <strong>${budgetPill}</strong>
           <p>${budgetLine}</p>
         </div>
@@ -1155,23 +1394,24 @@ function renderDecisionCoach(stores) {
         <div>
           <span>Today</span>
           <strong>${today.length ? `${today.length} logged` : "No logs yet"}</strong>
-          <p>${today.length ? `You spent PHP ${dailySpentTotal()} today.` : "Log meals to unlock better picks."}</p>
+          <p>${today.length ? `You spent PHP ${dailySpentTotal()} today${todayCalories ? `, about ${todayCalories} cal` : ""}.` : "Log meals to unlock better picks."}</p>
         </div>
       </div>
     </aside>
     <div class="saan-iq-alt">
       <div class="saan-iq-alt-heading">
-        <span>Alternates</span>
-        <b>${pickPill}</b>
+        <span>Other fits</span>
+        <b>${profile.total}/100 current pick</b>
       </div>
       ${alternates.map(({ store, profile: altProfile }) => `
         <button type="button" data-store-toggle="${store.id}">
           <strong>${store.name}</strong>
-          <span>${altProfile.total} match - ${store.walking_minutes} min - PHP ${store.price_min}-${store.price_max}</span>
+          <span>${altProfile.total}/100 fit - ${altProfile.nutrition.label} - ~${altProfile.nutrition.calories} cal - PHP ${store.price_min}-${store.price_max}</span>
         </button>
       `).join("") || `<p>No alternates yet.</p>`}
     </div>
   `;
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function budgetNote(food) {
@@ -1186,8 +1426,11 @@ function budgetNote(food) {
 
 function foodFrames(food) {
   const frames = [...(food.frames || [])];
+  const nutrition = nutritionProfile(food);
   if (getBookmarks().includes(food.id)) frames.unshift("Favorite");
   if (antiRepeatIds().includes(food.id)) frames.unshift("Recent");
+  frames.push(`${nutrition.label} - ~${nutrition.calories} cal`);
+  if (nutrition.health >= 78) frames.push("Healthier pick");
   const note = budgetNote(food);
   if (note) frames.push(note);
   return [...new Set(frames)].slice(0, 5);
@@ -1195,6 +1438,7 @@ function foodFrames(food) {
 
 function storeFrames(store) {
   const frames = [...(store.frames || [])];
+  const nutrition = nutritionProfile(store.menu[0] || store);
   const openStatus = openStatusFor(store);
   const breakInfo = breakDecisionFor(store);
   if (openStatus.isOpen === true) frames.unshift("Open now");
@@ -1208,6 +1452,7 @@ function storeFrames(store) {
   if (getUserStoreRating(store.id)) frames.unshift(`Your ${getUserStoreRating(store.id)}/5`);
   if (store.feature_tags?.includes("open_late")) frames.push("Open late");
   if (store.feature_tags?.includes("aircon")) frames.push("Aircon");
+  if (nutrition.health >= 78) frames.push("Healthy option");
   return [...new Set(frames)].slice(0, 5);
 }
 
@@ -1231,11 +1476,13 @@ function menuItemTemplate(food) {
   const active = getBookmarks().includes(food.id);
   const foodLog = latestFoodLog(food.id);
   const eatenToday = Boolean(foodLog && foodLog.phDate === manilaParts().date);
+  const nutrition = nutritionProfile(food);
   return `
     <li class="menu-item" data-menu-food-id="${food.id}">
       <div class="menu-copy">
         <strong>${food.name}</strong>
         <p>${food.description}</p>
+        <p class="nutrition-line">${nutrition.label} - about ${nutrition.calories} cal - ${nutrition.diet}</p>
       </div>
       <div class="menu-controls">
         <span>PHP ${food.price_min}-${food.price_max}</span>
@@ -1254,6 +1501,7 @@ function detailMenuItemTemplate(food) {
   const active = getBookmarks().includes(food.id);
   const foodLog = latestFoodLog(food.id);
   const eatenToday = Boolean(foodLog && foodLog.phDate === manilaParts().date);
+  const nutrition = nutritionProfile(food);
   const userRatingEntry = getUserFoodRatingEntry(food.id);
   const userRating = userRatingEntry.score;
   const publicRating = publicRatingForFood(food.id);
@@ -1269,6 +1517,7 @@ function detailMenuItemTemplate(food) {
           </div>
           <strong>${food.name}</strong>
           <p>${food.description}</p>
+          <p class="nutrition-line"><i data-lucide="heart-pulse"></i> ${nutrition.label} - about ${nutrition.calories} cal - health score ${nutrition.health}/100 - ${nutrition.diet}</p>
           ${publicRating ? `<p class="rating-reason"><i data-lucide="star"></i> ${publicRating.average.toFixed(1)} from ${publicRating.count} food rating${publicRating.count === 1 ? "" : "s"} - ${publicReason}</p>` : ""}
           ${reviewsTemplate(publicRating, "No food reviews yet. Add the first useful note.")}
         </div>
@@ -1305,6 +1554,7 @@ function storeCardTemplate(store) {
   const openStatus = openStatusFor(store);
   const breakInfo = breakDecisionFor(store);
   const decisionFood = store.menu[0];
+  const nutrition = nutritionProfile(decisionFood);
   return `
     <article class="food-card store-card ${isOpen ? "open" : ""}" data-store-id="${store.id}">
       <div class="food-image">
@@ -1322,6 +1572,7 @@ function storeCardTemplate(store) {
         <div class="food-meta">
           <span><small>Menu</small>${store.menu.length} items</span>
           <span><small>Walk</small>${store.walking_minutes} min</span>
+          <span><small>Health</small>${nutrition.label}</span>
           <span><small>${displayRatingLabel}</small><i data-lucide="star"></i> ${displayRating.toFixed(1)}</span>
         </div>
         <div class="open-status ${openStatus.className}">
@@ -1369,13 +1620,14 @@ function menuDetailTemplate(store) {
   const publicReason = publicRatingReason(store.id);
   const openStatus = openStatusFor(store);
   const breakInfo = breakDecisionFor(store);
+  const nutrition = nutritionProfile(store.menu[0] || store);
   return `
     <div class="menu-detail-header">
       <img src="${foodImageFor(store)}" alt="">
       <div>
         <span>${formatLabel(store.area)}</span>
         <strong>${store.name}</strong>
-        <p>${store.menu.length} menu items - ${store.walking_minutes} min walk - ${openStatus.label.toLowerCase()} - ${ratingSource.toLowerCase()} ${displayRating.toFixed(1)}/5</p>
+        <p>${store.menu.length} menu items - ${store.walking_minutes} min walk - ${openStatus.label.toLowerCase()} - ${ratingSource.toLowerCase()} ${displayRating.toFixed(1)}/5 - best item about ${nutrition.calories} cal</p>
         <b class="detail-price-range">PHP ${store.price_min}-${store.price_max}</b>
         <b class="open-status detail-open-status ${openStatus.className}"><i data-lucide="${openStatus.isOpen ? "door-open" : "door-closed"}"></i> ${openStatus.label} - ${openStatus.detail}</b>
       </div>
@@ -1505,6 +1757,8 @@ function mealBudgetMessage(price, food) {
   const remaining = Math.max(0, weekly - currentSpent);
   const after = remaining - Number(price || 0);
   if (after < 0) return `This meal puts you PHP ${Math.abs(after)} over your weekly budget.`;
+  if (after < MIN_SNACK_BUDGET) return `After this meal, only PHP ${after} remains. That is below a realistic food budget.`;
+  if (after < MIN_MEAL_BUDGET) return `After this meal, PHP ${after} remains. Treat it as snack or emergency money.`;
   if (after < 120) return `This leaves about PHP ${after} for the rest of the week.`;
   return `After this meal, you still have about PHP ${after} left this week.`;
 }
@@ -1517,12 +1771,13 @@ function openMealLogDialog(food, entry = null) {
   const dialog = document.getElementById("mealLogDialog");
   if (!dialog || !food) return;
   if (dialog.open) dialog.close();
+  const nutrition = nutritionProfile(food);
   document.getElementById("mealLogFoodId").value = String(food.id);
   document.getElementById("mealLogEntryId").value = entry?.entryId || "";
   document.getElementById("mealLogTitle").textContent = entry ? "Edit meal" : "Log meal";
   document.getElementById("mealLogFoodName").textContent = food.name;
   document.getElementById("mealLogRestaurant").textContent = food.restaurant;
-  document.getElementById("mealLogSuggestion").textContent = `Suggested: PHP ${food.price_min}-${food.price_max}`;
+  document.getElementById("mealLogSuggestion").textContent = `Suggested: PHP ${food.price_min}-${food.price_max} - about ${nutrition.calories} cal - ${nutrition.label}`;
   document.getElementById("mealLogPrice").value = String(entry?.price || averagePrice(food));
   document.getElementById("mealLogNote").value = entry?.note || "";
   document.getElementById("mealLogBudgetHint").textContent = mealBudgetMessage(entry?.price || averagePrice(food), food);
@@ -1615,6 +1870,7 @@ async function loadFoods() {
 function logFood(food, options = {}) {
   const now = new Date();
   const manila = manilaParts(now);
+  const nutrition = nutritionProfile(food);
   const entry = {
     entryId: options.entryId || `${food.id}-${now.toISOString()}`,
     id: food.id,
@@ -1625,12 +1881,15 @@ function logFood(food, options = {}) {
     date: manila.date,
     phDate: manila.date,
     phTime: manila.time,
+    mealPeriod: mealPeriodForTime(manila.time),
+    calories: nutrition.calories,
+    healthLabel: nutrition.label,
     weekKey: manilaWeekKey(manila.date),
     loggedAt: now.toISOString(),
   };
   upsertHistoryEntry(entry);
   renderFoods(state.foods);
-  showToast(`${options.entryId ? "Updated" : "Logged"} ${food.name} for PHP ${entry.price}.`);
+  showToast(`${options.entryId ? "Updated" : "Logged"} ${food.name}: PHP ${entry.price}, about ${entry.calories} cal.`);
 }
 
 function streakDays() {
@@ -1675,8 +1934,9 @@ function updateBudgetInsight(food = null) {
   if (bar) {
     const percent = weekly ? Math.min(100, Math.round((spent / weekly) * 100)) : 0;
     bar.style.width = `${percent}%`;
-    bar.classList.toggle("warning", weekly > 0 && percent >= 75 && percent < 100);
-    bar.classList.toggle("danger", weekly > 0 && percent >= 100);
+    const remaining = weekly - spent;
+    bar.classList.toggle("warning", weekly > 0 && remaining >= MIN_SNACK_BUDGET && (remaining < MIN_MEAL_BUDGET || (percent >= 75 && percent < 100)));
+    bar.classList.toggle("danger", weekly > 0 && (percent >= 100 || remaining < MIN_SNACK_BUDGET));
   }
   if (historyPanel) {
     const week = thisWeekHistory();
@@ -1716,13 +1976,27 @@ function updateBudgetInsight(food = null) {
   }
   const remaining = Math.max(0, weekly - spent);
   if (!food) {
-    insight.textContent = `You have PHP ${remaining} left this week.`;
+    if (weekly - spent < 0) {
+      insight.textContent = `You are PHP ${Math.abs(weekly - spent)} over budget this week.`;
+    } else if (remaining < MIN_SNACK_BUDGET) {
+      insight.textContent = `PHP ${remaining} left is below a realistic food budget.`;
+    } else if (remaining < MIN_MEAL_BUDGET) {
+      insight.textContent = `Only PHP ${remaining} left. Treat this as snack or emergency money.`;
+    } else {
+      insight.textContent = `You have PHP ${remaining} left this week.`;
+    }
     return;
   }
   const after = remaining - averagePrice(food);
-  insight.textContent = after < 0
-    ? `${food.name} would put you over budget. Try Tipid or under PHP 100.`
-    : `${food.name} leaves about PHP ${after} for the rest of the week.`;
+  if (after < 0) {
+    insight.textContent = `${food.name} would put you over budget. Try a cheaper canteen or snack option.`;
+  } else if (after < MIN_SNACK_BUDGET) {
+    insight.textContent = `${food.name} leaves only PHP ${after}, below a realistic food budget.`;
+  } else if (after < MIN_MEAL_BUDGET) {
+    insight.textContent = `${food.name} leaves PHP ${after}, which is snack/emergency money.`;
+  } else {
+    insight.textContent = `${food.name} leaves about PHP ${after} for the rest of the week.`;
+  }
 }
 
 function restorePreferences() {
@@ -1755,6 +2029,15 @@ function setupFilters() {
       state.showingBookmarks = false;
       state.visibleLimit = 12;
       loadFoods();
+    });
+  });
+
+  document.querySelectorAll("[data-category-scroll]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const rail = document.getElementById("categoryRail");
+      if (!rail) return;
+      const direction = Number(button.dataset.categoryScroll || 1);
+      rail.scrollBy({ left: direction * Math.max(rail.clientWidth * 0.72, 220), behavior: "smooth" });
     });
   });
 
