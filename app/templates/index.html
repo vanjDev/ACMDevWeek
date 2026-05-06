@@ -62,10 +62,10 @@
         Budget
         <select name="budget" id="budget">
           <option value="">Any budget</option>
-          <option value="0-50">Under PHP 50</option>
-          <option value="50-100">PHP 50-100</option>
-          <option value="100-200">PHP 100-200</option>
-          <option value="200-500">PHP 200+</option>
+          <option value="0-50">Under ₱50</option>
+          <option value="50-100">₱50-100</option>
+          <option value="100-200">₱100-200</option>
+          <option value="200-500">₱200+</option>
         </select>
       </label>
 
@@ -234,7 +234,7 @@
         </button>
         <button id="openComboFinder" class="secondary-button" type="button">
           <i data-lucide="coins"></i>
-          PHP Combos
+          Combo for Me?
         </button>
       </div>
       <div id="resultCount" class="result-count">Loading...</div>
@@ -243,27 +243,31 @@
     <section id="pickResult" class="pick-result" hidden></section>
 
     <section class="habit-strip" aria-label="Food history and streaks">
-      <div>
+      <div class="habit-stat">
+        <i data-lucide="flame"></i>
         <span>Streak</span>
         <strong id="streakCount">0 days</strong>
       </div>
-      <div>
+      <div class="habit-stat">
+        <i data-lucide="clock-3"></i>
         <span>Last ate</span>
         <strong id="lastAte">Nothing logged yet</strong>
       </div>
-      <div>
+      <div class="habit-stat">
+        <i data-lucide="wallet-cards"></i>
         <span>Today spent</span>
-        <strong id="todaySpent">PHP 0</strong>
+        <strong id="todaySpent">₱0</strong>
       </div>
-      <div>
+      <div class="habit-stat">
+        <i data-lucide="calendar-days"></i>
         <span>This week</span>
-        <strong id="weekSpent">PHP 0</strong>
+        <strong id="weekSpent">₱0</strong>
       </div>
-      <a href="/tracker" class="secondary-button compact-button">
-        <i data-lucide="wallet"></i>
-        Open tracker
+      <a href="/tracker" class="secondary-button compact-button habit-action">
+        <i data-lucide="chart-no-axes-combined"></i>
+        Tracker
       </a>
-      <span id="saveStatus" class="save-status">Guest saves stay on this device</span>
+      <span id="saveStatus" class="save-status"><i data-lucide="cloud"></i> Guest saves stay on this device</span>
     </section>
 
     <section id="decisionCoach" class="decision-coach" aria-live="polite" aria-label="Personal suggestion"></section>
@@ -288,26 +292,20 @@
             <span>Stores Available</span>
             <strong>Swipe stores near campus</strong>
           </div>
-          <div class="store-rail-actions">
-            <button class="icon-button rail-arrow" type="button" data-store-scroll="-1" aria-label="Scroll stores left" title="Scroll stores left">
-              <i data-lucide="arrow-left"></i>
-            </button>
-            <button class="icon-button rail-arrow" type="button" data-store-scroll="1" aria-label="Scroll stores right" title="Scroll stores right">
-              <i data-lucide="arrow-right"></i>
-            </button>
-            <button id="scrollToMap" class="secondary-button compact-button" type="button">
-              <i data-lucide="map"></i>
-              Map
-            </button>
-          </div>
+          <button id="scrollToMap" class="secondary-button compact-button" type="button">
+            <i data-lucide="map"></i>
+            Map
+          </button>
         </div>
       <div id="menuDetailBackdrop" class="menu-detail-backdrop" hidden></div>
       <aside id="menuDetail" class="menu-detail" aria-live="polite" hidden></aside>
+      <button class="icon-button rail-arrow store-rail-nav store-rail-nav-left" type="button" data-store-scroll="-1" aria-label="Scroll stores left" title="Scroll stores left">
+        <i data-lucide="arrow-left"></i>
+      </button>
       <div id="results" class="results-grid" aria-live="polite"></div>
-      <button id="loadMore" class="load-more" type="button" hidden>
-        <i data-lucide="chevrons-down"></i>
-        Show More
-        </button>
+      <button class="icon-button rail-arrow store-rail-nav store-rail-nav-right" type="button" data-store-scroll="1" aria-label="Scroll stores right" title="Scroll stores right">
+        <i data-lucide="arrow-right"></i>
+      </button>
       </section>
     </div>
   </section>
@@ -356,7 +354,7 @@
     </div>
     <label>
       How much did you spend?
-      <input id="mealLogPrice" type="number" min="0" step="1" placeholder="PHP" required>
+      <input id="mealLogPrice" type="number" min="0" step="1" placeholder="₱" required>
     </label>
     <label>
       Note
@@ -450,7 +448,7 @@
 <script>
   window.SAAN_CAMPUSES = {{ campuses | tojson }};
 </script>
-<script src="{{ url_for('static', path='/js/map.js') }}?v=pedestrian-corridor-20260506"></script>
-<script src="{{ url_for('static', path='/js/app.js') }}?v=filter-tiles-20260507"></script>
-<script src="{{ url_for('static', path='/js/pickforme.js') }}?v=smart-picker-20260506"></script>
+<script src="{{ url_for('static', path='/js/map.js') }}?v=peso-picker-20260507"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}?v=peso-picker-20260507"></script>
+<script src="{{ url_for('static', path='/js/pickforme.js') }}?v=picker-modes-20260507"></script>
 {% endblock %}

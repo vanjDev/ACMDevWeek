@@ -232,7 +232,7 @@ function adminFoodRow(food) {
         <strong>${food.name}</strong>
         <span>${food.restaurant} - ${formatLabel(food.area)} - ${formatLabel(food.category)} - ${hours}</span>
       </div>
-      <b>PHP ${food.price_min}-${food.price_max}</b>
+      <b>₱${food.price_min}-${food.price_max}</b>
       <small>${food.is_active ? "Active" : "Hidden"}</small>
       <button class="icon-button" type="button" data-admin-edit="${food.id}" aria-label="Edit ${food.name}" title="Edit">
         <i data-lucide="pencil"></i>

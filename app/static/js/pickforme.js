@@ -1,14 +1,65 @@
 let pickForMeMode = "smart";
 
+const PICK_FOR_ME_MODES = [
+  {
+    value: "smart",
+    label: "Best",
+    icon: "sparkles",
+    hint: "balanced",
+    copy: "Best overall fit from your filters, budget, walk time, and meal history.",
+  },
+  {
+    value: "tipid",
+    label: "Tipid",
+    icon: "wallet",
+    hint: "low spend",
+    copy: "Cheaper picks first, so it feels lighter on your weekly budget.",
+  },
+  {
+    value: "healthy",
+    label: "Healthy",
+    icon: "heart-pulse",
+    hint: "cleaner",
+    copy: "Prioritizes lighter, balanced meals with better health signals.",
+  },
+  {
+    value: "fast",
+    label: "Fast",
+    icon: "timer",
+    hint: "nearby",
+    copy: "Closest options first for quick breaks between classes.",
+  },
+  {
+    value: "filling",
+    label: "Busog",
+    icon: "utensils",
+    hint: "meal",
+    copy: "More filling food first when you need a proper meal.",
+  },
+  {
+    value: "new",
+    label: "New",
+    icon: "refresh-cw",
+    hint: "fresh pick",
+    copy: "Avoids recent meals so you do not keep landing on the same thing.",
+  },
+];
+
+function activePickMode() {
+  return PICK_FOR_ME_MODES.find((mode) => mode.value === pickForMeMode) || PICK_FOR_ME_MODES[0];
+}
+
 function currentStoresForWheel() {
   const foods = state.foods?.length ? applyClientRanking(state.foods) : [];
-  return groupFoodsByStore(foods).slice(0, 12);
+  return rankStoresForPickMode(groupFoodsByStore(foods)).slice(0, 12);
 }
 
 function storeScoreForMode(store) {
   const food = store.menu[0];
   let score = store.rating * 10 - (store.walking_minutes || 0);
-  if (pickForMeMode === "tipid") score -= store.price_max / 5;
+  const nutrition = typeof nutritionProfile === "function" ? nutritionProfile(food) : null;
+  if (pickForMeMode === "tipid") score -= store.price_max / 2;
+  if (pickForMeMode === "healthy") score += (nutrition?.score || 50) / 2 - (nutrition?.calories || 250) / 35;
   if (pickForMeMode === "fast") score -= (store.walking_minutes || 0) * 6;
   if (pickForMeMode === "filling") score += food.category === "rice_meals" || food.category === "chicken" ? 18 : 0;
   if (pickForMeMode === "new") score += antiRepeatIds().includes(food.id) ? -80 : 10;
@@ -18,17 +69,34 @@ function storeScoreForMode(store) {
   return score;
 }
 
+function rankStoresForPickMode(stores) {
+  return [...stores].sort((a, b) => {
+    const scoreDelta = storeScoreForMode(b) - storeScoreForMode(a);
+    if (Math.abs(scoreDelta) > 0.01) return scoreDelta;
+    return a.name.localeCompare(b.name);
+  });
+}
+
 function smartPickedFood(stores) {
   if (!stores.length) return null;
-  const ranked = [...stores].sort((a, b) => storeScoreForMode(b) - storeScoreForMode(a));
-  const pool = ranked.slice(0, Math.min(5, ranked.length));
-  const store = pool[Math.floor(Math.random() * pool.length)];
+  const ranked = rankStoresForPickMode(stores);
+  const pool = ranked.slice(0, Math.min(4, ranked.length));
+  const totalWeight = pool.reduce((sum, _store, index) => sum + (pool.length - index), 0);
+  let roll = Math.random() * totalWeight;
+  const store = pool.find((_store, index) => {
+    roll -= pool.length - index;
+    return roll <= 0;
+  }) || pool[0];
   return store?.menu?.[0] || null;
 }
 
 function pickModeReason(food) {
   const breakInfo = breakDecisionFor(food);
   if (pickForMeMode === "tipid") return `Picked because it protects your budget: ${recommendationReason(food)}.`;
+  if (pickForMeMode === "healthy") {
+    const nutrition = typeof nutritionProfile === "function" ? nutritionProfile(food) : null;
+    return nutrition ? `Picked for a cleaner choice: about ${nutrition.calories} cal and ${nutrition.label.toLowerCase()}.` : "Picked for a cleaner meal choice.";
+  }
   if (pickForMeMode === "fast") return breakInfo
     ? `Picked for speed: ${breakInfo.total} min total for your class break.`
     : `Picked for speed: about ${food.walking_minutes} min away.`;
@@ -44,8 +112,20 @@ function wheelSegments(stores) {
   `).join("");
 }
 
+function storeModeDetail(store) {
+  const food = store.menu[0];
+  const nutrition = typeof nutritionProfile === "function" ? nutritionProfile(food) : null;
+  if (pickForMeMode === "tipid") return `${peso(store.price_min)}-${peso(store.price_max)}`;
+  if (pickForMeMode === "healthy" && nutrition) return `~${nutrition.calories} cal`;
+  if (pickForMeMode === "fast") return `${store.walking_minutes || 1} min walk`;
+  if (pickForMeMode === "filling") return food.category === "rice_meals" ? "rice meal" : (food.category || "meal").replace("_", " ");
+  if (pickForMeMode === "new") return antiRepeatIds().includes(food.id) ? "recent" : "fresh";
+  return `${store.rating.toFixed(1)} rating`;
+}
+
 function showWheelPanel(stores, mode = "ready") {
   const panel = document.getElementById("pickResult");
+  const selectedMode = activePickMode();
   panel.hidden = false;
   panel.innerHTML = `
     <div class="wheel-layout">
@@ -56,21 +136,26 @@ function showWheelPanel(stores, mode = "ready") {
       <div class="wheel-copy">
         <span>${mode === "spinning" ? "Randomizer" : "Undecided?"}</span>
         <h2>${mode === "spinning" ? "Spinning..." : "Ready to pick?"}</h2>
-        <p>${mode === "spinning" ? "Checking your current filters and nearby FEU stores." : "Your filters are set. Press start when you want Saan? to choose."}</p>
-        <div class="pick-mode-row" aria-label="Pick mode">
-          ${[
-            ["smart", "Best"],
-            ["tipid", "Tipid"],
-            ["fast", "Fast"],
-            ["filling", "Busog"],
-            ["new", "New"],
-          ].map(([value, label]) => `
-            <button type="button" data-pick-mode="${value}" class="${pickForMeMode === value ? "active" : ""}">${label}</button>
+        <p>${mode === "spinning" ? `Picking with ${selectedMode.label.toLowerCase()} mode.` : selectedMode.copy}</p>
+        <div class="pick-mode-grid" aria-label="Pick mode">
+          ${PICK_FOR_ME_MODES.map(({ value, label, icon, hint }) => `
+            <button type="button" data-pick-mode="${value}" class="pick-mode-tile ${pickForMeMode === value ? "active" : ""}" aria-pressed="${pickForMeMode === value}">
+              <i data-lucide="${icon}"></i>
+              <span>${label}</span>
+              <small>${hint}</small>
+            </button>
           `).join("")}
         </div>
       </div>
       <div class="wheel-store-list" aria-label="Stores in the randomizer">
-        ${stores.slice(0, 6).map((store, index) => `<span>${index + 1}. ${store.name}</span>`).join("")}
+        ${stores.slice(0, 6).map((store, index) => `
+          <span>
+            <b>${index + 1}</b>
+            <i data-lucide="${selectedMode.icon}"></i>
+            <strong>${store.name}</strong>
+            <small>${storeModeDetail(store)}</small>
+          </span>
+        `).join("")}
       </div>
     </div>
     ${mode === "ready" ? `
@@ -132,7 +217,7 @@ async function pickForMe() {
       clearInterval(spin);
       wheel.classList.add("landed");
       heading.textContent = storeName;
-      copy.textContent = `${food.name} - PHP ${food.price_min}-${food.price_max} - ${food.walking_minutes} min walk. ${pickModeReason(food)}`;
+      copy.textContent = `${food.name} - ${peso(food.price_min)}-${peso(food.price_max)} - ${food.walking_minutes} min walk. ${pickModeReason(food)}`;
       panel.insertAdjacentHTML("beforeend", `
         <div class="wheel-actions">
           <button class="primary-button compact-button" type="button" data-picked-store="${storeIdFor(storeName)}">

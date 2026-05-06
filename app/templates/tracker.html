@@ -15,27 +15,31 @@
   </div>
 
   <section class="habit-strip tracker-habit-strip" aria-label="Food history and streaks">
-    <div>
+    <div class="habit-stat">
+      <i data-lucide="flame"></i>
       <span>Streak</span>
       <strong id="streakCount">0 days</strong>
     </div>
-    <div>
+    <div class="habit-stat">
+      <i data-lucide="clock-3"></i>
       <span>Last ate</span>
       <strong id="lastAte">Nothing logged yet</strong>
     </div>
-    <div>
+    <div class="habit-stat">
+      <i data-lucide="wallet-cards"></i>
       <span>Today spent</span>
-      <strong id="todaySpent">PHP 0</strong>
+      <strong id="todaySpent">₱0</strong>
     </div>
-    <div>
+    <div class="habit-stat">
+      <i data-lucide="calendar-days"></i>
       <span>This week</span>
-      <strong id="weekSpent">PHP 0</strong>
+      <strong id="weekSpent">₱0</strong>
     </div>
-    <button id="clearHistory" class="secondary-button compact-button" type="button">
+    <button id="clearHistory" class="secondary-button compact-button habit-action" type="button">
       <i data-lucide="history"></i>
-      Clear history
+      Clear
     </button>
-    <span id="saveStatus" class="save-status">Guest saves stay on this device</span>
+    <span id="saveStatus" class="save-status"><i data-lucide="cloud"></i> Guest saves stay on this device</span>
   </section>
 
   <section class="tracker-panel tracker-page-panel" aria-label="Budget tracker and meal logs">
@@ -49,20 +53,21 @@
       <div class="budget-row">
         <label>
           Weekly budget
-          <input type="number" id="weeklyBudget" min="0" step="10" placeholder="PHP">
+          <input type="number" id="weeklyBudget" min="0" step="10" placeholder="₱">
         </label>
         <label>
           Auto spent
-          <input type="number" id="weeklySpent" min="0" step="10" placeholder="PHP" readonly>
+          <input type="number" id="weeklySpent" min="0" step="10" placeholder="₱" readonly>
         </label>
       </div>
       <div class="budget-meter" aria-label="Weekly budget progress">
         <div>
-          <span id="budgetSpentLabel">PHP 0 spent</span>
+          <span id="budgetSpentLabel">₱0 spent</span>
           <span id="budgetRemainingLabel">Set a budget</span>
         </div>
         <div class="budget-bar"><span id="budgetBar"></span></div>
       </div>
+      <div id="trackerInsightGrid" class="tracker-insight-grid" aria-label="Spending summary"></div>
       <p id="budgetInsight">Set a weekly budget to see smarter spending notes.</p>
       <div class="budget-coach-list" aria-live="polite">
         <div class="budget-coach-heading">
@@ -79,7 +84,22 @@
           <span>Meal logs</span>
           <strong>This week in Manila time</strong>
         </div>
+        <div class="history-sort" aria-label="Sort meal logs">
+          <button class="active" type="button" data-history-sort="latest" title="Sort by latest">
+            <i data-lucide="clock-3"></i>
+            Latest
+          </button>
+          <button type="button" data-history-sort="price" title="Sort by highest spend">
+            <i data-lucide="arrow-down-up"></i>
+            Spend
+          </button>
+          <button type="button" data-history-sort="day" title="Group by day">
+            <i data-lucide="calendar-days"></i>
+            Day
+          </button>
+        </div>
       </div>
+      <div id="weekStrip" class="week-strip" aria-label="Week spending by day"></div>
       <div id="weeklyHistory" class="weekly-history" aria-live="polite"></div>
     </div>
   </section>
@@ -106,7 +126,7 @@
     </div>
     <label>
       How much did you spend?
-      <input id="mealLogPrice" type="number" min="0" step="1" placeholder="PHP" required>
+      <input id="mealLogPrice" type="number" min="0" step="1" placeholder="₱" required>
     </label>
     <label>
       Note
@@ -128,5 +148,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', path='/js/tracker.js') }}?v=realistic-budget-20260507"></script>
+<script src="{{ url_for('static', path='/js/tracker.js') }}?v=tracker-dashboard-20260507"></script>
 {% endblock %}

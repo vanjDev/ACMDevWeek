@@ -3,7 +3,7 @@ function recommendationTemplate(item) {
   return `
     <article class="timer-item">
       <h3>${food.name}</h3>
-      <p>${food.restaurant} · PHP ${food.price_min}-${food.price_max} · ${food.walking_minutes} min one-way</p>
+      <p>${food.restaurant} - ₱${food.price_min}-${food.price_max} - ${food.walking_minutes} min one-way</p>
       <p>${item.total_needed_minutes} min total with ${item.round_trip_minutes} min walking.</p>
     </article>
   `;

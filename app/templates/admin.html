@@ -61,11 +61,11 @@
       <div class="budget-row">
         <label>
           Min price
-          <input id="adminPriceMin" name="price_min" type="number" min="0" step="1" required placeholder="PHP">
+          <input id="adminPriceMin" name="price_min" type="number" min="0" step="1" required placeholder="₱">
         </label>
         <label>
           Max price
-          <input id="adminPriceMax" name="price_max" type="number" min="0" step="1" required placeholder="PHP">
+          <input id="adminPriceMax" name="price_max" type="number" min="0" step="1" required placeholder="₱">
         </label>
       </div>
 
@@ -199,5 +199,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', path='/js/admin.js') }}?v=admin-rating-removed-20260506"></script>
+<script src="{{ url_for('static', path='/js/admin.js') }}?v=peso-picker-20260507"></script>
 {% endblock %}

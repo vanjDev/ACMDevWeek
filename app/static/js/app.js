@@ -1210,7 +1210,7 @@ function decisionProfile(food) {
   if (openStatus.isOpen === false) total -= 18;
 
   const reasonPool = [
-    { key: "budget", score: budgetScore, label: health.weekly ? `leaves PHP ${Math.max(0, remaining - price)}` : `PHP ${price} average` },
+    { key: "budget", score: budgetScore, label: health.weekly ? `leaves ${peso(Math.max(0, remaining - price))}` : `${peso(price)} average` },
     { key: "health", score: nutritionScore, label: `${nutrition.label}, ~${nutrition.calories} cal` },
     { key: "diet", score: nutrition.health, label: nutrition.diet },
     { key: "walk", score: distanceScore, label: walk <= 2 ? "super near" : `${walk} min walk` },
@@ -1290,19 +1290,19 @@ function renderDecisionCoach(stores) {
       ? "You already ate this late. Water and rest are probably the better call."
       : `You already logged ${mealPeriodLabel(latest.mealPeriod)}. I will stay quiet unless you browse.`;
     panel.innerHTML = `
-      <article class="saan-iq-main rested">
-        <div class="saan-iq-ring" style="--score-pct:100%;">
-          <strong><i data-lucide="check"></i></strong>
-          <span>DONE</span>
+      <article class="saan-rest-card">
+        <div class="saan-rest-icon">
+          <i data-lucide="check"></i>
         </div>
-        <div class="saan-iq-copy">
+        <div class="saan-rest-copy">
           <span>${periodInfo.displayTime} assistant</span>
           <strong>${mealPeriodLabel(latest.mealPeriod)} handled</strong>
-          <p>${restLine} Last log: ${latest.name} at ${latest.restaurant}.</p>
-          <div class="saan-iq-chips">
-            <span>${peso(dailySpentTotal())} spent today</span>
-            ${loggedCalories ? `<span>~${loggedCalories} cal this ${mealPeriodLabel(latest.mealPeriod)}</span>` : ""}
-          </div>
+          <p>${restLine}</p>
+          <small>Last log: ${latest.name} at ${latest.restaurant}</small>
+        </div>
+        <div class="saan-rest-meta">
+          <span>${peso(dailySpentTotal())} today</span>
+          ${loggedCalories ? `<span>~${loggedCalories} cal</span>` : ""}
         </div>
         <a class="secondary-button compact-button" href="/tracker">
           <i data-lucide="wallet"></i>
@@ -1370,8 +1370,8 @@ function budgetNote(food) {
   const remaining = Math.max(0, weekly - spent);
   const after = remaining - averagePrice(food);
   if (after < 0) return "Over weekly budget";
-  if (after < 100) return `PHP ${after} left after this`;
-  return `Leaves PHP ${after}`;
+  if (after < 100) return `${peso(after)} left after this`;
+  return `Leaves ${peso(after)}`;
 }
 
 function foodFrames(food) {
@@ -1445,8 +1445,8 @@ function menuItemTemplate(food) {
         <p class="nutrition-line">${nutrition.label} - about ${nutrition.calories} cal - ${nutrition.diet}</p>
       </div>
       <div class="menu-controls">
-        <span>PHP ${food.price_min}-${food.price_max}</span>
-        <button class="icon-button ate-button ${eatenToday ? "active" : ""}" type="button" data-ate="${food.id}" aria-label="${eatenToday ? "Edit meal log for" : "Log"} ${food.name}" aria-pressed="${eatenToday}" title="${eatenToday ? `Logged PHP ${foodLog.price} today` : "Log eaten"}">
+        <span>${peso(food.price_min)}-${peso(food.price_max)}</span>
+        <button class="icon-button ate-button ${eatenToday ? "active" : ""}" type="button" data-ate="${food.id}" aria-label="${eatenToday ? "Edit meal log for" : "Log"} ${food.name}" aria-pressed="${eatenToday}" title="${eatenToday ? `Logged ${peso(foodLog.price)} today` : "Log eaten"}">
           <i data-lucide="utensils"></i>
         </button>
         <button class="icon-button bookmark ${active ? "active" : ""}" type="button" data-bookmark="${food.id}" aria-label="${active ? "Remove bookmark for" : "Bookmark"} ${food.name}" aria-pressed="${active}" title="${active ? "Saved" : "Bookmark"}">
@@ -1473,7 +1473,7 @@ function detailMenuItemTemplate(food) {
         <div>
           <div class="detail-menu-topline">
             <span>${categoryLabel(food.category)}</span>
-            <b>PHP ${food.price_min}-${food.price_max}</b>
+            <b>${peso(food.price_min)}-${peso(food.price_max)}</b>
           </div>
           <strong>${food.name}</strong>
           <p>${food.description}</p>
@@ -1490,7 +1490,7 @@ function detailMenuItemTemplate(food) {
             <span>${userRating ? `You rated ${userRating}/5` : "Rate"}</span>
             ${ratingStarsTemplate({ id: food.id, type: "food", value: userRating, label: `Rate ${food.name}` })}
           </div>
-          <button class="icon-button ate-button ${eatenToday ? "active" : ""}" type="button" data-ate="${food.id}" aria-label="${eatenToday ? "Edit meal log for" : "Log"} ${food.name}" aria-pressed="${eatenToday}" title="${eatenToday ? `Logged PHP ${foodLog.price} today` : "Log eaten"}">
+          <button class="icon-button ate-button ${eatenToday ? "active" : ""}" type="button" data-ate="${food.id}" aria-label="${eatenToday ? "Edit meal log for" : "Log"} ${food.name}" aria-pressed="${eatenToday}" title="${eatenToday ? `Logged ${peso(foodLog.price)} today` : "Log eaten"}">
             <i data-lucide="utensils"></i>
           </button>
           <button class="icon-button bookmark ${active ? "active" : ""}" type="button" data-bookmark="${food.id}" aria-label="${active ? "Remove bookmark for" : "Bookmark"} ${food.name}" aria-pressed="${active}" title="${active ? "Saved" : "Bookmark"}">
@@ -1558,7 +1558,7 @@ function storeCardTemplate(store) {
         <div class="card-actions">
           <span class="pill price-pill">
             <small>Price</small>
-            <strong>PHP ${store.price_min}-${store.price_max}</strong>
+            <strong>${peso(store.price_min)}-${peso(store.price_max)}</strong>
           </span>
           <button class="secondary-button compact-button" type="button" data-store-toggle="${store.id}" aria-expanded="${isOpen}" aria-label="${isOpen ? "Hide menu for" : "View menu for"} ${store.name}">
             <i data-lucide="${isOpen ? "panel-right-open" : "utensils"}"></i>
@@ -1684,10 +1684,14 @@ function applyClientRanking(foods) {
 function renderFoods(foods) {
   const results = document.getElementById("results");
   if (state.isLoading) {
-    results.innerHTML = Array.from({ length: 6 }, () => `<div class="food-card skeleton-card"></div>`).join("");
-    document.getElementById("resultCount").textContent = "Loading...";
+    if (results.children.length) {
+      results.classList.add("is-refreshing");
+    } else {
+      results.innerHTML = Array.from({ length: 6 }, () => `<div class="food-card skeleton-card"></div>`).join("");
+    }
     return;
   }
+  results.classList.remove("is-refreshing");
 
   const ranked = applyClientRanking(foods);
   const foodBookmarks = getBookmarks();
@@ -1696,7 +1700,7 @@ function renderFoods(foods) {
     ? ranked.filter((food) => foodBookmarks.includes(food.id) || storeBookmarks.includes(storeIdFor(food.restaurant)))
     : ranked;
   const stores = groupFoodsByStore(visible);
-  const paged = stores.slice(0, state.visibleLimit);
+  const paged = stores;
 
   results.innerHTML = paged.length
     ? paged.map(storeCardTemplate).join("")
@@ -1704,11 +1708,9 @@ function renderFoods(foods) {
   renderMenuDetail(stores);
 
   document.getElementById("resultCount").textContent = state.showingBookmarks
-    ? `${Math.min(state.visibleLimit, stores.length)} of ${stores.length} saved store${stores.length === 1 ? "" : "s"}`
-    : `${Math.min(state.visibleLimit, stores.length)} of ${stores.length} store${stores.length === 1 ? "" : "s"}`;
+    ? `${stores.length} saved store${stores.length === 1 ? "" : "s"}`
+    : `${stores.length} store${stores.length === 1 ? "" : "s"}`;
   updateBookmarkToggle();
-  const loadMore = document.getElementById("loadMore");
-  loadMore.hidden = state.visibleLimit >= stores.length;
   renderDecisionCoach(stores);
   renderClassBreakBrief(stores);
   if (window.lucide) window.lucide.createIcons();
@@ -1723,11 +1725,11 @@ function mealBudgetMessage(price, food) {
   if (!weekly) return `Logging ${food.name} helps build your weekly food history.`;
   const remaining = Math.max(0, weekly - currentSpent);
   const after = remaining - Number(price || 0);
-  if (after < 0) return `This meal puts you PHP ${Math.abs(after)} over your weekly budget.`;
-  if (after < MIN_SNACK_BUDGET) return `After this meal, only PHP ${after} remains. That is below a realistic food budget.`;
-  if (after < MIN_MEAL_BUDGET) return `After this meal, PHP ${after} remains. Treat it as snack or emergency money.`;
-  if (after < 120) return `This leaves about PHP ${after} for the rest of the week.`;
-  return `After this meal, you still have about PHP ${after} left this week.`;
+  if (after < 0) return `This meal puts you ${peso(Math.abs(after))} over your weekly budget.`;
+  if (after < MIN_SNACK_BUDGET) return `After this meal, only ${peso(after)} remains. That is below a realistic food budget.`;
+  if (after < MIN_MEAL_BUDGET) return `After this meal, ${peso(after)} remains. Treat it as snack or emergency money.`;
+  if (after < 120) return `This leaves about ${peso(after)} for the rest of the week.`;
+  return `After this meal, you still have about ${peso(after)} left this week.`;
 }
 
 function closeMealLogDialog() {
@@ -1744,7 +1746,7 @@ function openMealLogDialog(food, entry = null) {
   document.getElementById("mealLogTitle").textContent = entry ? "Edit meal" : "Log meal";
   document.getElementById("mealLogFoodName").textContent = food.name;
   document.getElementById("mealLogRestaurant").textContent = food.restaurant;
-  document.getElementById("mealLogSuggestion").textContent = `Suggested: PHP ${food.price_min}-${food.price_max} - about ${nutrition.calories} cal - ${nutrition.label}`;
+  document.getElementById("mealLogSuggestion").textContent = `Suggested: ${peso(food.price_min)}-${peso(food.price_max)} - about ${nutrition.calories} cal - ${nutrition.label}`;
   document.getElementById("mealLogPrice").value = String(entry?.price || averagePrice(food));
   document.getElementById("mealLogNote").value = entry?.note || "";
   document.getElementById("mealLogBudgetHint").textContent = mealBudgetMessage(entry?.price || averagePrice(food), food);
@@ -1856,7 +1858,7 @@ function logFood(food, options = {}) {
   };
   upsertHistoryEntry(entry);
   renderFoods(state.foods);
-  showToast(`${options.entryId ? "Updated" : "Logged"} ${food.name}: PHP ${entry.price}, about ${entry.calories} cal.`);
+  showToast(`${options.entryId ? "Updated" : "Logged"} ${food.name}: ${peso(entry.price)}, about ${entry.calories} cal.`);
 }
 
 function streakDays() {
@@ -1876,8 +1878,8 @@ function streakDays() {
 
 function renderHabitStrip() {
   const history = getHistory().map(normalizeHistoryEntry);
-  document.getElementById("todaySpent").textContent = `PHP ${dailySpentTotal()}`;
-  document.getElementById("weekSpent").textContent = `PHP ${weeklySpentTotal()}`;
+  document.getElementById("todaySpent").textContent = peso(dailySpentTotal());
+  document.getElementById("weekSpent").textContent = peso(weeklySpentTotal());
   document.getElementById("streakCount").textContent = `${streakDays()} day${streakDays() === 1 ? "" : "s"}`;
   document.getElementById("lastAte").textContent = history[0]
     ? `${history[0].name} at ${history[0].restaurant} - ${mealTimeLabel(history[0])}`
@@ -1896,8 +1898,8 @@ function updateBudgetInsight(food = null) {
   const bar = document.getElementById("budgetBar");
   const historyPanel = document.getElementById("weeklyHistory");
   if (spentInput) spentInput.value = String(spent);
-  if (spentLabel) spentLabel.textContent = `PHP ${spent} spent`;
-  if (remainingLabel) remainingLabel.textContent = weekly ? `PHP ${Math.max(0, weekly - spent)} left` : "Set a budget";
+  if (spentLabel) spentLabel.textContent = `${peso(spent)} spent`;
+  if (remainingLabel) remainingLabel.textContent = weekly ? `${peso(Math.max(0, weekly - spent))} left` : "Set a budget";
   if (bar) {
     const percent = weekly ? Math.min(100, Math.round((spent / weekly) * 100)) : 0;
     bar.style.width = `${percent}%`;
@@ -1920,7 +1922,7 @@ function updateBudgetInsight(food = null) {
               <span>${item.restaurant} - ${mealTimeLabel(item)}${item.note ? ` - ${item.note}` : ""}</span>
             </div>
             <div class="weekly-history-actions">
-              <b>PHP ${item.price}</b>
+              <b>${peso(item.price)}</b>
               <button class="icon-button" type="button" data-history-edit="${item.entryId}" aria-label="Edit ${item.name}" title="Edit meal">
                 <i data-lucide="pencil"></i>
               </button>
@@ -1937,20 +1939,20 @@ function updateBudgetInsight(food = null) {
   if (!insight) return;
   if (!weekly) {
     insight.textContent = spent
-      ? `You logged PHP ${spent} this week. Set a weekly budget to track what is left.`
+      ? `You logged ${peso(spent)} this week. Set a weekly budget to track what is left.`
       : "Set a weekly budget to see smarter spending notes.";
     return;
   }
   const remaining = Math.max(0, weekly - spent);
   if (!food) {
     if (weekly - spent < 0) {
-      insight.textContent = `You are PHP ${Math.abs(weekly - spent)} over budget this week.`;
+      insight.textContent = `You are ${peso(Math.abs(weekly - spent))} over budget this week.`;
     } else if (remaining < MIN_SNACK_BUDGET) {
-      insight.textContent = `PHP ${remaining} left is below a realistic food budget.`;
+      insight.textContent = `${peso(remaining)} left is below a realistic food budget.`;
     } else if (remaining < MIN_MEAL_BUDGET) {
-      insight.textContent = `Only PHP ${remaining} left. Treat this as snack or emergency money.`;
+      insight.textContent = `Only ${peso(remaining)} left. Treat this as snack or emergency money.`;
     } else {
-      insight.textContent = `You have PHP ${remaining} left this week.`;
+      insight.textContent = `You have ${peso(remaining)} left this week.`;
     }
     return;
   }
@@ -1958,11 +1960,11 @@ function updateBudgetInsight(food = null) {
   if (after < 0) {
     insight.textContent = `${food.name} would put you over budget. Try a cheaper canteen or snack option.`;
   } else if (after < MIN_SNACK_BUDGET) {
-    insight.textContent = `${food.name} leaves only PHP ${after}, below a realistic food budget.`;
+    insight.textContent = `${food.name} leaves only ${peso(after)}, below a realistic food budget.`;
   } else if (after < MIN_MEAL_BUDGET) {
-    insight.textContent = `${food.name} leaves PHP ${after}, which is snack/emergency money.`;
+    insight.textContent = `${food.name} leaves ${peso(after)}, which is snack/emergency money.`;
   } else {
-    insight.textContent = `${food.name} leaves about PHP ${after} for the rest of the week.`;
+    insight.textContent = `${food.name} leaves about ${peso(after)} for the rest of the week.`;
   }
 }
 
@@ -2095,11 +2097,6 @@ function setupFilters() {
         ? `Saved ${categories.length} favorite food type${categories.length === 1 ? "" : "s"}. These get ranked higher.`
         : "Favorite food types cleared.",
     );
-    renderFoods(state.foods);
-  });
-
-  document.getElementById("loadMore").addEventListener("click", () => {
-    state.visibleLimit += 12;
     renderFoods(state.foods);
   });
 

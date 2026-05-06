@@ -75,7 +75,7 @@ let activeMarkerId = null;
 const foodMarkers = new Map();
 
 function markerLabel(food) {
-  return `${food.name} - PHP ${food.price_min}-${food.price_max}`;
+  return `${food.name} - ₱${food.price_min}-${food.price_max}`;
 }
 
 function formatMapArea(value) {
@@ -173,7 +173,7 @@ function selectedMapMarkup(food, index) {
     <button class="map-close-button" type="button" data-map-clear aria-label="Clear selected shop" title="Clear selected shop">
       <i data-lucide="x"></i>
     </button>
-    <p>${formatMapArea(food.area)} - ${food.menu.length} menu items - PHP ${food.price_min}-${food.price_max}</p>
+    <p>${formatMapArea(food.area)} - ${food.menu.length} menu items - ₱${food.price_min}-${food.price_max}</p>
     <div class="map-selected-meta">
       <span>${food.walking_minutes} min walk</span>
       <span>${Math.round(food.distance_m)} m</span>

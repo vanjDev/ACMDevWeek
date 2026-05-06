@@ -2,6 +2,7 @@ const HISTORY_KEY = "saanFoodHistory";
 const BUDGET_KEY = "saanWeeklyBudget";
 const MIN_SNACK_BUDGET = 50;
 const MIN_MEAL_BUDGET = 80;
+let currentHistorySort = "latest";
 
 function getJson(key, fallback) {
   try {
@@ -142,6 +143,76 @@ function weeklySpentTotal() {
   return thisWeekHistory().reduce((total, item) => total + Number(item.price || 0), 0);
 }
 
+function thisMonthHistory() {
+  const currentMonth = manilaParts().date.slice(0, 7);
+  return getHistory().map(normalizeHistoryEntry).filter((item) => item.phDate.slice(0, 7) === currentMonth);
+}
+
+function totalSpent(items) {
+  return items.reduce((total, item) => total + Number(item.price || 0), 0);
+}
+
+function formatPeso(amount) {
+  return `₱${Math.round(Number(amount || 0)).toLocaleString("en-PH")}`;
+}
+
+function dateFromText(dateText) {
+  const [year, month, day] = String(dateText).split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function dateTextFromDate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function currentWeekDates() {
+  const start = dateFromText(manilaWeekKey());
+  if (!start) return [];
+  return Array.from({ length: 7 }, (_, index) => {
+    const cursor = new Date(start);
+    cursor.setUTCDate(start.getUTCDate() + index);
+    return dateTextFromDate(cursor);
+  });
+}
+
+function groupByDate(items) {
+  return items.reduce((memo, item) => {
+    if (!item.phDate) return memo;
+    memo[item.phDate] = memo[item.phDate] || [];
+    memo[item.phDate].push(item);
+    return memo;
+  }, {});
+}
+
+function mealIcon(item) {
+  const period = mealPeriodForEntry(item);
+  if (period === "breakfast") return "sunrise";
+  if (period === "lunch") return "utensils";
+  if (period === "merienda") return "cookie";
+  return "moon";
+}
+
+function historySortValue(item) {
+  return `${item.phDate || ""} ${item.phTime || "00:00"}`;
+}
+
+function sortedHistory(items) {
+  return [...items].sort((a, b) => {
+    if (currentHistorySort === "price") return Number(b.price || 0) - Number(a.price || 0);
+    if (currentHistorySort === "day") return String(a.phDate || "").localeCompare(String(b.phDate || ""));
+    return historySortValue(b).localeCompare(historySortValue(a));
+  });
+}
+
+function renderHistorySortButtons() {
+  document.querySelectorAll("[data-history-sort]").forEach((button) => {
+    const isActive = button.dataset.historySort === currentHistorySort;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+}
+
 function averageMealSpend(items) {
   if (!items.length) return 0;
   return Math.round(items.reduce((total, item) => total + Number(item.price || 0), 0) / items.length);
@@ -189,32 +260,32 @@ function budgetCoachMessages(spent, weekly) {
       tone: "neutral",
       title: "Set a weekly target",
       body: week.length
-        ? `You already logged PHP ${spent} this week. Add a budget so the app can tell you when to magtipid.`
-        : "Start with a realistic weekly food budget. Even PHP 500-800 is enough for useful tipid feedback.",
+        ? `You already logged ${formatPeso(spent)} this week. Add a budget so the app can tell you when to magtipid.`
+        : "Start with a realistic weekly food budget. Even ₱500-800 is enough for useful tipid feedback.",
     });
   } else if (remaining < 0) {
     messages.push({
       tone: "danger",
       title: "Magtipid muna",
-      body: `You are PHP ${Math.abs(remaining)} over budget. Prioritize canteen meals, street food, or packed snacks for the rest of the week.`,
+      body: `You are ${formatPeso(Math.abs(remaining))} over budget. Prioritize canteen meals, street food, or packed snacks for the rest of the week.`,
     });
   } else if (remaining < MIN_SNACK_BUDGET) {
     messages.push({
       tone: "danger",
       title: "Not enough for a meal",
-      body: `PHP ${remaining} left is below a realistic food budget. Pack food, choose the cheapest canteen option, or raise your weekly target.`,
+      body: `${formatPeso(remaining)} left is below a realistic food budget. Pack food, choose the cheapest canteen option, or raise your weekly target.`,
     });
   } else if (remaining < MIN_MEAL_BUDGET) {
     messages.push({
       tone: "warning",
       title: "Snack-only budget",
-      body: `Only PHP ${remaining} left. Treat this as emergency or snack money, not a normal meal budget.`,
+      body: `Only ${formatPeso(remaining)} left. Treat this as emergency or snack money, not a normal meal budget.`,
     });
   } else if (percent >= 0.85) {
     messages.push({
       tone: "warning",
       title: "Tipid mode recommended",
-      body: `Only PHP ${remaining} left. Keep the next meals under PHP ${Math.max(MIN_SNACK_BUDGET, Math.floor(remaining / 2))} if you still need budget buffer.`,
+      body: `Only ${formatPeso(remaining)} left. Keep the next meals under ${formatPeso(Math.max(MIN_SNACK_BUDGET, Math.floor(remaining / 2)))} if you still need budget buffer.`,
     });
   } else if (percent >= 0.6) {
     messages.push({
@@ -226,7 +297,7 @@ function budgetCoachMessages(spent, weekly) {
     messages.push({
       tone: "good",
       title: "Safe pa budget",
-      body: `PHP ${remaining} left this week. Keep meals near PHP ${Math.min(average || 100, Math.max(MIN_MEAL_BUDGET, Math.floor(remaining / 3)))} to protect the buffer.`,
+      body: `${formatPeso(remaining)} left this week. Keep meals near ${formatPeso(Math.min(average || 100, Math.max(MIN_MEAL_BUDGET, Math.floor(remaining / 3))))} to protect the buffer.`,
     });
   }
 
@@ -240,7 +311,7 @@ function budgetCoachMessages(spent, weekly) {
     messages.push({
       tone: "warning",
       title: "Today is getting expensive",
-      body: `You already spent PHP ${todaySpent} today. For ${mealPeriod()}, aim for a lower-cost pick.`,
+      body: `You already spent ${formatPeso(todaySpent)} today. For ${mealPeriod()}, aim for a lower-cost pick.`,
     });
   } else if (today.length === 0) {
     messages.push({
@@ -254,13 +325,13 @@ function budgetCoachMessages(spent, weekly) {
     messages.push({
       tone: "warning",
       title: "Average meal is high",
-      body: `Your average logged meal is PHP ${average}. Try alternating one full meal with one tipid meal under PHP 100.`,
+      body: `Your average logged meal is ${formatPeso(average)}. Try alternating one full meal with one tipid meal under ₱100.`,
     });
   } else if (average && average <= 90) {
     messages.push({
       tone: "good",
       title: "Tipid streak",
-      body: `Average meal is PHP ${average}. Good budget control, just make sure the meals are still filling enough.`,
+      body: `Average meal is ${formatPeso(average)}. Good budget control, just make sure the meals are still filling enough.`,
     });
   }
 
@@ -268,7 +339,7 @@ function budgetCoachMessages(spent, weekly) {
     messages.push({
       tone: "neutral",
       title: "Biggest spend spot",
-      body: `${topStore[0]} is your top spend this week at PHP ${topStore[1]}. If budget feels tight, rotate in a lower-cost pick tomorrow.`,
+      body: `${topStore[0]} is your top spend this week at ${formatPeso(topStore[1])}. If budget feels tight, rotate in a lower-cost pick tomorrow.`,
     });
   }
 
@@ -277,7 +348,7 @@ function budgetCoachMessages(spent, weekly) {
     messages.push({
       tone: topPeriod[1] > weekly * 0.35 ? "warning" : "neutral",
       title: `${topPeriod[0]} spending pattern`,
-      body: `Most spending happens during ${topPeriod[0]}. Suggested next-meal cap: PHP ${dayCap}.`,
+      body: `Most spending happens during ${topPeriod[0]}. Suggested next-meal cap: ${formatPeso(dayCap)}.`,
     });
   }
 
@@ -315,15 +386,15 @@ function updateBudgetState() {
 function budgetMessage(spent, weekly) {
   if (!weekly) {
     return spent
-      ? `You logged PHP ${spent} this week. Set a weekly budget to track what is left.`
+      ? `You logged ${formatPeso(spent)} this week. Set a weekly budget to track what is left.`
       : "Set a weekly budget to see smarter spending notes.";
   }
   const rawRemaining = weekly - spent;
   const remaining = Math.max(0, rawRemaining);
-  if (rawRemaining < 0) return `You are PHP ${Math.abs(rawRemaining)} over budget this week.`;
-  if (remaining < MIN_SNACK_BUDGET) return `PHP ${remaining} left is below a realistic food budget.`;
-  if (remaining < MIN_MEAL_BUDGET) return `Only PHP ${remaining} left. Treat this as snack or emergency money.`;
-  return `You have PHP ${remaining} left this week.`;
+  if (rawRemaining < 0) return `You are ${formatPeso(Math.abs(rawRemaining))} over budget this week.`;
+  if (remaining < MIN_SNACK_BUDGET) return `${formatPeso(remaining)} left is below a realistic food budget.`;
+  if (remaining < MIN_MEAL_BUDGET) return `Only ${formatPeso(remaining)} left. Treat this as snack or emergency money.`;
+  return `You have ${formatPeso(remaining)} left this week.`;
 }
 
 function renderBudgetCoach(spent, weekly) {
@@ -338,24 +409,110 @@ function renderBudgetCoach(spent, weekly) {
   `).join("");
 }
 
+function renderTrackerInsights() {
+  const panel = document.getElementById("trackerInsightGrid");
+  if (!panel) return;
+  const today = todayHistory();
+  const week = thisWeekHistory();
+  const month = thisMonthHistory();
+  const allHistory = getHistory().map(normalizeHistoryEntry);
+  const topStore = mostSpentBy(month, (item) => item.restaurant);
+  const average = averageMealSpend(month.length ? month : allHistory);
+  const daysWithLogs = new Set(week.map((item) => item.phDate)).size;
+  const cards = [
+    {
+      icon: "wallet-cards",
+      label: "Today",
+      value: formatPeso(totalSpent(today)),
+      note: `${today.length} meal${today.length === 1 ? "" : "s"} logged`,
+    },
+    {
+      icon: "calendar-days",
+      label: "This week",
+      value: formatPeso(totalSpent(week)),
+      note: `${daysWithLogs}/7 days tracked`,
+    },
+    {
+      icon: "calendar-range",
+      label: "This month",
+      value: formatPeso(totalSpent(month)),
+      note: `${month.length} meal${month.length === 1 ? "" : "s"} total`,
+    },
+    {
+      icon: "badge-dollar-sign",
+      label: "Usual spend",
+      value: average ? formatPeso(average) : "No average yet",
+      note: average ? "Average per logged meal" : "Log meals to learn it",
+    },
+    {
+      icon: "store",
+      label: "Top store",
+      value: topStore ? topStore[0] : "None yet",
+      note: topStore ? `${formatPeso(topStore[1])} this month` : "Your repeat spot appears here",
+    },
+  ];
+  panel.innerHTML = cards.map((card) => `
+    <article class="tracker-insight-card">
+      <i data-lucide="${card.icon}"></i>
+      <span>${card.label}</span>
+      <strong>${card.value}</strong>
+      <small>${card.note}</small>
+    </article>
+  `).join("");
+}
+
+function renderWeekStrip() {
+  const panel = document.getElementById("weekStrip");
+  if (!panel) return;
+  const today = manilaParts().date;
+  const weekByDate = groupByDate(thisWeekHistory());
+  const labels = ["M", "T", "W", "TH", "F", "SAT", "SUN"];
+  panel.innerHTML = currentWeekDates().map((dateText, index) => {
+    const meals = weekByDate[dateText] || [];
+    const spent = totalSpent(meals);
+    const classes = [
+      "week-day-card",
+      dateText === today ? "today" : "",
+      meals.length ? "has-log" : "",
+    ].filter(Boolean).join(" ");
+    return `
+      <article class="${classes}">
+        <span>${labels[index]}</span>
+        <i data-lucide="${meals.length ? "check" : "plus"}"></i>
+        <strong>${spent ? formatPeso(spent) : "₱0"}</strong>
+        <small>${meals.length} meal${meals.length === 1 ? "" : "s"}</small>
+      </article>
+    `;
+  }).join("");
+}
+
 function renderHistory() {
   const historyPanel = document.getElementById("weeklyHistory");
   if (!historyPanel) return;
   const week = thisWeekHistory();
+  const visibleWeek = sortedHistory(week);
   historyPanel.innerHTML = week.length
     ? `
       <div class="weekly-history-header">
-        <span>This week in Manila time</span>
-        <b>${week.length} meal${week.length === 1 ? "" : "s"}</b>
+        <span><i data-lucide="list-filter"></i> Recent logs</span>
+        <b>${week.length} meal${week.length === 1 ? "" : "s"} - ${formatPeso(totalSpent(week))}</b>
       </div>
-      ${week.slice(0, 12).map((item) => `
+      <div class="history-list">
+      ${visibleWeek.slice(0, 12).map((item) => `
         <div class="weekly-history-item">
-          <div>
+          <div class="history-icon">
+            <i data-lucide="${mealIcon(item)}"></i>
+          </div>
+          <div class="history-copy">
             <strong>${item.name}</strong>
-            <span>${item.restaurant} - ${mealTimeLabel(item)}${item.note ? ` - ${item.note}` : ""}</span>
+            <span>${item.restaurant}</span>
+            <small>${mealTimeLabel(item)}${item.note ? ` - ${item.note}` : ""}</small>
+          </div>
+          <div class="history-meta">
+            <b>${formatPeso(item.price)}</b>
+            <small>${mealPeriodForEntry(item)}</small>
           </div>
           <div class="weekly-history-actions">
-            <b>PHP ${item.price}</b>
             <button class="icon-button" type="button" data-history-edit="${item.entryId}" aria-label="Edit ${item.name}" title="Edit meal">
               <i data-lucide="pencil"></i>
             </button>
@@ -365,14 +522,22 @@ function renderHistory() {
           </div>
         </div>
       `).join("")}
+      </div>
     `
-    : `<p>No meals logged this week yet. Log a meal from a store menu after eating.</p>`;
+    : `
+      <div class="tracker-empty-state">
+        <i data-lucide="receipt-text"></i>
+        <strong>No meals logged this week yet.</strong>
+        <span>Tap “Eat something” from a menu after you buy food so this turns into your weekly spending story.</span>
+      </div>
+    `;
+  renderHistorySortButtons();
 }
 
 function renderHabitStrip() {
   const history = getHistory().map(normalizeHistoryEntry);
-  document.getElementById("todaySpent").textContent = `PHP ${dailySpentTotal()}`;
-  document.getElementById("weekSpent").textContent = `PHP ${weeklySpentTotal()}`;
+  document.getElementById("todaySpent").textContent = formatPeso(dailySpentTotal());
+  document.getElementById("weekSpent").textContent = formatPeso(weeklySpentTotal());
   document.getElementById("streakCount").textContent = `${streakDays()} day${streakDays() === 1 ? "" : "s"}`;
   document.getElementById("lastAte").textContent = history[0]
     ? `${history[0].name} at ${history[0].restaurant} - ${mealTimeLabel(history[0])}`
@@ -389,8 +554,8 @@ function updateBudgetInsight() {
   const bar = document.getElementById("budgetBar");
   const insight = document.getElementById("budgetInsight");
   if (spentInput) spentInput.value = String(spent);
-  if (spentLabel) spentLabel.textContent = `PHP ${spent} spent`;
-  if (remainingLabel) remainingLabel.textContent = weekly ? `PHP ${Math.max(0, weekly - spent)} left` : "Set a budget";
+  if (spentLabel) spentLabel.textContent = `${formatPeso(spent)} spent`;
+  if (remainingLabel) remainingLabel.textContent = weekly ? `${formatPeso(Math.max(0, weekly - spent))} left` : "Set a budget";
   if (bar) {
     const percent = weekly ? Math.min(100, Math.round((spent / weekly) * 100)) : 0;
     bar.style.width = `${percent}%`;
@@ -404,6 +569,8 @@ function updateBudgetInsight() {
 
 function renderTracker() {
   renderHabitStrip();
+  renderTrackerInsights();
+  renderWeekStrip();
   renderHistory();
   updateBudgetInsight();
   if (window.lucide) window.lucide.createIcons();
@@ -439,6 +606,14 @@ function setupTrackerPage() {
   document.getElementById("weeklyBudget")?.addEventListener("input", () => {
     updateBudgetState();
     updateBudgetInsight();
+  });
+
+  document.querySelectorAll("[data-history-sort]").forEach((button) => {
+    button.addEventListener("click", () => {
+      currentHistorySort = button.dataset.historySort || "latest";
+      renderHistory();
+      if (window.lucide) window.lucide.createIcons();
+    });
   });
 
   document.getElementById("clearHistory")?.addEventListener("click", () => {
@@ -493,7 +668,7 @@ function setupTrackerPage() {
     ));
     saveHistory(next);
     closeMealLogDialog();
-    showToast(`Updated meal to PHP ${price}.`);
+    showToast(`Updated meal to ${formatPeso(price)}.`);
   });
 }
 
