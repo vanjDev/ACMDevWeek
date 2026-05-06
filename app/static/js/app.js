@@ -4,6 +4,7 @@ const state = {
   visibleLimit: 12,
   weatherMode: "auto",
   isLoading: false,
+  hasLoadedFoods: false,
   selectedStoreId: null,
   userLocation: null,
   publicStoreRatings: {},
@@ -954,22 +955,6 @@ function renderComboResults(amount) {
 
   const combos = buildBudgetCombos(amount);
   const singles = buildBudgetSingles(amount);
-  const roles = ["meal", "coffee", "drink", "snack"];
-  const roleSections = roles.map((role) => {
-    const items = singles.filter((food) => comboRole(food) === role).slice(0, 4);
-    if (!items.length) return "";
-    return `
-      <section class="combo-single-section">
-        <div class="combo-section-heading">
-          <span>${comboRoleLabel(role)}</span>
-          <strong>${items.length} pick${items.length === 1 ? "" : "s"}</strong>
-        </div>
-        <div class="combo-single-grid">
-          ${items.map(singlePickTemplate).join("")}
-        </div>
-      </section>
-    `;
-  }).join("");
 
   results.innerHTML = `
     <div class="combo-summary">
@@ -989,7 +974,6 @@ function renderComboResults(amount) {
         </div>
       </section>
     ` : ""}
-    ${roleSections || `<p class="combo-empty">Nothing fits ${peso(amount)} with the current filters. Try a little more budget or loosen the filters.</p>`}
   `;
   if (window.lucide) window.lucide.createIcons();
 }
@@ -1767,15 +1751,25 @@ function applyClientRanking(foods) {
 
 function renderFoods(foods) {
   const results = document.getElementById("results");
-  if (state.isLoading) {
-    if (results.children.length) {
-      results.classList.add("is-refreshing");
+  const resultCount = document.getElementById("resultCount");
+  const shopsPanel = document.querySelector(".shops-panel");
+  const isInitialLoad = !state.hasLoadedFoods && !foods.length;
+  if (state.isLoading || isInitialLoad) {
+    if (resultCount) resultCount.textContent = state.showingBookmarks ? "Loading saved stores..." : "Loading stores...";
+    shopsPanel?.classList.add("is-loading");
+    results?.classList.remove("is-refreshing");
+    document.querySelectorAll("[data-store-scroll], [data-category-scroll]").forEach((button) => {
+      button.hidden = true;
+    });
+    if (results && (!results.children.length || isInitialLoad)) {
+      results.innerHTML = Array.from({ length: 4 }, () => `<div class="food-card store-rail-card skeleton-card"></div>`).join("");
     } else {
-      results.innerHTML = Array.from({ length: 6 }, () => `<div class="food-card skeleton-card"></div>`).join("");
+      results?.classList.add("is-refreshing");
     }
     return;
   }
   results.classList.remove("is-refreshing");
+  shopsPanel?.classList.remove("is-loading");
 
   const ranked = applyClientRanking(foods);
   const foodBookmarks = getBookmarks();
@@ -1791,7 +1785,7 @@ function renderFoods(foods) {
     : `<div class="pick-result"><h2>No matches yet</h2><p>Adjust the filters, time window, budget, or anti-repeat setting.</p></div>`;
   renderMenuDetail(stores);
 
-  document.getElementById("resultCount").textContent = state.showingBookmarks
+  if (resultCount) resultCount.textContent = state.showingBookmarks
     ? `${stores.length} saved store${stores.length === 1 ? "" : "s"}`
     : `${stores.length} store${stores.length === 1 ? "" : "s"}`;
   updateRailButtons("results", "[data-store-scroll]");
@@ -1917,6 +1911,7 @@ async function loadFoods() {
   } catch {
     showToast("Could not load food spots. Check the server and try again.");
   } finally {
+    state.hasLoadedFoods = true;
     state.isLoading = false;
     renderFoods(state.foods);
   }

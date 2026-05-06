@@ -12,6 +12,7 @@ from app.models import FoodRating, FoodSpot, SavedFood, Store, StoreRating, User
 from app.schemas import (
     AdminFoodSpotPayload,
     AdminFoodSpotResponse,
+    AdminStorePayload,
     AdminStoreResponse,
     AuthRequest,
     AuthResponse,
@@ -118,6 +119,24 @@ def admin_store_response(store: Store) -> AdminStoreResponse:
     return AdminStoreResponse.model_validate(store)
 
 
+def apply_store_payload(db: Session, store: Store, payload: AdminStorePayload) -> Store:
+    name = payload.name.strip()
+    existing = db.query(Store).filter(Store.name == name, Store.id != store.id).first() if store.id else db.query(Store).filter(Store.name == name).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="A store with this name already exists. Use a branch/street name if it is a different location.")
+
+    store.name = name
+    store.latitude = payload.latitude
+    store.longitude = payload.longitude
+    store.area = payload.area.strip()
+    store.rating = payload.rating
+    store.image_url = payload.image_url.strip() if payload.image_url else None
+    store.opens_at = validate_time_value(payload.opens_at, "Opens")
+    store.closes_at = validate_time_value(payload.closes_at, "Closes")
+    store.is_active = payload.is_active
+    return store
+
+
 def safe_upload_stem(filename: str) -> str:
     stem = Path(filename or "food-image").stem.lower()
     stem = re.sub(r"[^a-z0-9]+", "-", stem).strip("-")
@@ -174,6 +193,14 @@ def apply_food_payload(db: Session, food: FoodSpot, payload: AdminFoodSpotPayloa
     food.description = payload.description.strip()
     food.is_active = payload.is_active
     return food
+
+
+def sync_foods_for_store(store: Store) -> None:
+    for food in store.foods:
+        food.restaurant = store.name
+        food.latitude = store.latitude
+        food.longitude = store.longitude
+        food.area = store.area
 
 
 @router.get("/config", response_model=PublicConfigResponse)
@@ -411,6 +438,52 @@ def admin_list_stores(
         query = query.filter(Store.is_active.is_(True))
     rows = query.order_by(Store.name.asc()).all()
     return [admin_store_response(row) for row in rows]
+
+
+@router.post("/admin/stores", response_model=AdminStoreResponse)
+def admin_create_store(
+    payload: AdminStorePayload,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    store = apply_store_payload(db, Store(), payload)
+    db.add(store)
+    db.commit()
+    db.refresh(store)
+    return admin_store_response(store)
+
+
+@router.put("/admin/stores/{store_id}", response_model=AdminStoreResponse)
+def admin_update_store(
+    store_id: int,
+    payload: AdminStorePayload,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    store = db.get(Store, store_id)
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found.")
+    apply_store_payload(db, store, payload)
+    sync_foods_for_store(store)
+    db.commit()
+    db.refresh(store)
+    return admin_store_response(store)
+
+
+@router.delete("/admin/stores/{store_id}")
+def admin_disable_store(
+    store_id: int,
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    store = db.get(Store, store_id)
+    if not store:
+        raise HTTPException(status_code=404, detail="Store not found.")
+    store.is_active = False
+    for food in store.foods:
+        food.is_active = False
+    db.commit()
+    return {"ok": True}
 
 
 @router.post("/admin/uploads/image")

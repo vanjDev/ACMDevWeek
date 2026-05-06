@@ -6,7 +6,7 @@
     <div>
       <p>Admin access</p>
       <h1>Sign in to manage stores</h1>
-      <span>Use an email listed in ADMIN_EMAILS to edit prices, store locations, menu items, and visibility.</span>
+      <span>Use an email listed in ADMIN_EMAILS to edit branches, store photos, hours, and menu items.</span>
     </div>
     <button id="adminOpenLogin" class="primary-button compact-button" type="button">
       <i data-lucide="log-in"></i>
@@ -16,9 +16,9 @@
 
   <div class="admin-heading">
     <div>
-      <p>Admin</p>
-      <h1>Manage Food Spots</h1>
-      <span>Add menu items, update store details, and hide entries that should no longer appear.</span>
+      <p>Store manager</p>
+      <h1>Stores First, Menus Inside</h1>
+      <span>Make one store or branch, pin its location once, then add menu items under it.</span>
     </div>
     <a class="secondary-button compact-button" href="/">
       <i data-lucide="utensils"></i>
@@ -26,172 +26,238 @@
     </a>
   </div>
 
-  <section id="adminWorkspace" class="admin-layout" hidden>
-    <form id="adminFoodForm" class="admin-form">
-      <div class="admin-card-heading">
-        <div>
-          <span id="adminFormMode">New item</span>
-          <strong id="adminFormTitle">Add food spot</strong>
-        </div>
-        <button id="adminResetForm" class="icon-button" type="button" aria-label="Reset form" title="Reset form">
-          <i data-lucide="rotate-ccw"></i>
-        </button>
-      </div>
-
-      <input id="adminFoodId" type="hidden">
-      <input id="adminStoreId" type="hidden">
-
-      <label>
-        Use existing store
-        <select id="adminExistingStore" name="existing_store">
-          <option value="">Add as new store</option>
-        </select>
-      </label>
-
-      <label>
-        Store / restaurant
-        <input id="adminRestaurant" name="restaurant" required placeholder="Example: 1008 Kopi">
-      </label>
-
-      <label>
-        Menu item
-        <input id="adminName" name="name" required placeholder="Example: Iced Spanish Latte">
-      </label>
-
-      <div class="budget-row">
-        <label>
-          Min price
-          <input id="adminPriceMin" name="price_min" type="number" min="0" step="1" required placeholder="₱">
-        </label>
-        <label>
-          Max price
-          <input id="adminPriceMax" name="price_max" type="number" min="0" step="1" required placeholder="₱">
-        </label>
-      </div>
-
-      <section class="admin-map-card">
-        <div class="admin-card-heading">
-          <div>
-            <span>Location picker</span>
-            <strong>Click the map</strong>
-          </div>
-        </div>
-        <div id="adminMap" class="admin-map"></div>
-        <p id="adminMapHint">Click the map to fill latitude and longitude.</p>
-      </section>
-
-      <div class="budget-row">
-        <label>
-          Category
-          <select id="adminCategory" name="category" required>
-            <option value="chicken">Chicken</option>
-            <option value="rice_meals">Rice meals</option>
-            <option value="street_food">Street food</option>
-            <option value="dimsum">Dimsum</option>
-            <option value="coffee_drinks">Coffee / drinks</option>
-            <option value="burgers">Burgers</option>
-            <option value="unli_rice">Unli rice</option>
-            <option value="snacks">Snacks</option>
-          </select>
-        </label>
-        <label>
-          Mood
-          <select id="adminMood" name="mood" required>
-            <option value="quick_lunch">Quick lunch</option>
-            <option value="study_fuel">Study fuel</option>
-            <option value="chill_hangout">Chill hangout</option>
-            <option value="group_meal">Group meal</option>
-            <option value="late_night">Late night</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="budget-row">
-        <label>
-          Area
-          <select id="adminArea" name="area" required>
-            <option value="near_feu_tech">Near FEU Tech</option>
-            <option value="near_feu_manila">Near FEU Manila</option>
-            <option value="lerma">Lerma</option>
-            <option value="p_campa">P. Campa</option>
-            <option value="hepa_lane">Hepa Lane</option>
-            <option value="inside_campus">Inside campus</option>
-          </select>
-        </label>
-      </div>
-
-      <div class="budget-row">
-        <label>
-          Latitude
-          <input id="adminLatitude" name="latitude" type="number" min="-90" max="90" step="0.000001" required placeholder="14.6042">
-        </label>
-        <label>
-          Longitude
-          <input id="adminLongitude" name="longitude" type="number" min="-180" max="180" step="0.000001" required placeholder="120.9882">
-        </label>
-      </div>
-
-      <div class="budget-row">
-        <label>
-          Opens
-          <input id="adminOpensAt" name="opens_at" type="time" value="08:00" required>
-        </label>
-        <label>
-          Closes
-          <input id="adminClosesAt" name="closes_at" type="time" value="21:00" required>
-        </label>
-      </div>
-
-      <section class="admin-image-card">
-        <div>
-          <label>
-            Image path / URL
-            <input id="adminImageUrl" name="image_url" type="text" placeholder="Optional, or upload below">
-          </label>
-          <label>
-            Upload image
-            <input id="adminImageUpload" name="image_upload" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
-          </label>
-          <p id="adminImageHint">Uploads are saved to app/static/uploads/foods.</p>
-        </div>
-        <img id="adminImagePreview" alt="" hidden>
-      </section>
-
-      <label>
-        Description
-        <textarea id="adminDescription" name="description" rows="4" required placeholder="Short student-friendly description"></textarea>
-      </label>
-
-      <label class="toggle-row">
-        <input id="adminIsActive" name="is_active" type="checkbox" checked>
-        Show in food finder
-      </label>
-
-      <div class="admin-actions">
-        <button id="adminDisableFood" class="secondary-button compact-button" type="button" hidden>
-          <i data-lucide="eye-off"></i>
-          Hide item
-        </button>
-        <button class="primary-button compact-button" type="submit">
-          <i data-lucide="save"></i>
-          Save item
-        </button>
-      </div>
-    </form>
-
-    <section class="admin-list-panel">
+  <section id="adminWorkspace" class="admin-store-workspace" hidden>
+    <aside class="admin-store-panel">
       <div class="admin-list-toolbar">
         <div>
-          <span>Food database</span>
-          <strong id="adminFoodCount">Loading...</strong>
+          <span>Stores</span>
+          <strong id="adminStoreCount">Loading...</strong>
         </div>
-        <label>
-          Search
-          <input id="adminSearch" type="search" placeholder="Store or item">
-        </label>
+        <button id="adminNewStore" class="primary-button compact-button" type="button">
+          <i data-lucide="plus"></i>
+          New store
+        </button>
       </div>
-      <div id="adminFoodList" class="admin-food-list" aria-live="polite"></div>
-    </section>
+      <label>
+        Search stores
+        <input id="adminSearch" type="search" placeholder="1008, Belgian, Lerma">
+      </label>
+      <div id="adminStoreList" class="admin-store-list" aria-live="polite"></div>
+    </aside>
+
+    <main class="admin-editor-stack">
+      <form id="adminStoreForm" class="admin-form admin-store-form">
+        <div class="admin-card-heading">
+          <div>
+            <span id="adminStoreFormMode">Selected store</span>
+            <strong id="adminStoreFormTitle">Store details</strong>
+          </div>
+          <button id="adminResetStore" class="icon-button" type="button" aria-label="Reset store form" title="Reset store form">
+            <i data-lucide="rotate-ccw"></i>
+          </button>
+        </div>
+
+        <input id="adminStoreId" type="hidden">
+
+        <label>
+          Store / branch name
+          <input id="adminStoreName" name="store_name" required placeholder="Example: Famous Belgian Waffles - FEU Tech">
+        </label>
+
+        <div class="budget-row">
+          <label>
+            Area
+            <select id="adminStoreArea" name="store_area" required>
+              <option value="near_feu_tech">Near FEU Tech</option>
+              <option value="near_feu_manila">Near FEU Manila</option>
+              <option value="lerma">Lerma</option>
+              <option value="p_campa">P. Campa</option>
+              <option value="hepa_lane">Hepa Lane</option>
+              <option value="inside_campus">Inside campus</option>
+            </select>
+          </label>
+          <label>
+            Store rating
+            <input id="adminStoreRating" name="store_rating" type="number" min="0" max="5" step="0.1" value="4.0" required>
+          </label>
+        </div>
+
+        <div class="budget-row">
+          <label>
+            Opens
+            <input id="adminStoreOpensAt" name="store_opens_at" type="time" value="08:00" required>
+          </label>
+          <label>
+            Closes
+            <input id="adminStoreClosesAt" name="store_closes_at" type="time" value="21:00" required>
+          </label>
+        </div>
+
+        <section class="admin-image-card">
+          <div>
+            <label>
+              Store image path / URL
+              <input id="adminStoreImageUrl" name="store_image_url" type="text" placeholder="Store photo or storefront image">
+            </label>
+            <label>
+              Upload store image
+              <input id="adminStoreImageUpload" name="store_image_upload" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+            </label>
+            <p id="adminStoreImageHint">This photo represents the whole store. Menu items can still have their own image if useful.</p>
+          </div>
+          <img id="adminStoreImagePreview" alt="" hidden>
+        </section>
+
+        <section class="admin-map-card">
+          <div class="admin-card-heading">
+            <div>
+              <span>Branch location</span>
+              <strong>Pin once for this store</strong>
+            </div>
+          </div>
+          <div id="adminMap" class="admin-map"></div>
+          <p id="adminMapHint">Click the map once. Menu items will use this store location automatically.</p>
+        </section>
+
+        <div class="budget-row">
+          <label>
+            Latitude
+            <input id="adminStoreLatitude" name="store_latitude" type="number" min="-90" max="90" step="0.000001" required placeholder="14.6042">
+          </label>
+          <label>
+            Longitude
+            <input id="adminStoreLongitude" name="store_longitude" type="number" min="-180" max="180" step="0.000001" required placeholder="120.9882">
+          </label>
+        </div>
+
+        <label class="toggle-row">
+          <input id="adminStoreIsActive" name="store_is_active" type="checkbox" checked>
+          Show this store and its active menu items
+        </label>
+
+        <div class="admin-actions">
+          <button id="adminDisableStore" class="secondary-button compact-button" type="button" hidden>
+            <i data-lucide="eye-off"></i>
+            Hide store
+          </button>
+          <button class="primary-button compact-button" type="submit">
+            <i data-lucide="save"></i>
+            Save store
+          </button>
+        </div>
+      </form>
+
+      <section class="admin-list-panel admin-menu-panel">
+        <div class="admin-list-toolbar">
+          <div>
+            <span>Menu</span>
+            <strong id="adminMenuCount">Choose a store</strong>
+          </div>
+          <button id="adminNewMenuItem" class="primary-button compact-button" type="button" disabled>
+            <i data-lucide="plus"></i>
+            New item
+          </button>
+        </div>
+        <div id="adminSelectedStoreHint" class="admin-selected-store-hint">
+          <i data-lucide="store"></i>
+          Select a store on the left. Items do not need coordinates because they inherit the store branch.
+        </div>
+
+        <form id="adminFoodForm" class="admin-menu-form" hidden>
+          <div class="admin-card-heading">
+            <div>
+              <span id="adminFormMode">New menu item</span>
+              <strong id="adminFormTitle">Add item</strong>
+            </div>
+            <button id="adminResetForm" class="icon-button" type="button" aria-label="Reset menu item form" title="Reset menu item form">
+              <i data-lucide="rotate-ccw"></i>
+            </button>
+          </div>
+
+          <input id="adminFoodId" type="hidden">
+
+          <label>
+            Menu item
+            <input id="adminName" name="name" required placeholder="Example: Banana Caramel Waffle">
+          </label>
+
+          <div class="budget-row">
+            <label>
+              Min price
+              <input id="adminPriceMin" name="price_min" type="number" min="0" step="1" required placeholder="₱">
+            </label>
+            <label>
+              Max price
+              <input id="adminPriceMax" name="price_max" type="number" min="0" step="1" required placeholder="₱">
+            </label>
+          </div>
+
+          <div class="budget-row">
+            <label>
+              Category
+              <select id="adminCategory" name="category" required>
+                <option value="chicken">Chicken</option>
+                <option value="rice_meals">Rice meals</option>
+                <option value="street_food">Street food</option>
+                <option value="dimsum">Dimsum</option>
+                <option value="coffee_drinks">Coffee / drinks</option>
+                <option value="burgers">Burgers</option>
+                <option value="unli_rice">Unli rice</option>
+                <option value="snacks">Snacks</option>
+              </select>
+            </label>
+            <label>
+              Mood
+              <select id="adminMood" name="mood" required>
+                <option value="quick_lunch">Quick lunch</option>
+                <option value="study_fuel">Study fuel</option>
+                <option value="chill_hangout">Chill hangout</option>
+                <option value="group_meal">Group meal</option>
+                <option value="late_night">Late night</option>
+              </select>
+            </label>
+          </div>
+
+          <section class="admin-image-card">
+            <div>
+              <label>
+                Item image path / URL
+                <input id="adminImageUrl" name="image_url" type="text" placeholder="Optional item photo">
+              </label>
+              <label>
+                Upload item image
+                <input id="adminImageUpload" name="image_upload" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+              </label>
+              <p id="adminImageHint">Leave blank to use the store photo.</p>
+            </div>
+            <img id="adminImagePreview" alt="" hidden>
+          </section>
+
+          <label>
+            Description
+            <textarea id="adminDescription" name="description" rows="3" required placeholder="Short student-friendly description"></textarea>
+          </label>
+
+          <label class="toggle-row">
+            <input id="adminIsActive" name="is_active" type="checkbox" checked>
+            Show this item in the food finder
+          </label>
+
+          <div class="admin-actions">
+            <button id="adminDisableFood" class="secondary-button compact-button" type="button" hidden>
+              <i data-lucide="eye-off"></i>
+              Hide item
+            </button>
+            <button class="primary-button compact-button" type="submit">
+              <i data-lucide="save"></i>
+              Save item
+            </button>
+          </div>
+        </form>
+
+        <div id="adminFoodList" class="admin-food-list" aria-live="polite"></div>
+      </section>
+    </main>
   </section>
 </section>
 
@@ -199,5 +265,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', path='/js/admin.js') }}?v=peso-picker-20260507"></script>
+<script src="{{ url_for('static', path='/js/admin.js') }}?v=store-admin-20260507"></script>
 {% endblock %}
