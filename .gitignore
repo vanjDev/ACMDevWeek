@@ -15,3 +15,4 @@ saan.db
 dist/
 build/
 *.egg-info/
+output/
