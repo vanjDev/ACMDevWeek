@@ -2518,13 +2518,13 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
   min-width: 170px;
 }
 
-.shops-heading span {
+.shops-heading-copy > span {
   color: var(--green);
   font-size: 0.75rem;
   font-weight: 900;
 }
 
-.shops-heading strong {
+.shops-heading-copy > strong {
   font-size: clamp(1rem, 2vw, 1.35rem);
 }
 
@@ -5923,11 +5923,11 @@ body.menu-detail-open {
     padding: 10px 12px;
   }
 
-  .shops-heading span {
+  .shops-heading-copy > span {
     font-size: 0.68rem;
   }
 
-  .shops-heading strong {
+  .shops-heading-copy > strong {
     font-size: 0.9rem;
   }
 

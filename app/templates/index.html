@@ -237,37 +237,38 @@
           Combo for Me?
         </button>
       </div>
+      <div id="resultCount" class="result-count">Loading...</div>
     </div>
 
     <section id="pickResult" class="pick-result" hidden></section>
 
     <!-- Home tracker glance moved into the stores header. -->
-    <section class="habit-strip" aria-label="Food history and streaks" hidden>
+    <section class="habit-strip" aria-label="Food history and streaks">
       <div class="habit-stat">
         <i data-lucide="flame"></i>
         <span>Streak</span>
-        <strong>0 days</strong>
+        <strong id="streakCount">0 days</strong>
       </div>
       <div class="habit-stat">
         <i data-lucide="clock-3"></i>
         <span>Last pick</span>
-        <strong>No food yet</strong>
+        <strong id="lastAte">No food yet</strong>
       </div>
       <div class="habit-stat">
         <i data-lucide="wallet-cards"></i>
         <span>Today spent</span>
-        <strong>₱0</strong>
+        <strong id="todaySpent">₱0</strong>
       </div>
       <div class="habit-stat">
         <i data-lucide="calendar-days"></i>
         <span>This week</span>
-        <strong>₱0</strong>
+        <strong id="weekSpent">₱0</strong>
       </div>
       <a href="/tracker" class="secondary-button compact-button habit-action">
         <i data-lucide="chart-no-axes-combined"></i>
         Tracker
       </a>
-      <span class="save-status"><i data-lucide="cloud"></i> Guest saves stay on this device</span>
+      <span id="saveStatus" class="save-status"><i data-lucide="cloud"></i> Guest saves stay on this device</span>
     </section>
 
     <section id="decisionCoach" class="decision-coach" aria-live="polite" aria-label="Personal suggestion"></section>
@@ -292,40 +293,10 @@
             <span>Stores Available</span>
             <strong>Swipe stores near campus</strong>
           </div>
-          <div class="shops-heading-side">
-            <div id="resultCount" class="result-count">Loading...</div>
-            <div class="home-store-stats" aria-label="Food history and spending summary">
-              <div class="home-store-stat">
-                <i data-lucide="flame"></i>
-                <span>Streak</span>
-                <strong id="streakCount">0 days</strong>
-              </div>
-              <div class="home-store-stat">
-                <i data-lucide="clock-3"></i>
-                <span>Last pick</span>
-                <strong id="lastAte">No food yet</strong>
-              </div>
-              <div class="home-store-stat">
-                <i data-lucide="wallet-cards"></i>
-                <span>Today</span>
-                <strong id="todaySpent">₱0</strong>
-              </div>
-              <div class="home-store-stat">
-                <i data-lucide="calendar-days"></i>
-                <span>Week</span>
-                <strong id="weekSpent">₱0</strong>
-              </div>
-            </div>
-            <a href="/tracker" class="secondary-button compact-button home-tracker-link">
-              <i data-lucide="chart-no-axes-combined"></i>
-              Tracker
-            </a>
-            <button id="scrollToMap" class="secondary-button compact-button" type="button">
-              <i data-lucide="map"></i>
-              Map
-            </button>
-            <span id="saveStatus" class="save-status home-save-status"><i data-lucide="cloud"></i> Guest saves stay on this device</span>
-          </div>
+          <button id="scrollToMap" class="secondary-button compact-button" type="button">
+            <i data-lucide="map"></i>
+            Map
+          </button>
         </div>
       <div id="menuDetailBackdrop" class="menu-detail-backdrop" hidden></div>
       <aside id="menuDetail" class="menu-detail" aria-live="polite" hidden></aside>
@@ -478,7 +449,7 @@
 <script>
   window.SAAN_CAMPUSES = {{ campuses | tojson }};
 </script>
-<script src="{{ url_for('static', path='/js/map.js') }}?v=peso-picker-20260507"></script>
-<script src="{{ url_for('static', path='/js/app.js') }}?v=peso-picker-20260507"></script>
+<script src="{{ url_for('static', path='/js/map.js') }}?v=home-store-header-20260507"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}?v=home-store-header-20260507"></script>
 <script src="{{ url_for('static', path='/js/pickforme.js') }}?v=picker-modes-20260507"></script>
 {% endblock %}
