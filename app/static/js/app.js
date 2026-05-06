@@ -69,6 +69,53 @@ function showToast(message) {
   }, 2600);
 }
 
+function manilaParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(date).reduce((memo, part) => {
+    memo[part.type] = part.value;
+    return memo;
+  }, {});
+  return {
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    time: `${parts.hour}:${parts.minute}`,
+  };
+}
+
+function formatManilaTime(iso) {
+  if (!iso) return "";
+  return new Intl.DateTimeFormat("en-PH", {
+    timeZone: "Asia/Manila",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(new Date(iso));
+}
+
+function mealTimeLabel(item) {
+  if (item.phTime) return `${item.phTime} PHT`;
+  if (item.loggedAt) return `${formatManilaTime(item.loggedAt)} PHT`;
+  if (item.phDate || item.date) return `${item.phDate || item.date} PHT`;
+  return "PHT time unavailable";
+}
+
+function manilaWeekKey(dateText = manilaParts().date) {
+  const [year, month, day] = String(dateText).split("-").map(Number);
+  if (!year || !month || !day) return "";
+  const cursor = new Date(Date.UTC(year, month - 1, day));
+  const mondayOffset = (cursor.getUTCDay() + 6) % 7;
+  cursor.setUTCDate(cursor.getUTCDate() - mondayOffset);
+  return cursor.toISOString().slice(0, 10);
+}
+
 function updateSaveStatus(label = null) {
   const status = document.getElementById("saveStatus");
   if (!status) return;
@@ -143,20 +190,95 @@ function getHistory() {
 }
 
 function saveHistory(history) {
-  setJson(HISTORY_KEY, history.slice(0, 30));
+  setJson(HISTORY_KEY, history.slice(0, 60));
   renderHabitStrip();
+  updateBudgetInsight();
 }
 
 function getBudgetState() {
-  return getJson(BUDGET_KEY, { weekly: "", spent: "" });
+  return getJson(BUDGET_KEY, { weekly: "" });
 }
 
 function setBudgetState() {
   setJson(BUDGET_KEY, {
     weekly: document.getElementById("weeklyBudget").value,
-    spent: document.getElementById("weeklySpent").value,
   });
   updateBudgetInsight();
+}
+
+function normalizeHistoryEntry(item) {
+  const phDate = item.phDate || item.date || "";
+  return {
+    ...item,
+    entryId: item.entryId || item.loggedAt || `${item.id}-${phDate}-${item.phTime || "00:00"}`,
+    phDate,
+    phTime: item.phTime || "",
+    weekKey: item.weekKey || manilaWeekKey(phDate),
+    price: Number(item.price || 0),
+    note: item.note || "",
+  };
+}
+
+function thisWeekHistory() {
+  const currentWeek = manilaWeekKey();
+  return getHistory().map(normalizeHistoryEntry).filter((item) => item.weekKey === currentWeek);
+}
+
+function todayHistory() {
+  const today = manilaParts().date;
+  return getHistory().map(normalizeHistoryEntry).filter((item) => item.phDate === today);
+}
+
+function dailySpentTotal() {
+  return todayHistory().reduce((total, item) => total + Number(item.price || 0), 0);
+}
+
+function weeklySpentTotal() {
+  return thisWeekHistory().reduce((total, item) => total + Number(item.price || 0), 0);
+}
+
+function latestFoodLog(foodId) {
+  return getHistory()
+    .map(normalizeHistoryEntry)
+    .find((item) => item.id === Number(foodId));
+}
+
+function latestTodayFoodLog(foodId) {
+  const today = manilaParts().date;
+  const entry = latestFoodLog(foodId);
+  return entry?.phDate === today ? entry : null;
+}
+
+function foodFromHistoryEntry(entry) {
+  if (!entry) return null;
+  return state.foods.find((item) => item.id === Number(entry.id)) || {
+    id: entry.id,
+    name: entry.name,
+    restaurant: entry.restaurant,
+    price_min: entry.price,
+    price_max: entry.price,
+    category: "snacks",
+    description: entry.note || "Saved from your meal history.",
+  };
+}
+
+function upsertHistoryEntry(entry) {
+  const normalized = normalizeHistoryEntry(entry);
+  const next = [
+    normalized,
+    ...getHistory()
+      .map(normalizeHistoryEntry)
+      .filter((item) => item.entryId !== normalized.entryId),
+  ];
+  saveHistory(next);
+}
+
+function removeHistoryEntry(entryId) {
+  saveHistory(
+    getHistory()
+      .map(normalizeHistoryEntry)
+      .filter((item) => item.entryId !== entryId),
+  );
 }
 
 function getBookmarks() {
@@ -327,7 +449,7 @@ function averagePrice(food) {
 
 function budgetNote(food) {
   const weekly = Number(document.getElementById("weeklyBudget")?.value || 0);
-  const spent = Number(document.getElementById("weeklySpent")?.value || 0);
+  const spent = weeklySpentTotal();
   if (!weekly) return "";
   const remaining = Math.max(0, weekly - spent);
   const after = remaining - averagePrice(food);
@@ -361,7 +483,8 @@ function foodImageFor(food) {
 
 function menuItemTemplate(food) {
   const active = getBookmarks().includes(food.id);
-  const eatenToday = getHistory().some((item) => item.id === food.id && item.date === new Date().toISOString().slice(0, 10));
+  const foodLog = latestFoodLog(food.id);
+  const eatenToday = Boolean(foodLog && foodLog.phDate === manilaParts().date);
   return `
     <li class="menu-item" data-menu-food-id="${food.id}">
       <div class="menu-copy">
@@ -370,7 +493,7 @@ function menuItemTemplate(food) {
       </div>
       <div class="menu-controls">
         <span>PHP ${food.price_min}-${food.price_max}</span>
-        <button class="icon-button ate-button ${eatenToday ? "active" : ""}" type="button" data-ate="${food.id}" aria-label="${eatenToday ? "Logged" : "Log"} ${food.name}" aria-pressed="${eatenToday}" title="${eatenToday ? "Logged today" : "Log eaten"}">
+        <button class="icon-button ate-button ${eatenToday ? "active" : ""}" type="button" data-ate="${food.id}" aria-label="${eatenToday ? "Edit meal log for" : "Log"} ${food.name}" aria-pressed="${eatenToday}" title="${eatenToday ? `Logged PHP ${foodLog.price} today` : "Log eaten"}">
           <i data-lucide="utensils"></i>
         </button>
         <button class="icon-button bookmark ${active ? "active" : ""}" type="button" data-bookmark="${food.id}" aria-label="${active ? "Remove bookmark for" : "Bookmark"} ${food.name}" aria-pressed="${active}" title="${active ? "Saved" : "Bookmark"}">
@@ -383,7 +506,8 @@ function menuItemTemplate(food) {
 
 function detailMenuItemTemplate(food) {
   const active = getBookmarks().includes(food.id);
-  const eatenToday = getHistory().some((item) => item.id === food.id && item.date === new Date().toISOString().slice(0, 10));
+  const foodLog = latestFoodLog(food.id);
+  const eatenToday = Boolean(foodLog && foodLog.phDate === manilaParts().date);
   return `
     <article class="detail-menu-item" data-menu-food-id="${food.id}">
       <img src="${foodImageFor(food)}" alt="">
@@ -397,7 +521,7 @@ function detailMenuItemTemplate(food) {
           <p>${food.description}</p>
         </div>
         <div class="detail-menu-meta">
-          <button class="icon-button ate-button ${eatenToday ? "active" : ""}" type="button" data-ate="${food.id}" aria-label="${eatenToday ? "Logged" : "Log"} ${food.name}" aria-pressed="${eatenToday}" title="${eatenToday ? "Logged today" : "Log eaten"}">
+          <button class="icon-button ate-button ${eatenToday ? "active" : ""}" type="button" data-ate="${food.id}" aria-label="${eatenToday ? "Edit meal log for" : "Log"} ${food.name}" aria-pressed="${eatenToday}" title="${eatenToday ? `Logged PHP ${foodLog.price} today` : "Log eaten"}">
             <i data-lucide="utensils"></i>
           </button>
           <button class="icon-button bookmark ${active ? "active" : ""}" type="button" data-bookmark="${food.id}" aria-label="${active ? "Remove bookmark for" : "Bookmark"} ${food.name}" aria-pressed="${active}" title="${active ? "Saved" : "Bookmark"}">
@@ -464,9 +588,14 @@ function menuDetailTemplate(store) {
         <p>${store.menu.length} menu items - ${store.walking_minutes} min walk</p>
         <b class="detail-price-range">PHP ${store.price_min}-${store.price_max}</b>
       </div>
-      <button class="store-save-dot ${storeSaved ? "active" : ""}" type="button" data-store-bookmark="${store.id}" title="${storeSaved ? "Saved restaurant" : "Save restaurant"}" aria-label="${storeSaved ? "Remove restaurant bookmark for" : "Bookmark restaurant"} ${store.name}" aria-pressed="${storeSaved}">
-        <i data-lucide="heart"></i>
-      </button>
+      <div class="menu-detail-header-actions">
+        <button class="store-save-dot ${storeSaved ? "active" : ""}" type="button" data-store-bookmark="${store.id}" title="${storeSaved ? "Saved restaurant" : "Save restaurant"}" aria-label="${storeSaved ? "Remove restaurant bookmark for" : "Bookmark restaurant"} ${store.name}" aria-pressed="${storeSaved}">
+          <i data-lucide="heart"></i>
+        </button>
+        <button class="icon-button menu-detail-close" type="button" data-close-menu aria-label="Close menu" title="Close menu">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
     </div>
     <div class="detail-menu-list">
       ${store.menu.map(detailMenuItemTemplate).join("")}
@@ -476,15 +605,18 @@ function menuDetailTemplate(store) {
 
 function renderMenuDetail(stores) {
   const detail = document.getElementById("menuDetail");
+  const backdrop = document.getElementById("menuDetailBackdrop");
   if (!detail) return;
   const selected = stores.find((store) => store.id === state.selectedStoreId);
   detail.hidden = !selected;
-  detail.innerHTML = menuDetailTemplate(selected);
+  if (backdrop) backdrop.hidden = !selected;
+  document.body.classList.toggle("menu-detail-open", Boolean(selected));
+  detail.innerHTML = selected ? menuDetailTemplate(selected) : "";
+  if (window.lucide) window.lucide.createIcons();
 }
 
 function focusMenuDetail() {
-  if (window.innerWidth > 1100) return;
-  document.getElementById("menuDetail")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  return;
 }
 
 function applyClientRanking(foods) {
@@ -543,6 +675,43 @@ function renderFoods(foods) {
   updateBudgetInsight(paged[0]?.menu?.[0]);
 }
 
+function mealBudgetMessage(price, food) {
+  const weekly = Number(document.getElementById("weeklyBudget")?.value || 0);
+  const currentSpent = weeklySpentTotal();
+  if (!weekly) return `Logging ${food.name} helps build your weekly food history.`;
+  const remaining = Math.max(0, weekly - currentSpent);
+  const after = remaining - Number(price || 0);
+  if (after < 0) return `This meal puts you PHP ${Math.abs(after)} over your weekly budget.`;
+  if (after < 120) return `This leaves about PHP ${after} for the rest of the week.`;
+  return `After this meal, you still have about PHP ${after} left this week.`;
+}
+
+function closeMealLogDialog() {
+  document.getElementById("mealLogDialog")?.close();
+}
+
+function openMealLogDialog(food, entry = null) {
+  const dialog = document.getElementById("mealLogDialog");
+  if (!dialog || !food) return;
+  if (dialog.open) dialog.close();
+  document.getElementById("mealLogFoodId").value = String(food.id);
+  document.getElementById("mealLogEntryId").value = entry?.entryId || "";
+  document.getElementById("mealLogTitle").textContent = entry ? "Edit meal" : "Log meal";
+  document.getElementById("mealLogFoodName").textContent = food.name;
+  document.getElementById("mealLogRestaurant").textContent = food.restaurant;
+  document.getElementById("mealLogSuggestion").textContent = `Suggested: PHP ${food.price_min}-${food.price_max}`;
+  document.getElementById("mealLogPrice").value = String(entry?.price || averagePrice(food));
+  document.getElementById("mealLogNote").value = entry?.note || "";
+  document.getElementById("mealLogBudgetHint").textContent = mealBudgetMessage(entry?.price || averagePrice(food), food);
+  document.getElementById("mealLogSubmit").innerHTML = entry
+    ? `<i data-lucide="save"></i> Update meal`
+    : `<i data-lucide="check"></i> Log meal`;
+  document.getElementById("mealLogRemove").hidden = !entry;
+  document.getElementById("mealLogRemove").dataset.entryId = entry?.entryId || "";
+  dialog.showModal();
+  if (window.lucide) window.lucide.createIcons();
+}
+
 async function loadFoods() {
   const params = buildParams();
   state.isLoading = true;
@@ -559,30 +728,33 @@ async function loadFoods() {
   }
 }
 
-function logFood(food) {
-  const today = new Date().toISOString().slice(0, 10);
+function logFood(food, options = {}) {
+  const now = new Date();
+  const manila = manilaParts(now);
   const entry = {
+    entryId: options.entryId || `${food.id}-${now.toISOString()}`,
     id: food.id,
     name: food.name,
     restaurant: food.restaurant,
-    price: averagePrice(food),
-    date: today,
+    price: Number(options.price || averagePrice(food)),
+    note: options.note || "",
+    date: manila.date,
+    phDate: manila.date,
+    phTime: manila.time,
+    weekKey: manilaWeekKey(manila.date),
+    loggedAt: now.toISOString(),
   };
-  const history = [entry, ...getHistory().filter((item) => item.id !== food.id || item.date !== today)];
-  saveHistory(history);
-
-  const spentInput = document.getElementById("weeklySpent");
-  if (spentInput) {
-    spentInput.value = String(Number(spentInput.value || 0) + entry.price);
-    setBudgetState();
-  }
+  upsertHistoryEntry(entry);
   renderFoods(state.foods);
+  showToast(`${options.entryId ? "Updated" : "Logged"} ${food.name} for PHP ${entry.price}.`);
 }
 
 function streakDays() {
-  const dates = [...new Set(getHistory().map((item) => item.date))].sort().reverse();
+  const dates = [...new Set(getHistory().map((item) => item.phDate || item.date))].sort().reverse();
   let streak = 0;
-  const cursor = new Date();
+  const cursorParts = manilaParts();
+  const [year, month, day] = cursorParts.date.split("-").map(Number);
+  const cursor = new Date(Date.UTC(year, month - 1, day));
   for (const date of dates) {
     const expected = cursor.toISOString().slice(0, 10);
     if (date !== expected) break;
@@ -593,9 +765,13 @@ function streakDays() {
 }
 
 function renderHabitStrip() {
-  const history = getHistory();
+  const history = getHistory().map(normalizeHistoryEntry);
+  document.getElementById("todaySpent").textContent = `PHP ${dailySpentTotal()}`;
+  document.getElementById("weekSpent").textContent = `PHP ${weeklySpentTotal()}`;
   document.getElementById("streakCount").textContent = `${streakDays()} day${streakDays() === 1 ? "" : "s"}`;
-  document.getElementById("lastAte").textContent = history[0] ? `${history[0].name} at ${history[0].restaurant}` : "Nothing logged yet";
+  document.getElementById("lastAte").textContent = history[0]
+    ? `${history[0].name} at ${history[0].restaurant} - ${mealTimeLabel(history[0])}`
+    : "Nothing logged yet";
   updateSaveStatus();
 }
 
@@ -603,9 +779,54 @@ function updateBudgetInsight(food = null) {
   const insight = document.getElementById("budgetInsight");
   if (!insight) return;
   const weekly = Number(document.getElementById("weeklyBudget").value || 0);
-  const spent = Number(document.getElementById("weeklySpent").value || 0);
+  const spent = weeklySpentTotal();
+  const spentInput = document.getElementById("weeklySpent");
+  const spentLabel = document.getElementById("budgetSpentLabel");
+  const remainingLabel = document.getElementById("budgetRemainingLabel");
+  const bar = document.getElementById("budgetBar");
+  const historyPanel = document.getElementById("weeklyHistory");
+  if (spentInput) spentInput.value = String(spent);
+  if (spentLabel) spentLabel.textContent = `PHP ${spent} spent`;
+  if (remainingLabel) remainingLabel.textContent = weekly ? `PHP ${Math.max(0, weekly - spent)} left` : "Set a budget";
+  if (bar) {
+    const percent = weekly ? Math.min(100, Math.round((spent / weekly) * 100)) : 0;
+    bar.style.width = `${percent}%`;
+    bar.classList.toggle("warning", weekly > 0 && percent >= 75 && percent < 100);
+    bar.classList.toggle("danger", weekly > 0 && percent >= 100);
+  }
+  if (historyPanel) {
+    const week = thisWeekHistory();
+    historyPanel.innerHTML = week.length
+      ? `
+        <div class="weekly-history-header">
+          <span>This week in Manila time</span>
+          <b>${week.length} meal${week.length === 1 ? "" : "s"}</b>
+        </div>
+        ${week.slice(0, 5).map((item) => `
+          <div class="weekly-history-item">
+            <div>
+              <strong>${item.name}</strong>
+              <span>${item.restaurant} - ${mealTimeLabel(item)}${item.note ? ` - ${item.note}` : ""}</span>
+            </div>
+            <div class="weekly-history-actions">
+              <b>PHP ${item.price}</b>
+              <button class="icon-button" type="button" data-history-edit="${item.entryId}" aria-label="Edit ${item.name}" title="Edit meal">
+                <i data-lucide="pencil"></i>
+              </button>
+              <button class="icon-button" type="button" data-history-remove="${item.entryId}" aria-label="Remove ${item.name}" title="Remove meal">
+                <i data-lucide="undo-2"></i>
+              </button>
+            </div>
+          </div>
+        `).join("")}
+      `
+      : `<p>No meals logged this week yet. Tap the utensil button on a menu item after eating.</p>`;
+    if (window.lucide) window.lucide.createIcons();
+  }
   if (!weekly) {
-    insight.textContent = "Set a weekly budget to see smarter spending notes.";
+    insight.textContent = spent
+      ? `You logged PHP ${spent} this week. Set a weekly budget to track what is left.`
+      : "Set a weekly budget to see smarter spending notes.";
     return;
   }
   const remaining = Math.max(0, weekly - spent);
@@ -622,7 +843,7 @@ function updateBudgetInsight(food = null) {
 function restorePreferences() {
   const budget = getBudgetState();
   document.getElementById("weeklyBudget").value = budget.weekly || "";
-  document.getElementById("weeklySpent").value = budget.spent || "";
+  document.getElementById("weeklySpent").value = String(weeklySpentTotal());
   document.getElementById("timeAvailable").value = getJson("saanTimeAvailable", "");
   document.getElementById("mealMinutes").value = getJson("saanMealMinutes", "20");
   getJson(FAVORITES_KEY, []).forEach((category) => {
@@ -684,7 +905,7 @@ function setupFilters() {
     });
   });
 
-  ["weeklyBudget", "weeklySpent"].forEach((id) => {
+  ["weeklyBudget"].forEach((id) => {
     document.getElementById(id).addEventListener("input", setBudgetState);
   });
 
@@ -737,6 +958,44 @@ function setupFilters() {
   document.getElementById("heroPickForMe")?.addEventListener("click", () => {
     document.getElementById("pickForMe")?.click();
     document.getElementById("pickResult")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+
+  document.getElementById("mealLogPrice")?.addEventListener("input", () => {
+    const food = state.foods.find((item) => item.id === Number(document.getElementById("mealLogFoodId")?.value));
+    if (!food) return;
+    const price = Number(document.getElementById("mealLogPrice").value || 0);
+    document.getElementById("mealLogBudgetHint").textContent = mealBudgetMessage(price, food);
+  });
+
+  document.getElementById("closeMealLog")?.addEventListener("click", closeMealLogDialog);
+  document.getElementById("mealLogDialog")?.addEventListener("click", (event) => {
+    if (event.target === event.currentTarget) closeMealLogDialog();
+  });
+
+  document.getElementById("mealLogRemove")?.addEventListener("click", () => {
+    const entryId = document.getElementById("mealLogRemove")?.dataset.entryId;
+    if (!entryId) return;
+    removeHistoryEntry(entryId);
+    closeMealLogDialog();
+    renderFoods(state.foods);
+    showToast("Removed meal log.");
+  });
+
+  document.getElementById("mealLogForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const food = state.foods.find((item) => item.id === Number(document.getElementById("mealLogFoodId").value));
+    if (!food) return;
+    const price = Number(document.getElementById("mealLogPrice").value || 0);
+    if (!price) {
+      showToast("Add the amount you spent first.");
+      return;
+    }
+    logFood(food, {
+      entryId: document.getElementById("mealLogEntryId").value || undefined,
+      price,
+      note: document.getElementById("mealLogNote").value.trim(),
+    });
+    closeMealLogDialog();
   });
 
   document.getElementById("usePreciseLocation")?.addEventListener("click", () => {
@@ -812,7 +1071,7 @@ function setupFilters() {
     }
     if (ateButton) {
       const food = state.foods.find((item) => item.id === Number(ateButton.dataset.ate));
-      if (food) logFood(food);
+      if (food) openMealLogDialog(food, latestTodayFoodLog(food.id));
     } else if (card) {
       window.selectFoodOnMap?.(card.dataset.storeId, false);
     }
@@ -822,6 +1081,13 @@ function setupFilters() {
     const bookmarkButton = event.target.closest("[data-bookmark]");
     const storeBookmarkButton = event.target.closest("[data-store-bookmark]");
     const ateButton = event.target.closest("[data-ate]");
+    const closeButton = event.target.closest("[data-close-menu]");
+    if (closeButton) {
+      state.selectedStoreId = null;
+      renderFoods(state.foods);
+      window.selectFoodOnMap?.(null, false);
+      return;
+    }
     if (bookmarkButton) {
       const id = Number(bookmarkButton.dataset.bookmark);
       if (!Number.isFinite(id)) return;
@@ -844,7 +1110,36 @@ function setupFilters() {
     }
     if (ateButton) {
       const food = state.foods.find((item) => item.id === Number(ateButton.dataset.ate));
-      if (food) logFood(food);
+      if (food) openMealLogDialog(food, latestTodayFoodLog(food.id));
+    }
+  });
+
+  document.getElementById("menuDetailBackdrop")?.addEventListener("click", () => {
+    state.selectedStoreId = null;
+    renderFoods(state.foods);
+    window.selectFoodOnMap?.(null, false);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || !state.selectedStoreId) return;
+    state.selectedStoreId = null;
+    renderFoods(state.foods);
+    window.selectFoodOnMap?.(null, false);
+  });
+
+  document.getElementById("weeklyHistory")?.addEventListener("click", (event) => {
+    const editButton = event.target.closest("[data-history-edit]");
+    const removeButton = event.target.closest("[data-history-remove]");
+    if (editButton) {
+      const entry = getHistory().map(normalizeHistoryEntry).find((item) => item.entryId === editButton.dataset.historyEdit);
+      const food = foodFromHistoryEntry(entry);
+      if (food && entry) openMealLogDialog(food, entry);
+      return;
+    }
+    if (removeButton) {
+      removeHistoryEntry(removeButton.dataset.historyRemove);
+      renderFoods(state.foods);
+      showToast("Removed meal log.");
     }
   });
 }

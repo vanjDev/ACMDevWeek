@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}?v=mobile-map-ux-20260506">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}?v=floating-menu-20260506">
   </head>
   <body>
     <header class="site-header">
@@ -28,10 +28,10 @@
         <a class="{{ 'active' if active_page == 'about' else '' }}" href="/about">About</a>
       </nav>
       <div class="auth-controls">
-        <span id="authStatus">Guest mode</span>
-        <button id="openAuth" class="secondary-button compact-button" type="button">
+        <span id="authStatus">Checking your saves...</span>
+        <button id="openAuth" class="secondary-button compact-button" type="button" hidden>
           <i data-lucide="log-in"></i>
-          Login
+          Sign in
         </button>
         <button id="logoutAuth" class="icon-button" type="button" aria-label="Logout" title="Logout" hidden>
           <i data-lucide="log-out"></i>
@@ -94,7 +94,7 @@
       window.SAAN_GOOGLE_CLIENT_ID = {{ google_client_id | tojson }};
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="{{ url_for('static', path='/js/auth.js') }}?v=googlecopy-20260506"></script>
+    <script src="{{ url_for('static', path='/js/auth.js') }}?v=friendly-header-20260506"></script>
     {% block scripts %}{% endblock %}
     <script>
       if (window.lucide) window.lucide.createIcons();

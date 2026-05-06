@@ -3,6 +3,7 @@ const SaanAuth = {
   bookmarks: null,
   data: null,
   ready: null,
+  hydrated: false,
 };
 
 function readGuestBookmarks() {
@@ -105,16 +106,25 @@ function updateAuthUi() {
   const status = document.getElementById("authStatus");
   const openButton = document.getElementById("openAuth");
   const logoutButton = document.getElementById("logoutAuth");
+  const controls = document.querySelector(".auth-controls");
   if (!status || !openButton || !logoutButton) return;
 
-  if (SaanAuth.user) {
-    status.textContent = SaanAuth.user.name;
+  if (!SaanAuth.hydrated) {
+    status.textContent = "Checking your saves...";
+    openButton.hidden = true;
+    logoutButton.hidden = true;
+    controls?.classList.add("is-pending");
+  } else if (SaanAuth.user) {
+    const firstName = (SaanAuth.user.name || "").trim().split(/\s+/)[0];
+    status.textContent = firstName ? `Hi, ${firstName}` : "Signed in";
     openButton.hidden = true;
     logoutButton.hidden = false;
+    controls?.classList.remove("is-pending");
   } else {
-    status.textContent = "Guest mode";
+    status.textContent = "Saving on this device";
     openButton.hidden = false;
     logoutButton.hidden = true;
+    controls?.classList.remove("is-pending");
   }
 
   if (window.lucide) window.lucide.createIcons();
@@ -169,6 +179,8 @@ async function refreshAuth({ mergeGuest = false } = {}) {
     SaanAuth.user = null;
     SaanAuth.bookmarks = null;
     SaanAuth.data = readGuestData();
+  } finally {
+    SaanAuth.hydrated = true;
   }
 
   updateAuthUi();
@@ -204,6 +216,7 @@ function setupAuthControls() {
     SaanAuth.user = null;
     SaanAuth.bookmarks = null;
     SaanAuth.data = readGuestData();
+    SaanAuth.hydrated = true;
     updateAuthUi();
     window.dispatchEvent(new CustomEvent("saan:auth-changed"));
   });

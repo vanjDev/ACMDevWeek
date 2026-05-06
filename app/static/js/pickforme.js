@@ -136,7 +136,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const storeButton = event.target.closest("[data-picked-store]");
     if (ateButton) {
       const food = state.foods.find((item) => item.id === Number(ateButton.dataset.pickedAte));
-      if (food) logFood(food);
+      if (food) openMealLogDialog(food, latestTodayFoodLog(food.id));
       return;
     }
     if (storeButton) {
