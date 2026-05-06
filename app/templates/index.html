@@ -69,26 +69,6 @@
         </select>
       </label>
 
-      <div class="budget-coach">
-        <div class="budget-row">
-          <label>
-            I have
-            <input type="number" id="timeAvailable" min="5" max="180" step="5" placeholder="Minutes">
-          </label>
-          <label>
-            Meal time
-            <input type="number" id="mealMinutes" min="5" max="90" step="5" value="20">
-          </label>
-        </div>
-        <div class="break-presets" aria-label="Class break presets">
-          <button type="button" data-break-minutes="5">5m</button>
-          <button type="button" data-break-minutes="10">10m</button>
-          <button type="button" data-break-minutes="15">15m</button>
-          <button type="button" data-break-minutes="30">30m</button>
-        </div>
-        <p id="classBreakBrief">Add break minutes to see safe, tight, and risky picks.</p>
-      </div>
-
       <label>
         Area
         <select name="area" id="area">
@@ -367,6 +347,6 @@
   window.SAAN_CAMPUSES = {{ campuses | tojson }};
 </script>
 <script src="{{ url_for('static', path='/js/map.js') }}?v=pedestrian-corridor-20260506"></script>
-<script src="{{ url_for('static', path='/js/app.js') }}?v=decision-coach-ui-20260506"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}?v=decision-coach-no-break-ui-20260507"></script>
 <script src="{{ url_for('static', path='/js/pickforme.js') }}?v=smart-picker-20260506"></script>
 {% endblock %}

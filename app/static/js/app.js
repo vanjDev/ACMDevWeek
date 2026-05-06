@@ -543,8 +543,8 @@ function buildParams() {
   const features = selectedValues("feature");
   const weather = state.weatherMode || document.getElementById("weather").value;
   const antiRepeat = antiRepeatIds();
-  const timeMax = document.getElementById("timeAvailable").value;
-  const mealMinutes = document.getElementById("mealMinutes").value;
+  const timeMax = document.getElementById("timeAvailable")?.value || "";
+  const mealMinutes = document.getElementById("mealMinutes")?.value || "";
 
   params.set("campus", document.getElementById("campus").value);
   params.set("radius", String(DEFAULT_RADIUS));
@@ -744,7 +744,7 @@ function recommendationReason(food) {
 
 function breakDecisionFor(food) {
   const available = Number(document.getElementById("timeAvailable")?.value || 0);
-  const mealMinutes = Number(document.getElementById("mealMinutes")?.value || 20);
+  const mealMinutes = Number(document.getElementById("mealMinutes")?.value || 0);
   if (!available || !food) return null;
   const roundTrip = (food.walking_minutes || 0) * 2;
   const total = roundTrip + mealMinutes;
@@ -1413,7 +1413,9 @@ function setupFilters() {
   });
 
   ["campus", "budget", "area", "sort", "weather", "antiRepeat", "timeAvailable", "mealMinutes"].forEach((id) => {
-    document.getElementById(id).addEventListener("change", () => {
+    const control = document.getElementById(id);
+    if (!control) return;
+    control.addEventListener("change", () => {
       state.weatherMode = document.getElementById("weather").value;
       if (id === "timeAvailable") setJson("saanTimeAvailable", document.getElementById("timeAvailable").value);
       if (id === "mealMinutes") setJson("saanMealMinutes", document.getElementById("mealMinutes").value);
@@ -1426,11 +1428,14 @@ function setupFilters() {
   document.querySelectorAll("[data-break-minutes]").forEach((button) => {
     button.addEventListener("click", () => {
       const minutes = button.dataset.breakMinutes;
-      document.getElementById("timeAvailable").value = minutes;
-      document.getElementById("mealMinutes").value = Number(minutes) <= 10 ? "5" : "15";
+      const timeInput = document.getElementById("timeAvailable");
+      const mealInput = document.getElementById("mealMinutes");
+      if (!timeInput || !mealInput) return;
+      timeInput.value = minutes;
+      mealInput.value = Number(minutes) <= 10 ? "5" : "15";
       document.getElementById("sort").value = "distance";
       setJson("saanTimeAvailable", minutes);
-      setJson("saanMealMinutes", document.getElementById("mealMinutes").value);
+      setJson("saanMealMinutes", mealInput.value);
       document.querySelectorAll("[data-break-minutes]").forEach((item) => item.classList.toggle("active", item === button));
       state.showingBookmarks = false;
       state.visibleLimit = 12;
