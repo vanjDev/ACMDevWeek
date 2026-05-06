@@ -5363,12 +5363,86 @@ body.map-helper-open .top-map-wrap {
   align-items: start;
 }
 
+.admin-store-workspace {
+  display: grid;
+  grid-template-columns: minmax(270px, 0.42fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.admin-store-panel,
+.admin-editor-stack {
+  min-width: 0;
+}
+
+.admin-store-panel {
+  position: sticky;
+  top: 92px;
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 18px 18px 8px 8px;
+  padding: 14px;
+  background: rgba(4, 31, 29, 0.86);
+  box-shadow: var(--shadow);
+}
+
+.admin-editor-stack {
+  display: grid;
+  gap: 16px;
+}
+
 .admin-form,
 .admin-list-panel {
   display: grid;
   gap: 14px;
   border-radius: 18px 18px 8px 8px;
   padding: 16px;
+}
+
+.admin-store-form {
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.8fr);
+  align-items: start;
+}
+
+.admin-store-form > .admin-card-heading,
+.admin-store-form > label,
+.admin-store-form > .budget-row,
+.admin-store-form > .toggle-row,
+.admin-store-form > .admin-actions {
+  grid-column: 1;
+}
+
+.admin-store-form > .admin-image-card,
+.admin-store-form > .admin-map-card {
+  grid-column: 2;
+}
+
+.admin-store-form > .admin-map-card {
+  grid-row: span 3;
+}
+
+.admin-menu-panel {
+  background: rgba(246, 241, 231, 0.94);
+}
+
+.admin-menu-panel .admin-list-toolbar strong,
+.admin-menu-panel .admin-card-heading strong {
+  color: var(--ink);
+}
+
+.admin-menu-panel .admin-list-toolbar span,
+.admin-menu-panel .admin-card-heading span {
+  color: var(--green);
+}
+
+.admin-menu-form {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(0, 138, 84, 0.16);
+  border-radius: 16px 16px 8px 8px;
+  padding: 14px;
+  background: rgba(0, 138, 84, 0.08);
 }
 
 .admin-map-card {
@@ -5384,6 +5458,10 @@ body.map-helper-open .top-map-wrap {
   overflow: hidden;
   border-radius: 12px;
   background: rgba(246, 241, 231, 0.12);
+}
+
+.admin-store-form .admin-map {
+  min-height: 320px;
 }
 
 .admin-map-card p {
@@ -5466,6 +5544,117 @@ body.map-helper-open .top-map-wrap {
 
 .admin-list-toolbar label {
   width: min(240px, 100%);
+}
+
+.admin-store-list {
+  display: grid;
+  gap: 8px;
+  max-height: 680px;
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.admin-store-list > p {
+  margin: 0;
+  color: var(--mint);
+  font-weight: 800;
+}
+
+.admin-store-card {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(246, 241, 231, 0.12);
+  border-radius: 14px;
+  padding: 8px;
+  color: var(--cream);
+  background: rgba(246, 241, 231, 0.07);
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-store-card.active {
+  border-color: rgba(255, 223, 53, 0.72);
+  background: rgba(255, 223, 53, 0.14);
+  box-shadow: inset 4px 0 0 var(--yellow);
+}
+
+.admin-store-card.is-inactive {
+  opacity: 0.58;
+}
+
+.admin-store-card img {
+  width: 46px;
+  height: 46px;
+  object-fit: cover;
+  border-radius: 12px;
+  background: rgba(246, 241, 231, 0.14);
+}
+
+.admin-store-card span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.admin-store-card strong,
+.admin-store-card small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-store-card strong {
+  font-family: Outfit, Inter, sans-serif;
+  font-size: 0.86rem;
+  text-transform: uppercase;
+}
+
+.admin-store-card small {
+  color: var(--mint);
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.admin-store-card b {
+  min-width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--cream);
+  font-size: 0.72rem;
+}
+
+.admin-selected-store-hint {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  border-radius: 14px;
+  padding: 10px;
+  color: #2e5a51;
+  background: rgba(0, 138, 84, 0.1);
+  font-size: 0.82rem;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.admin-selected-store-hint svg {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  padding: 9px;
+  color: var(--cream);
+  background: var(--green);
+}
+
+.admin-selected-store-hint strong {
+  color: var(--ink);
 }
 
 .admin-food-list {
@@ -5686,6 +5875,25 @@ body.map-helper-open .top-map-wrap {
 
   .admin-layout {
     grid-template-columns: 1fr;
+  }
+
+  .admin-store-workspace,
+  .admin-store-form {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-store-panel {
+    position: static;
+  }
+
+  .admin-store-form > .admin-card-heading,
+  .admin-store-form > label,
+  .admin-store-form > .budget-row,
+  .admin-store-form > .toggle-row,
+  .admin-store-form > .admin-actions,
+  .admin-store-form > .admin-image-card,
+  .admin-store-form > .admin-map-card {
+    grid-column: 1;
   }
 
   .hero-board {

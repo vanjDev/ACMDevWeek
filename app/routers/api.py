@@ -166,7 +166,7 @@ def get_or_create_store(db: Session, payload: AdminFoodSpotPayload) -> Store:
     store.latitude = payload.latitude
     store.longitude = payload.longitude
     store.area = payload.area.strip()
-    if payload.image_url or not payload.store_id:
+    if not payload.store_id:
         store.image_url = payload.image_url.strip() if payload.image_url else None
     store.opens_at = validate_time_value(payload.opens_at, "Opens")
     store.closes_at = validate_time_value(payload.closes_at, "Closes")
