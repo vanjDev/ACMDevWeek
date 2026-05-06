@@ -2191,7 +2191,7 @@ input[type="range"] {
 
 .map-route polyline {
   fill: none;
-  stroke: #f7d56b;
+  stroke: #ef233c;
   stroke-width: 1.2;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -2468,7 +2468,7 @@ input[type="range"] {
 
 .map-legend .legend-route {
   height: 4px;
-  background: #f7d56b;
+  background: #ef233c;
 }
 
 .map-summary {

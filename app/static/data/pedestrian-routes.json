@@ -1,23 +1,32 @@
 {
   "generated_at": "2026-05-06",
-  "routes": [
-    {
-      "key": "feu_tech_paredes_crossing",
-      "label": "FEU Tech pedestrian lane",
-      "start_campus": "feu_tech",
-      "reason": "Manual correction for the nearby pedestrian lane that OSRM may route around.",
-      "destination_box": {
-        "min_lat": 14.60325,
-        "max_lat": 14.60445,
-        "min_lng": 120.98735,
-        "max_lng": 120.9889
-      },
-      "points": [
-        [14.6042, 120.9882],
-        [14.60398, 120.98842],
-        [14.60379, 120.98825],
-        [14.60363, 120.98802]
-      ]
-    }
+  "notes": [
+    "These points document pedestrian-walkable segments around FEU Tech and Nicanor Reyes/P. Paredes based on visual correction marks.",
+    "They are treated as a small pedestrian graph, not as one fixed route. Nearby selected stores snap to the nearest node, then continue to the store marker."
+  ],
+  "nodes": {
+    "feu_tech": [14.6042, 120.9882],
+    "feu_sidewalk": [14.60384, 120.98795],
+    "paredes_corner": [14.60366, 120.98778],
+    "crossing_east": [14.60347, 120.98765],
+    "crossing_west": [14.60343, 120.98751],
+    "nicanor_south": [14.60322, 120.98749],
+    "nicanor_mid": [14.60385, 120.98734],
+    "nicanor_lerma": [14.60445, 120.98716],
+    "lerma_west": [14.60472, 120.98694],
+    "lerma_east": [14.60476, 120.9875],
+    "campus_east": [14.6039, 120.9886]
+  },
+  "edges": [
+    ["feu_tech", "feu_sidewalk"],
+    ["feu_sidewalk", "paredes_corner"],
+    ["paredes_corner", "crossing_east"],
+    ["crossing_east", "crossing_west"],
+    ["crossing_west", "nicanor_south"],
+    ["crossing_west", "nicanor_mid"],
+    ["nicanor_mid", "nicanor_lerma"],
+    ["nicanor_lerma", "lerma_west"],
+    ["nicanor_lerma", "lerma_east"],
+    ["feu_tech", "campus_east"]
   ]
 }

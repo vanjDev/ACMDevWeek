@@ -8,24 +8,33 @@ const ROUTE_API = "https://router.project-osrm.org/route/v1/foot";
 const DEFAULT_CENTER = [14.6042, 120.9888];
 const routeCache = new Map();
 
-const PEDESTRIAN_LANES = [
-  {
-    key: "feu_tech_paredes_crossing",
-    label: "FEU Tech pedestrian lane",
-    startCampus: "feu_tech",
-    destinationBox: {
-      minLat: 14.60325,
-      maxLat: 14.60445,
-      minLng: 120.98735,
-      maxLng: 120.9889,
-    },
-    points: [
-      [14.6042, 120.9882],
-      [14.60398, 120.98842],
-      [14.60379, 120.98825],
-      [14.60363, 120.98802],
-    ],
-  },
+const WALK_ROUTE_COLOR = "#ef233c";
+
+const PEDESTRIAN_NODES = {
+  feu_tech: [14.6042, 120.9882],
+  feu_sidewalk: [14.60384, 120.98795],
+  paredes_corner: [14.60366, 120.98778],
+  crossing_east: [14.60347, 120.98765],
+  crossing_west: [14.60343, 120.98751],
+  nicanor_south: [14.60322, 120.98749],
+  nicanor_mid: [14.60385, 120.98734],
+  nicanor_lerma: [14.60445, 120.98716],
+  lerma_west: [14.60472, 120.98694],
+  lerma_east: [14.60476, 120.98750],
+  campus_east: [14.6039, 120.9886],
+};
+
+const PEDESTRIAN_EDGES = [
+  ["feu_tech", "feu_sidewalk"],
+  ["feu_sidewalk", "paredes_corner"],
+  ["paredes_corner", "crossing_east"],
+  ["crossing_east", "crossing_west"],
+  ["crossing_west", "nicanor_south"],
+  ["crossing_west", "nicanor_mid"],
+  ["nicanor_mid", "nicanor_lerma"],
+  ["nicanor_lerma", "lerma_west"],
+  ["nicanor_lerma", "lerma_east"],
+  ["feu_tech", "campus_east"],
 ];
 
 let saanLeafletMap = null;
@@ -61,27 +70,59 @@ function distanceBetweenPoints(a, b) {
   return Math.sqrt((latMeters * latMeters) + (lngMeters * lngMeters));
 }
 
-function nearestPointIndex(points, target) {
-  return points.reduce((bestIndex, point, index) => (
-    distanceBetweenPoints(point, target) < distanceBetweenPoints(points[bestIndex], target) ? index : bestIndex
-  ), 0);
+function pedestrianNeighbors(nodeKey) {
+  return PEDESTRIAN_EDGES
+    .filter(([a, b]) => a === nodeKey || b === nodeKey)
+    .map(([a, b]) => (a === nodeKey ? b : a));
+}
+
+function nearestPedestrianNode(target) {
+  return Object.entries(PEDESTRIAN_NODES).reduce((best, [key, point]) => {
+    const distance = distanceBetweenPoints(point, target);
+    return distance < best.distance ? { key, point, distance } : best;
+  }, { key: "", point: null, distance: Infinity });
+}
+
+function shortestPedestrianPath(startKey, endKey) {
+  const distances = Object.fromEntries(Object.keys(PEDESTRIAN_NODES).map((key) => [key, Infinity]));
+  const previous = {};
+  const queue = new Set(Object.keys(PEDESTRIAN_NODES));
+  distances[startKey] = 0;
+
+  while (queue.size) {
+    const current = [...queue].sort((a, b) => distances[a] - distances[b])[0];
+    queue.delete(current);
+    if (current === endKey) break;
+
+    pedestrianNeighbors(current).forEach((neighbor) => {
+      if (!queue.has(neighbor)) return;
+      const distance = distanceBetweenPoints(PEDESTRIAN_NODES[current], PEDESTRIAN_NODES[neighbor]);
+      const nextDistance = distances[current] + distance;
+      if (nextDistance < distances[neighbor]) {
+        distances[neighbor] = nextDistance;
+        previous[neighbor] = current;
+      }
+    });
+  }
+
+  const path = [];
+  let cursor = endKey;
+  while (cursor) {
+    path.unshift(PEDESTRIAN_NODES[cursor]);
+    if (cursor === startKey) break;
+    cursor = previous[cursor];
+  }
+  return path[0] === PEDESTRIAN_NODES[startKey] ? path : [];
 }
 
 function customPedestrianRoute(food) {
   if (window.SaanUserLocation || window.SaanMapCampus !== "feu_tech") return null;
   const destination = [food.latitude, food.longitude];
-  const lane = PEDESTRIAN_LANES.find((item) => (
-    item.startCampus === "feu_tech"
-    && destination[0] >= item.destinationBox.minLat
-    && destination[0] <= item.destinationBox.maxLat
-    && destination[1] >= item.destinationBox.minLng
-    && destination[1] <= item.destinationBox.maxLng
-  ));
-  if (!lane) return null;
-
-  const lastLaneIndex = nearestPointIndex(lane.points, destination);
-  const lanePoints = lane.points.slice(0, lastLaneIndex + 1);
-  return [...lanePoints, destination];
+  const nearest = nearestPedestrianNode(destination);
+  if (!nearest.key || nearest.distance > 95) return null;
+  const graphPath = shortestPedestrianPath("feu_tech", nearest.key);
+  if (graphPath.length < 2) return null;
+  return [...graphPath, destination];
 }
 
 function mapIconForFood(food) {
@@ -239,7 +280,7 @@ async function renderWalkingRoute(food = null) {
   const start = currentStartCoordinates();
   const fallback = [[start.lat, start.lng], [food.latitude, food.longitude]];
   routeLayer = L.polyline(fallback, {
-    color: "#f7d56b",
+    color: WALK_ROUTE_COLOR,
     dashArray: "5 8",
     opacity: 0.72,
     weight: 4,
@@ -249,9 +290,9 @@ async function renderWalkingRoute(food = null) {
     const latLngs = await fetchWalkingRoute(food);
     clearRoute();
     routeLayer = L.polyline(latLngs, {
-      color: "#f7d56b",
+      color: WALK_ROUTE_COLOR,
       opacity: 0.95,
-      weight: 5,
+      weight: 4,
       lineCap: "round",
       lineJoin: "round",
     }).addTo(saanLeafletMap);
