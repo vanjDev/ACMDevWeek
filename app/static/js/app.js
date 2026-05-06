@@ -1115,8 +1115,20 @@ function calorieScore(food) {
   return clampNumber(92 - distance / 7, 28, 92);
 }
 
-function recommendationReason(food) {
-  return decisionProfile(food).reasons.map((reason) => reason.label).slice(0, 3).join(", ") || "matches your current filters";
+function recommendationReason(food, store = null) {
+  const profileReasons = decisionProfile(food).reasons;
+  const storeRating = store ? getUserStoreRating(store.id) : 0;
+  const reasonLabels = profileReasons
+    .filter((reason) => !(storeRating && storeRating <= 2 && reason.key === "rating"))
+    .map((reason) => reason.label);
+
+  if (storeRating && storeRating <= 2) {
+    reasonLabels.unshift(`your low ${storeRating}/5 store rating`);
+  } else if (storeRating && storeRating >= 4) {
+    reasonLabels.unshift(`your ${storeRating}/5 store rating`);
+  }
+
+  return [...new Set(reasonLabels)].slice(0, 3).join(", ") || "matches your current filters";
 }
 
 function clampNumber(value, min, max) {
@@ -1180,7 +1192,8 @@ function decisionProfile(food) {
           ? 12
       : clampNumber(100 - (price / Math.max(remaining, 1)) * 70, 12, 100);
   const distanceScore = clampNumber(106 - walk * 14, 18, 100);
-  const ratingScore = clampNumber(((userFoodRating || publicRating || 4) / 5) * 100, 45, 100);
+  const ratingValue = userFoodRating || publicRating || 4;
+  const ratingScore = clampNumber((ratingValue / 5) * 100, userFoodRating ? 20 : 45, 100);
   const timeScore = mealPeriodScore(food);
   const nutritionScore = (nutrition.health * 0.68) + (calorieScore(food) * 0.32);
   const freshnessScore = insights.recentIds.has(food.id) ? 18 : 88;
@@ -1214,7 +1227,17 @@ function decisionProfile(food) {
     { key: "health", score: nutritionScore, label: `${nutrition.label}, ~${nutrition.calories} cal` },
     { key: "diet", score: nutrition.health, label: nutrition.diet },
     { key: "walk", score: distanceScore, label: walk <= 2 ? "super near" : `${walk} min walk` },
-    { key: "rating", score: ratingScore, label: ratingScore >= 88 ? "trusted rating" : "decent rating" },
+    {
+      key: "rating",
+      score: ratingScore,
+      label: ratingValue >= 4.4
+        ? "trusted rating"
+        : ratingValue >= 3.7
+          ? "good rating"
+          : ratingValue >= 2.8
+            ? "mixed rating"
+            : "low rating",
+    },
     { key: "time", score: timeScore, label: `fits ${mealPeriodLabel()}` },
     { key: "fresh", score: freshnessScore, label: insights.recentIds.has(food.id) ? "recently tried" : "not recently eaten" },
     { key: "pref", score: preferenceScore, label: preferenceScore >= 84 ? "matches your pattern" : "good variety" },
@@ -1539,7 +1562,7 @@ function storeCardTemplate(store) {
           <span><small>Menu</small>${store.menu.length} items</span>
           <span><small>Walk</small>${store.walking_minutes} min</span>
           <span><small>Health</small>${nutrition.label}</span>
-          <span><small>${displayRatingLabel}</small><i data-lucide="star"></i> ${displayRating.toFixed(1)}</span>
+          <span class="rating-meta"><small>${displayRatingLabel}</small><b><i data-lucide="star"></i>${displayRating.toFixed(1)}</b></span>
         </div>
         <div class="open-status ${openStatus.className}">
           <i data-lucide="${openStatus.isOpen ? "door-open" : "door-closed"}"></i>
@@ -1548,7 +1571,7 @@ function storeCardTemplate(store) {
         </div>
         <div class="why-pick ${breakInfo?.tone || ""}">
           <i data-lucide="${breakInfo ? "timer" : "sparkles"}"></i>
-          <span>${breakInfo ? `${breakInfo.label} - ${breakInfo.total} min total` : `Why: ${recommendationReason(decisionFood)}`}</span>
+          <span>${breakInfo ? `${breakInfo.label} - ${breakInfo.total} min total` : `Why: ${recommendationReason(decisionFood, store)}`}</span>
         </div>
         <div class="rating-panel store-card-rating">
           <span>${userRating ? `Your rating: ${userRating}/5` : "Rate store"}</span>
@@ -1878,12 +1901,16 @@ function streakDays() {
 
 function renderHabitStrip() {
   const history = getHistory().map(normalizeHistoryEntry);
+  const lastAte = document.getElementById("lastAte");
   document.getElementById("todaySpent").textContent = peso(dailySpentTotal());
   document.getElementById("weekSpent").textContent = peso(weeklySpentTotal());
   document.getElementById("streakCount").textContent = `${streakDays()} day${streakDays() === 1 ? "" : "s"}`;
-  document.getElementById("lastAte").textContent = history[0]
-    ? `${history[0].name} at ${history[0].restaurant} - ${mealTimeLabel(history[0])}`
-    : "Nothing logged yet";
+  if (lastAte) {
+    lastAte.textContent = history[0] ? history[0].name : "No food yet";
+    lastAte.title = history[0]
+      ? `${history[0].name} at ${history[0].restaurant} - ${mealTimeLabel(history[0])}`
+      : "No food logged yet";
+  }
   updateSaveStatus();
 }
 

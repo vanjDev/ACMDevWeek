@@ -237,37 +237,37 @@
           Combo for Me?
         </button>
       </div>
-      <div id="resultCount" class="result-count">Loading...</div>
     </div>
 
     <section id="pickResult" class="pick-result" hidden></section>
 
-    <section class="habit-strip" aria-label="Food history and streaks">
+    <!-- Home tracker glance moved into the stores header. -->
+    <section class="habit-strip" aria-label="Food history and streaks" hidden>
       <div class="habit-stat">
         <i data-lucide="flame"></i>
         <span>Streak</span>
-        <strong id="streakCount">0 days</strong>
+        <strong>0 days</strong>
       </div>
       <div class="habit-stat">
         <i data-lucide="clock-3"></i>
-        <span>Last ate</span>
-        <strong id="lastAte">Nothing logged yet</strong>
+        <span>Last pick</span>
+        <strong>No food yet</strong>
       </div>
       <div class="habit-stat">
         <i data-lucide="wallet-cards"></i>
         <span>Today spent</span>
-        <strong id="todaySpent">₱0</strong>
+        <strong>₱0</strong>
       </div>
       <div class="habit-stat">
         <i data-lucide="calendar-days"></i>
         <span>This week</span>
-        <strong id="weekSpent">₱0</strong>
+        <strong>₱0</strong>
       </div>
       <a href="/tracker" class="secondary-button compact-button habit-action">
         <i data-lucide="chart-no-axes-combined"></i>
         Tracker
       </a>
-      <span id="saveStatus" class="save-status"><i data-lucide="cloud"></i> Guest saves stay on this device</span>
+      <span class="save-status"><i data-lucide="cloud"></i> Guest saves stay on this device</span>
     </section>
 
     <section id="decisionCoach" class="decision-coach" aria-live="polite" aria-label="Personal suggestion"></section>
@@ -288,14 +288,44 @@
     <div class="content-grid">
       <section class="shops-panel">
         <div class="shops-heading">
-          <div>
+          <div class="shops-heading-copy">
             <span>Stores Available</span>
             <strong>Swipe stores near campus</strong>
           </div>
-          <button id="scrollToMap" class="secondary-button compact-button" type="button">
-            <i data-lucide="map"></i>
-            Map
-          </button>
+          <div class="shops-heading-side">
+            <div id="resultCount" class="result-count">Loading...</div>
+            <div class="home-store-stats" aria-label="Food history and spending summary">
+              <div class="home-store-stat">
+                <i data-lucide="flame"></i>
+                <span>Streak</span>
+                <strong id="streakCount">0 days</strong>
+              </div>
+              <div class="home-store-stat">
+                <i data-lucide="clock-3"></i>
+                <span>Last pick</span>
+                <strong id="lastAte">No food yet</strong>
+              </div>
+              <div class="home-store-stat">
+                <i data-lucide="wallet-cards"></i>
+                <span>Today</span>
+                <strong id="todaySpent">₱0</strong>
+              </div>
+              <div class="home-store-stat">
+                <i data-lucide="calendar-days"></i>
+                <span>Week</span>
+                <strong id="weekSpent">₱0</strong>
+              </div>
+            </div>
+            <a href="/tracker" class="secondary-button compact-button home-tracker-link">
+              <i data-lucide="chart-no-axes-combined"></i>
+              Tracker
+            </a>
+            <button id="scrollToMap" class="secondary-button compact-button" type="button">
+              <i data-lucide="map"></i>
+              Map
+            </button>
+            <span id="saveStatus" class="save-status home-save-status"><i data-lucide="cloud"></i> Guest saves stay on this device</span>
+          </div>
         </div>
       <div id="menuDetailBackdrop" class="menu-detail-backdrop" hidden></div>
       <aside id="menuDetail" class="menu-detail" aria-live="polite" hidden></aside>

@@ -2512,9 +2512,10 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
   text-transform: uppercase;
 }
 
-.shops-heading div {
+.shops-heading-copy {
   display: grid;
   gap: 2px;
+  min-width: 170px;
 }
 
 .shops-heading span {
@@ -2525,6 +2526,101 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 
 .shops-heading strong {
   font-size: clamp(1rem, 2vw, 1.35rem);
+}
+
+.shops-heading-side {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.shops-heading-side .result-count {
+  margin-left: 0;
+  color: var(--ink);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.home-store-stats {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
+}
+
+.home-store-stat {
+  min-width: 86px;
+  max-width: 120px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  grid-template-areas:
+    "icon label"
+    "icon value";
+  align-items: center;
+  gap: 1px 6px;
+  border: 1px solid rgba(4, 31, 29, 0.1);
+  border-radius: 12px;
+  padding: 6px 8px;
+  background: rgba(0, 138, 84, 0.08);
+}
+
+.home-store-stat svg {
+  grid-area: icon;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  padding: 5px;
+  color: var(--cream);
+  background: rgba(4, 31, 29, 0.72);
+}
+
+.home-store-stat span {
+  grid-area: label;
+  overflow: hidden;
+  color: var(--green);
+  font-size: 0.56rem;
+  font-weight: 950;
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.home-store-stat strong {
+  grid-area: value;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: Inter, sans-serif;
+  font-size: 0.76rem;
+  font-weight: 950;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.home-tracker-link,
+.shops-heading-side #scrollToMap {
+  min-height: 40px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.home-save-status {
+  width: 100%;
+  min-height: 0;
+  justify-content: flex-end;
+  color: rgba(4, 31, 29, 0.62);
+  font-size: 0.58rem;
+  line-height: 1;
+}
+
+.home-save-status svg {
+  color: var(--green);
 }
 
 .load-more {
@@ -2702,6 +2798,22 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
   height: 11px;
   fill: currentColor;
   vertical-align: -1px;
+}
+
+.food-meta b {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: inherit;
+  font-size: inherit;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.food-meta b svg {
+  flex: 0 0 auto;
 }
 
 .nutrition-line {
@@ -6173,6 +6285,12 @@ body.menu-detail-open {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.store-rail-card .food-meta span {
+  min-height: 48px;
+  align-content: center;
+  justify-items: center;
+}
+
 .store-rail-card .food-meta span:nth-child(1),
 .store-rail-card .food-meta span:nth-child(3) {
   display: none;
@@ -6266,7 +6384,33 @@ body.menu-detail-open {
 
 @media (max-width: 640px) {
   .shops-heading {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .shops-heading-side {
+    justify-content: flex-start;
+  }
+
+  .home-store-stats {
+    order: 3;
+    width: 100%;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .home-store-stats::-webkit-scrollbar {
+    display: none;
+  }
+
+  .home-store-stat {
+    flex: 0 0 104px;
+  }
+
+  .home-save-status {
+    display: none;
   }
 
   .shops-heading #scrollToMap {

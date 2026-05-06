@@ -536,12 +536,16 @@ function renderHistory() {
 
 function renderHabitStrip() {
   const history = getHistory().map(normalizeHistoryEntry);
+  const lastAte = document.getElementById("lastAte");
   document.getElementById("todaySpent").textContent = formatPeso(dailySpentTotal());
   document.getElementById("weekSpent").textContent = formatPeso(weeklySpentTotal());
   document.getElementById("streakCount").textContent = `${streakDays()} day${streakDays() === 1 ? "" : "s"}`;
-  document.getElementById("lastAte").textContent = history[0]
-    ? `${history[0].name} at ${history[0].restaurant} - ${mealTimeLabel(history[0])}`
-    : "Nothing logged yet";
+  if (lastAte) {
+    lastAte.textContent = history[0] ? history[0].name : "No food yet";
+    lastAte.title = history[0]
+      ? `${history[0].name} at ${history[0].restaurant} - ${mealTimeLabel(history[0])}`
+      : "No food logged yet";
+  }
   updateSaveStatus();
 }
 
