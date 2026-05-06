@@ -68,6 +68,14 @@ function setChipActive(chip, active) {
   chip.setAttribute("aria-pressed", String(active));
 }
 
+function updateWeatherTiles(value = document.getElementById("weather")?.value || "auto") {
+  document.querySelectorAll("[data-weather-choice]").forEach((button) => {
+    const active = button.dataset.weatherChoice === value;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+}
+
 function updateFavoriteTypesButton() {
   const button = document.getElementById("saveFavoriteTypes");
   if (!button) return;
@@ -940,6 +948,25 @@ function closeComboDialog() {
   document.getElementById("comboDialog")?.close();
 }
 
+function setFloatingMapOpen(open) {
+  if (open) setSuggestionOpen(false);
+  document.body.classList.toggle("map-helper-open", open);
+  const button = document.getElementById("toggleMap");
+  if (button) button.setAttribute("aria-expanded", String(open));
+  if (open) {
+    window.setTimeout(() => {
+      window.SaanLeafletMap?.invalidateSize?.();
+    }, 80);
+  }
+}
+
+function setSuggestionOpen(open) {
+  if (open) setFloatingMapOpen(false);
+  document.body.classList.toggle("suggestion-helper-open", open);
+  const button = document.getElementById("toggleSuggestion");
+  if (button) button.setAttribute("aria-expanded", String(open));
+}
+
 function openStoreFromCombo(storeId) {
   const stores = groupFoodsByStore(applyClientRanking(state.foods));
   const storeIndex = stores.findIndex((store) => store.id === String(storeId));
@@ -1256,14 +1283,12 @@ function renderDecisionCoach(stores) {
   const health = budgetHealth();
   const periodInfo = currentMealPeriodInfo();
   const currentLogs = currentPeriodHistory();
-  const today = todayHistory();
-  const todayCalories = totalLoggedCalories(today);
   if (currentLogs.length) {
     const latest = currentLogs[0];
     const loggedCalories = totalLoggedCalories(currentLogs);
     const restLine = periodInfo.period === "late_night"
-      ? "You already logged food this late. Water and rest are the healthier move now."
-      : `You already logged ${mealPeriodLabel(latest.mealPeriod)}. Saan will stop nudging unless you choose to browse.`;
+      ? "You already ate this late. Water and rest are probably the better call."
+      : `You already logged ${mealPeriodLabel(latest.mealPeriod)}. I will stay quiet unless you browse.`;
     panel.innerHTML = `
       <article class="saan-iq-main rested">
         <div class="saan-iq-ring" style="--score-pct:100%;">
@@ -1275,34 +1300,18 @@ function renderDecisionCoach(stores) {
           <strong>${mealPeriodLabel(latest.mealPeriod)} handled</strong>
           <p>${restLine} Last log: ${latest.name} at ${latest.restaurant}.</p>
           <div class="saan-iq-chips">
-            <span>PHP ${dailySpentTotal()} spent today</span>
+            <span>${peso(dailySpentTotal())} spent today</span>
             ${loggedCalories ? `<span>~${loggedCalories} cal this ${mealPeriodLabel(latest.mealPeriod)}</span>` : ""}
-            ${todayCalories ? `<span>~${todayCalories} cal today</span>` : ""}
           </div>
         </div>
         <a class="secondary-button compact-button" href="/tracker">
           <i data-lucide="wallet"></i>
           Tracker
         </a>
+        <button class="icon-button suggestion-close" type="button" data-suggestion-close aria-label="Hide suggestion" title="Hide suggestion">
+          <i data-lucide="x"></i>
+        </button>
       </article>
-      <aside class="saan-iq-side">
-        <div class="saan-iq-stat">
-          <i data-lucide="heart-pulse"></i>
-          <div>
-            <span>Health signal</span>
-            <strong>No need to force it</strong>
-            <p>${periodInfo.advice}</p>
-          </div>
-        </div>
-        <div class="saan-iq-stat">
-          <i data-lucide="${health.weekly ? "wallet" : "badge-help"}"></i>
-          <div>
-            <span>Budget signal</span>
-            <strong>${health.weekly ? `PHP ${Math.max(0, health.remaining)} left` : "Set budget"}</strong>
-            <p>${health.weekly ? `You spent PHP ${health.spent} this week.` : "Set a weekly budget so Saan can protect your spending."}</p>
-          </div>
-        </div>
-      </aside>
     `;
     if (window.lucide) window.lucide.createIcons();
     return;
@@ -1317,42 +1326,19 @@ function renderDecisionCoach(stores) {
   const topFood = best.food;
   const profile = best.profile;
   const nutrition = profile.nutrition;
-  const alternates = rankedStores.slice(1, 3);
   const breakInfo = breakDecisionFor(topStore);
-  const average = averageMealSpend();
   const mode = health.weekly && (health.remaining <= 180 || health.percent >= 0.75) ? "tipid" : "normal";
-  const budgetSignalTitle = health.weekly
-    ? health.remaining < 0
-      ? "Over budget"
-      : health.remaining < MIN_SNACK_BUDGET
-        ? "Not enough"
-        : health.remaining < MIN_MEAL_BUDGET
-          ? "Snack-only"
-          : mode === "tipid"
-            ? "Tipid signal"
-            : "Budget signal"
-    : "Budget signal";
-  const budgetLine = health.weekly
-    ? health.remaining < 0
-      ? `You are PHP ${Math.abs(health.remaining)} over budget this week.`
-      : health.remaining < MIN_SNACK_BUDGET
-        ? `PHP ${Math.max(0, health.remaining)} left is below a realistic meal budget.`
-        : health.remaining < MIN_MEAL_BUDGET
-          ? `Only PHP ${health.remaining} left. Treat it as snack or emergency money.`
-          : mode === "tipid"
-      ? `Magtipid-tipid muna. PHP ${Math.max(0, health.remaining)} left this week, so prioritize under PHP 100.`
-      : `Safe pa. PHP ${Math.max(0, health.remaining)} left this week${average ? `, usual meal PHP ${average}` : ""}.`
-    : "Set a weekly budget in Tracker so Saan can protect your spending.";
   const canAffordTopFood = !health.weekly || (health.remaining - averagePrice(topFood)) >= 0;
   const breakLine = health.weekly && !canAffordTopFood
-    ? `${topStore.name} fits your filters, but ${topFood.name} would exceed your remaining weekly budget.`
+    ? `Budget is tight. If you still need food, start with ${topStore.name} and pick carefully.`
     : breakInfo
       ? `${breakInfo.label}: ${topStore.name} needs about ${breakInfo.total} min total.`
-      : `${periodInfo.advice} Best now for ${periodInfo.label}: ${topStore.name} because ${recommendationReason(topFood)}.`;
-  const budgetPill = health.weekly ? `PHP ${Math.max(0, health.remaining)} left` : "Set budget";
-  const pickPill = `${nutrition.label} - ~${nutrition.calories} cal`;
-  const todayPill = today.length ? `PHP ${dailySpentTotal()} spent` : "No logs";
-  const reasonChips = profile.reasons.slice(0, 4).map((reason) => `<span>${reason.label}</span>`).join("");
+      : `${periodInfo.label} pick: ${recommendationReason(topFood)}.`;
+  const budgetPill = health.weekly ? `${peso(Math.max(0, health.remaining))} left` : "Set budget";
+  const reasonChips = [
+    `${nutrition.label}, ~${nutrition.calories} cal`,
+    budgetPill,
+  ].map((reason) => `<span>${reason}</span>`).join("");
 
   panel.innerHTML = `
     <article class="saan-iq-main ${mode}">
@@ -1365,51 +1351,15 @@ function renderDecisionCoach(stores) {
         <strong>${topStore.name}</strong>
         <p>${breakLine}</p>
         <div class="saan-iq-chips">${reasonChips}</div>
-        <div class="saan-fit-breakdown">${fitBreakdown(profile)}</div>
       </div>
       <button class="secondary-button compact-button" type="button" data-store-toggle="${topStore.id}">
         <i data-lucide="utensils"></i>
         Menu
       </button>
+      <button class="icon-button suggestion-close" type="button" data-suggestion-close aria-label="Hide suggestion" title="Hide suggestion">
+        <i data-lucide="x"></i>
+      </button>
     </article>
-    <aside class="saan-iq-side">
-      <div class="saan-iq-stat">
-        <i data-lucide="heart-pulse"></i>
-        <div>
-          <span>Health signal</span>
-          <strong>${nutrition.label}, ~${nutrition.calories} cal</strong>
-          <p>${nutrition.diet}. Health score ${nutrition.health}/100.</p>
-        </div>
-      </div>
-      <div class="saan-iq-stat">
-        <i data-lucide="${health.weekly && health.remaining < MIN_SNACK_BUDGET ? "badge-alert" : mode === "tipid" ? "wallet" : "badge-check"}"></i>
-        <div>
-          <span>${budgetSignalTitle}</span>
-          <strong>${budgetPill}</strong>
-          <p>${budgetLine}</p>
-        </div>
-      </div>
-      <div class="saan-iq-stat">
-        <i data-lucide="history"></i>
-        <div>
-          <span>Today</span>
-          <strong>${today.length ? `${today.length} logged` : "No logs yet"}</strong>
-          <p>${today.length ? `You spent PHP ${dailySpentTotal()} today${todayCalories ? `, about ${todayCalories} cal` : ""}.` : "Log meals to unlock better picks."}</p>
-        </div>
-      </div>
-    </aside>
-    <div class="saan-iq-alt">
-      <div class="saan-iq-alt-heading">
-        <span>Other fits</span>
-        <b>${profile.total}/100 current pick</b>
-      </div>
-      ${alternates.map(({ store, profile: altProfile }) => `
-        <button type="button" data-store-toggle="${store.id}">
-          <strong>${store.name}</strong>
-          <span>${altProfile.total}/100 fit - ${altProfile.nutrition.label} - ~${altProfile.nutrition.calories} cal - PHP ${store.price_min}-${store.price_max}</span>
-        </button>
-      `).join("") || `<p>No alternates yet.</p>`}
-    </div>
   `;
   if (window.lucide) window.lucide.createIcons();
 }
@@ -1472,6 +1422,16 @@ function ratingStarsTemplate({ id, type, value = 0, label }) {
   `;
 }
 
+function detailStatPill(icon, label, value, className = "") {
+  return `
+    <span class="detail-stat-pill ${className}">
+      <i data-lucide="${icon}"></i>
+      <small>${label}</small>
+      <b>${value}</b>
+    </span>
+  `;
+}
+
 function menuItemTemplate(food) {
   const active = getBookmarks().includes(food.id);
   const foodLog = latestFoodLog(food.id);
@@ -1517,15 +1477,18 @@ function detailMenuItemTemplate(food) {
           </div>
           <strong>${food.name}</strong>
           <p>${food.description}</p>
-          <p class="nutrition-line"><i data-lucide="heart-pulse"></i> ${nutrition.label} - about ${nutrition.calories} cal - health score ${nutrition.health}/100 - ${nutrition.diet}</p>
-          ${publicRating ? `<p class="rating-reason"><i data-lucide="star"></i> ${publicRating.average.toFixed(1)} from ${publicRating.count} food rating${publicRating.count === 1 ? "" : "s"} - ${publicReason}</p>` : ""}
-          ${reviewsTemplate(publicRating, "No food reviews yet. Add the first useful note.")}
+          <div class="detail-menu-pills">
+            ${detailStatPill("heart-pulse", "Health", nutrition.label)}
+            ${detailStatPill("flame", "Est.", `${nutrition.calories} cal`)}
+            ${detailStatPill("shield-check", "Diet", nutrition.diet)}
+            ${publicRating ? detailStatPill("star", "Rated", publicRating.average.toFixed(1)) : ""}
+          </div>
+          ${publicRating && publicReason ? `<p class="rating-reason"><i data-lucide="message-circle"></i> ${publicReason}</p>` : ""}
         </div>
         <div class="detail-menu-meta">
           <div class="rating-panel compact-rating">
-            <span>${userRating ? `Your food rating: ${userRating}/5` : "Rate food"}</span>
+            <span>${userRating ? `You rated ${userRating}/5` : "Rate"}</span>
             ${ratingStarsTemplate({ id: food.id, type: "food", value: userRating, label: `Rate ${food.name}` })}
-            <p class="rating-reason">${ratingReasonText(userRatingEntry, publicReason || "Add why: taste, serving, price, or sulit factor.")}</p>
           </div>
           <button class="icon-button ate-button ${eatenToday ? "active" : ""}" type="button" data-ate="${food.id}" aria-label="${eatenToday ? "Edit meal log for" : "Log"} ${food.name}" aria-pressed="${eatenToday}" title="${eatenToday ? `Logged PHP ${foodLog.price} today` : "Log eaten"}">
             <i data-lucide="utensils"></i>
@@ -1556,13 +1519,16 @@ function storeCardTemplate(store) {
   const decisionFood = store.menu[0];
   const nutrition = nutritionProfile(decisionFood);
   return `
-    <article class="food-card store-card ${isOpen ? "open" : ""}" data-store-id="${store.id}">
-      <div class="food-image">
+    <article class="food-card store-card store-rail-card ${isOpen ? "open" : ""}" data-store-id="${store.id}">
+      <div class="food-image store-rail-image">
         <img src="${image}" alt="">
         <span>${store.menu.length} items</span>
+        <button class="store-save-dot ${storeSaved ? "active" : ""}" type="button" data-store-bookmark="${store.id}" title="${storeSaved ? "Saved restaurant" : "Save restaurant"}" aria-label="${storeSaved ? "Remove restaurant bookmark for" : "Bookmark restaurant"} ${store.name}" aria-pressed="${storeSaved}">
+          <i data-lucide="heart"></i>
+        </button>
       </div>
       <div class="food-body">
-        <div>
+        <div class="store-rail-title">
           <h3>${store.name}</h3>
           <p>${formatLabel(store.area)} - ${store.menu.map((food) => categoryLabel(food.category)).slice(0, 2).join(", ")}</p>
         </div>
@@ -1598,9 +1564,6 @@ function storeCardTemplate(store) {
             <i data-lucide="${isOpen ? "panel-right-open" : "utensils"}"></i>
             ${isOpen ? "Viewing" : "View menu"}
           </button>
-          <button class="store-save-dot ${storeSaved ? "active" : ""}" type="button" data-store-bookmark="${store.id}" title="${storeSaved ? "Saved restaurant" : "Save restaurant"}" aria-label="${storeSaved ? "Remove restaurant bookmark for" : "Bookmark restaurant"} ${store.name}" aria-pressed="${storeSaved}">
-            <i data-lucide="heart"></i>
-          </button>
         </div>
         ${hasSavedFood ? `<p class="store-saved-note">Has saved food item</p>` : ""}
       </div>
@@ -1621,15 +1584,21 @@ function menuDetailTemplate(store) {
   const openStatus = openStatusFor(store);
   const breakInfo = breakDecisionFor(store);
   const nutrition = nutritionProfile(store.menu[0] || store);
+  const openLabel = openStatus.isOpen ? openStatus.detail : openStatus.detail;
   return `
     <div class="menu-detail-header">
       <img src="${foodImageFor(store)}" alt="">
       <div>
         <span>${formatLabel(store.area)}</span>
         <strong>${store.name}</strong>
-        <p>${store.menu.length} menu items - ${store.walking_minutes} min walk - ${openStatus.label.toLowerCase()} - ${ratingSource.toLowerCase()} ${displayRating.toFixed(1)}/5 - best item about ${nutrition.calories} cal</p>
-        <b class="detail-price-range">PHP ${store.price_min}-${store.price_max}</b>
-        <b class="open-status detail-open-status ${openStatus.className}"><i data-lucide="${openStatus.isOpen ? "door-open" : "door-closed"}"></i> ${openStatus.label} - ${openStatus.detail}</b>
+        <div class="menu-detail-stats">
+          ${detailStatPill("utensils", "Menu", `${store.menu.length}`)}
+          ${detailStatPill("footprints", "Walk", `${store.walking_minutes} min`)}
+          ${detailStatPill("star", ratingSource, displayRating.toFixed(1), "rating")}
+          ${detailStatPill("flame", "Best est.", `${nutrition.calories} cal`)}
+          ${detailStatPill(openStatus.isOpen ? "door-open" : "door-closed", openStatus.label, openLabel, openStatus.className)}
+          ${detailStatPill("wallet", "Range", `${peso(store.price_min)}-${peso(store.price_max)}`)}
+        </div>
       </div>
       <div class="menu-detail-header-actions">
         <button class="store-save-dot ${storeSaved ? "active" : ""}" type="button" data-store-bookmark="${store.id}" title="${storeSaved ? "Saved restaurant" : "Save restaurant"}" aria-label="${storeSaved ? "Remove restaurant bookmark for" : "Bookmark restaurant"} ${store.name}" aria-pressed="${storeSaved}">
@@ -1642,16 +1611,14 @@ function menuDetailTemplate(store) {
     </div>
     <div class="decision-rating">
       <div>
-        <span>Decision signal</span>
-        <strong><i data-lucide="star"></i> ${displayRating.toFixed(1)} ${ratingSource.toLowerCase()}</strong>
-        <p>${ratingReasonText(userRatingEntry, publicReason || "This rating currently comes from the store dataset. Add your own score and reason to make the recommendation more useful.")}</p>
+        <span>Quick read</span>
+        <strong><i data-lucide="sparkles"></i> ${displayRating.toFixed(1)} ${ratingSource.toLowerCase()}</strong>
+        <p>${ratingReasonText(userRatingEntry, publicReason || "Looks usable based on the starting store data. Rate it after trying so Saan learns your taste.")}</p>
         ${breakInfo ? `<p class="break-detail ${breakInfo.tone}">${breakInfo.label}: ${breakInfo.roundTrip} min walking + ${breakInfo.mealMinutes} min eating = ${breakInfo.total} min.</p>` : ""}
-        ${reviewsTemplate(publicRating, "No store reviews yet. Rate it after trying it.")}
       </div>
       <div class="rating-panel">
-        <span>${userRating ? `Your store rating: ${userRating}/5` : "Rate this store"}</span>
+        <span>${userRating ? `You rated ${userRating}/5` : "Rate store"}</span>
         ${ratingStarsTemplate({ id: store.id, type: "store", value: userRating, label: `Rate ${store.name}` })}
-        <p class="rating-reason">${ratingReasonText(userRatingEntry, "Explain the score so the rating is useful, not just a number.")}</p>
       </div>
     </div>
     <div class="detail-menu-list">
@@ -2032,6 +1999,21 @@ function setupFilters() {
     });
   });
 
+  document.querySelectorAll("[data-weather-choice]").forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.classList.contains("active")));
+    button.addEventListener("click", () => {
+      const weather = document.getElementById("weather");
+      if (!weather) return;
+      weather.value = button.dataset.weatherChoice || "auto";
+      state.weatherMode = weather.value;
+      updateWeatherTiles(weather.value);
+      state.showingBookmarks = false;
+      state.visibleLimit = 12;
+      loadFoods();
+    });
+  });
+  updateWeatherTiles();
+
   document.querySelectorAll("[data-category-scroll]").forEach((button) => {
     button.addEventListener("click", () => {
       const rail = document.getElementById("categoryRail");
@@ -2041,11 +2023,21 @@ function setupFilters() {
     });
   });
 
+  document.querySelectorAll("[data-store-scroll]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const rail = document.getElementById("results");
+      if (!rail) return;
+      const direction = Number(button.dataset.storeScroll || 1);
+      rail.scrollBy({ left: direction * Math.max(rail.clientWidth * 0.82, 280), behavior: "smooth" });
+    });
+  });
+
   ["campus", "budget", "area", "sort", "weather", "antiRepeat", "timeAvailable", "mealMinutes"].forEach((id) => {
     const control = document.getElementById(id);
     if (!control) return;
     control.addEventListener("change", () => {
       state.weatherMode = document.getElementById("weather").value;
+      if (id === "weather") updateWeatherTiles(state.weatherMode);
       if (id === "timeAvailable") setJson("saanTimeAvailable", document.getElementById("timeAvailable").value);
       if (id === "mealMinutes") setJson("saanMealMinutes", document.getElementById("mealMinutes").value);
       state.showingBookmarks = false;
@@ -2088,6 +2080,7 @@ function setupFilters() {
     document.getElementById("filters").reset();
     document.querySelectorAll(".chip").forEach((chip) => setChipActive(chip, false));
     state.weatherMode = "auto";
+    updateWeatherTiles("auto");
     state.showingBookmarks = false;
     state.visibleLimit = 12;
     loadFoods();
@@ -2123,11 +2116,23 @@ function setupFilters() {
     showToast("Food history cleared.");
   });
 
-  document.getElementById("scrollToMap").addEventListener("click", () => {
-    document.getElementById("map")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  document.getElementById("toggleMap")?.addEventListener("click", () => {
+    setFloatingMapOpen(!document.body.classList.contains("map-helper-open"));
+  });
+
+  document.getElementById("closeFloatingMap")?.addEventListener("click", () => {
+    setFloatingMapOpen(false);
+  });
+
+  document.getElementById("toggleSuggestion")?.addEventListener("click", () => {
+    setSuggestionOpen(!document.body.classList.contains("suggestion-helper-open"));
   });
 
   document.getElementById("decisionCoach")?.addEventListener("click", (event) => {
+    if (event.target.closest("[data-suggestion-close]")) {
+      setSuggestionOpen(false);
+      return;
+    }
     const button = event.target.closest("[data-store-toggle]");
     if (!button) return;
     state.selectedStoreId = button.dataset.storeToggle;
@@ -2299,6 +2304,7 @@ function setupFilters() {
       state.selectedStoreId = isClosing ? null : nextStoreId;
       renderFoods(state.foods);
       window.selectFoodOnMap?.(isClosing ? null : nextStoreId, false);
+      if (!isClosing) setFloatingMapOpen(false);
       if (!isClosing) focusMenuDetail();
       return;
     }
@@ -2427,6 +2433,7 @@ window.addEventListener("saan:auth-changed", () => {
 
 window.addEventListener("saan:store-open", (event) => {
   state.selectedStoreId = event.detail?.storeId || null;
+  setFloatingMapOpen(false);
   renderFoods(state.foods);
   window.selectFoodOnMap?.(state.selectedStoreId, true);
 });

@@ -233,6 +233,7 @@ function ensureMap() {
     scrollWheelZoom: false,
     attributionControl: true,
   }).setView(DEFAULT_CENTER, 17);
+  window.SaanLeafletMap = saanLeafletMap;
 
   L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
     maxZoom: 20,

@@ -91,61 +91,67 @@
         </select>
       </label>
 
-      <div>
+      <div class="filter-group visual-filter-group">
         <span class="field-label">Preferred dish</span>
-        <div class="chip-grid" data-filter="dish">
-          <button type="button" class="chip" data-value="pork">Pork</button>
-          <button type="button" class="chip" data-value="beef">Beef</button>
-          <button type="button" class="chip" data-value="chicken">Chicken</button>
-          <button type="button" class="chip" data-value="snacks">Snacks</button>
-          <button type="button" class="chip" data-value="halal">Halal-friendly</button>
+        <div class="chip-grid visual-filter-grid" data-filter="dish">
+          <button type="button" class="chip filter-tile" data-value="pork"><i data-lucide="ham"></i><span>Pork</span></button>
+          <button type="button" class="chip filter-tile" data-value="beef"><i data-lucide="beef"></i><span>Beef</span></button>
+          <button type="button" class="chip filter-tile" data-value="chicken"><i data-lucide="drumstick"></i><span>Chicken</span></button>
+          <button type="button" class="chip filter-tile" data-value="snacks"><i data-lucide="cookie"></i><span>Snacks</span></button>
+          <button type="button" class="chip filter-tile" data-value="halal"><i data-lucide="badge-check"></i><span>Halal</span></button>
         </div>
       </div>
 
-      <div>
+      <div class="filter-group visual-filter-group">
         <span class="field-label">Mood</span>
-        <div class="chip-grid" data-filter="mood">
-          <button type="button" class="chip mood-chip" data-value="tipid"><i data-lucide="wallet"></i> Tipid</button>
-          <button type="button" class="chip mood-chip" data-value="treat_myself"><i data-lucide="sparkles"></i> Treat</button>
-          <button type="button" class="chip mood-chip" data-value="nagmamadali"><i data-lucide="timer"></i> Nagmamadali</button>
-          <button type="button" class="chip mood-chip" data-value="tambay_vibes"><i data-lucide="sofa"></i> Tambay</button>
-          <button type="button" class="chip mood-chip" data-value="quick_lunch"><i data-lucide="zap"></i> Quick</button>
-          <button type="button" class="chip mood-chip" data-value="chill_hangout"><i data-lucide="coffee"></i> Chill</button>
-          <button type="button" class="chip mood-chip" data-value="study_fuel"><i data-lucide="book-open"></i> Study</button>
-          <button type="button" class="chip mood-chip" data-value="late_night"><i data-lucide="moon"></i> Late</button>
-          <button type="button" class="chip mood-chip" data-value="group_meal"><i data-lucide="users"></i> Group</button>
+        <div class="chip-grid visual-filter-grid mood-tile-grid" data-filter="mood">
+          <button type="button" class="chip mood-chip filter-tile" data-value="tipid"><i data-lucide="wallet"></i><span>Tipid</span></button>
+          <button type="button" class="chip mood-chip filter-tile" data-value="treat_myself"><i data-lucide="sparkles"></i><span>Treat</span></button>
+          <button type="button" class="chip mood-chip filter-tile" data-value="nagmamadali"><i data-lucide="timer"></i><span>Rush</span></button>
+          <button type="button" class="chip mood-chip filter-tile" data-value="tambay_vibes"><i data-lucide="sofa"></i><span>Tambay</span></button>
+          <button type="button" class="chip mood-chip filter-tile" data-value="quick_lunch"><i data-lucide="zap"></i><span>Quick</span></button>
+          <button type="button" class="chip mood-chip filter-tile" data-value="chill_hangout"><i data-lucide="coffee"></i><span>Chill</span></button>
+          <button type="button" class="chip mood-chip filter-tile" data-value="study_fuel"><i data-lucide="book-open"></i><span>Study</span></button>
+          <button type="button" class="chip mood-chip filter-tile" data-value="late_night"><i data-lucide="moon"></i><span>Late</span></button>
+          <button type="button" class="chip mood-chip filter-tile" data-value="group_meal"><i data-lucide="users"></i><span>Group</span></button>
         </div>
       </div>
 
-      <div>
+      <div class="filter-group visual-filter-group">
         <span class="field-label">Solo or barkada?</span>
-        <div class="chip-grid" data-filter="dining">
-          <button type="button" class="chip mood-chip" data-value="solo"><i data-lucide="user"></i> Solo</button>
-          <button type="button" class="chip mood-chip" data-value="barkada"><i data-lucide="users"></i> Barkada</button>
+        <div class="chip-grid visual-filter-grid two-tile-grid" data-filter="dining">
+          <button type="button" class="chip mood-chip filter-tile wide-filter-tile" data-value="solo"><i data-lucide="user"></i><span>Solo</span></button>
+          <button type="button" class="chip mood-chip filter-tile wide-filter-tile" data-value="barkada"><i data-lucide="users"></i><span>Barkada</span></button>
         </div>
       </div>
 
-      <div>
+      <div class="filter-group visual-filter-group">
         <span class="field-label">Needs</span>
-        <div class="chip-grid" data-filter="feature">
-          <button type="button" class="chip mood-chip" data-value="quick"><i data-lucide="footprints"></i> Quick walk</button>
-          <button type="button" class="chip mood-chip" data-value="budget"><i data-lucide="coins"></i> Low cost</button>
-          <button type="button" class="chip mood-chip" data-value="study"><i data-lucide="laptop"></i> Study</button>
-          <button type="button" class="chip mood-chip" data-value="aircon"><i data-lucide="snowflake"></i> Aircon</button>
-          <button type="button" class="chip mood-chip" data-value="open_late"><i data-lucide="clock-8"></i> Open late</button>
+        <div class="chip-grid visual-filter-grid" data-filter="feature">
+          <button type="button" class="chip mood-chip filter-tile" data-value="quick"><i data-lucide="footprints"></i><span>Near</span></button>
+          <button type="button" class="chip mood-chip filter-tile" data-value="budget"><i data-lucide="coins"></i><span>Cheap</span></button>
+          <button type="button" class="chip mood-chip filter-tile" data-value="study"><i data-lucide="laptop"></i><span>Study</span></button>
+          <button type="button" class="chip mood-chip filter-tile" data-value="aircon"><i data-lucide="snowflake"></i><span>Aircon</span></button>
+          <button type="button" class="chip mood-chip filter-tile" data-value="open_late"><i data-lucide="clock-8"></i><span>Late</span></button>
         </div>
       </div>
 
-      <label>
-        Weather
-        <select name="weather" id="weather">
+      <div class="filter-group visual-filter-group">
+        <span class="field-label">Weather</span>
+        <select class="native-filter-select" name="weather" id="weather" aria-label="Weather">
           <option value="auto">Auto weather</option>
           <option value="any">Any weather</option>
           <option value="hot">Hot day</option>
           <option value="rainy">Rainy day</option>
           <option value="cool">Cool weather</option>
         </select>
-      </label>
+        <div class="visual-filter-grid weather-tile-grid" aria-label="Weather shortcuts">
+          <button class="filter-tile weather-tile active" type="button" data-weather-choice="auto"><i data-lucide="sparkles"></i><span>Auto</span></button>
+          <button class="filter-tile weather-tile" type="button" data-weather-choice="hot"><i data-lucide="sun"></i><span>Hot</span></button>
+          <button class="filter-tile weather-tile" type="button" data-weather-choice="rainy"><i data-lucide="cloud-rain"></i><span>Rain</span></button>
+          <button class="filter-tile weather-tile" type="button" data-weather-choice="cool"><i data-lucide="cloud-sun"></i><span>Cool</span></button>
+        </div>
+      </div>
 
       <label class="toggle-row">
         <input type="checkbox" id="antiRepeat" checked>
@@ -260,12 +266,17 @@
       <span id="saveStatus" class="save-status">Guest saves stay on this device</span>
     </section>
 
-    <section id="decisionCoach" class="decision-coach" aria-live="polite"></section>
+    <section id="decisionCoach" class="decision-coach" aria-live="polite" aria-label="Personal suggestion"></section>
 
     <section class="map-wrap top-map-wrap" aria-label="Food map">
       <div class="map-heading">
-        <span>FEU Area</span>
-        <strong>Campus Food Map</strong>
+        <div>
+          <span>FEU Area</span>
+          <strong>Campus Food Map</strong>
+        </div>
+        <button id="closeFloatingMap" class="icon-button" type="button" aria-label="Close map" title="Close map">
+          <i data-lucide="x"></i>
+        </button>
       </div>
       <div id="map"></div>
     </section>
@@ -273,15 +284,23 @@
     <div class="content-grid">
       <section class="shops-panel">
         <div class="shops-heading">
-        <div>
-          <span>Stores Available</span>
-          <strong>Tap View Menu on a Store</strong>
+          <div>
+            <span>Stores Available</span>
+            <strong>Swipe stores near campus</strong>
+          </div>
+          <div class="store-rail-actions">
+            <button class="icon-button rail-arrow" type="button" data-store-scroll="-1" aria-label="Scroll stores left" title="Scroll stores left">
+              <i data-lucide="arrow-left"></i>
+            </button>
+            <button class="icon-button rail-arrow" type="button" data-store-scroll="1" aria-label="Scroll stores right" title="Scroll stores right">
+              <i data-lucide="arrow-right"></i>
+            </button>
+            <button id="scrollToMap" class="secondary-button compact-button" type="button">
+              <i data-lucide="map"></i>
+              Map
+            </button>
+          </div>
         </div>
-        <button id="scrollToMap" class="secondary-button compact-button" type="button">
-          <i data-lucide="map"></i>
-          Map
-        </button>
-      </div>
       <div id="menuDetailBackdrop" class="menu-detail-backdrop" hidden></div>
       <aside id="menuDetail" class="menu-detail" aria-live="polite" hidden></aside>
       <div id="results" class="results-grid" aria-live="polite"></div>
@@ -303,6 +322,17 @@
     <i data-lucide="rotate-cw"></i>
   </button>
 </section>
+
+<div class="floating-tools" aria-label="Quick helpers">
+  <button id="toggleSuggestion" class="floating-tool-button" type="button" aria-controls="decisionCoach" aria-expanded="false" title="Show suggestion">
+    <i data-lucide="sparkles"></i>
+    <span>Suggest</span>
+  </button>
+  <button id="toggleMap" class="floating-tool-button" type="button" aria-controls="map" aria-expanded="false" title="Show map">
+    <i data-lucide="map"></i>
+    <span>Map</span>
+  </button>
+</div>
 
 <div id="toast" class="toast" hidden></div>
 
@@ -421,6 +451,6 @@
   window.SAAN_CAMPUSES = {{ campuses | tojson }};
 </script>
 <script src="{{ url_for('static', path='/js/map.js') }}?v=pedestrian-corridor-20260506"></script>
-<script src="{{ url_for('static', path='/js/app.js') }}?v=cuisine-rail-20260507"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}?v=filter-tiles-20260507"></script>
 <script src="{{ url_for('static', path='/js/pickforme.js') }}?v=smart-picker-20260506"></script>
 {% endblock %}
