@@ -9,6 +9,7 @@ const state = {
   publicStoreRatings: {},
   publicFoodRatings: {},
   ratingDraft: null,
+  customComboIds: [],
 };
 
 const DEFAULT_RADIUS = 1200;
@@ -876,11 +877,66 @@ function comboCardTemplate(combo, amount) {
 function singlePickTemplate(food) {
   const openStatus = openStatusFor(food);
   return `
-    <button class="combo-single" type="button" data-combo-food="${food.id}">
+    <button class="combo-single" type="button" data-combo-add="${food.id}">
       <span>${comboRoleLabel(comboRole(food))}</span>
       <strong>${food.name}</strong>
       <small>${food.restaurant} - ${peso(comboPrice(food))} - ${openStatus.label}</small>
+      <b>Add</b>
     </button>
+  `;
+}
+
+function selectedComboFoods() {
+  return state.customComboIds
+    .map((id) => state.foods.find((food) => food.id === id))
+    .filter(Boolean);
+}
+
+function renderCustomComboBuilder(amount, singles) {
+  const selected = selectedComboFoods();
+  const total = selected.reduce((sum, food) => sum + comboPrice(food), 0);
+  const remaining = amount - total;
+  const selectedMarkup = selected.length
+    ? selected.map((food) => `
+        <div class="custom-combo-item">
+          <div>
+            <strong>${food.name}</strong>
+            <span>${food.restaurant} - ${comboRoleLabel(comboRole(food))}</span>
+          </div>
+          <b>${peso(comboPrice(food))}</b>
+          <button type="button" data-combo-remove="${food.id}" aria-label="Remove ${food.name}" title="Remove ${food.name}">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+      `).join("")
+    : `<p>Add items below to build a combo from your budget.</p>`;
+  const options = singles
+    .filter((food) => !state.customComboIds.includes(food.id))
+    .slice(0, 12);
+
+  return `
+    <section class="custom-combo-builder ${remaining < 0 ? "over" : ""}">
+      <div class="combo-section-heading">
+        <span>Build your own</span>
+        <strong>${selected.length ? `${selected.length} item${selected.length === 1 ? "" : "s"}` : "Choose items"}</strong>
+      </div>
+      <div class="custom-combo-board">
+        <div class="custom-combo-total">
+          <span>Total</span>
+          <strong>${peso(total)}</strong>
+          <p>${remaining >= 0 ? `${peso(remaining)} left from ${peso(amount)}` : `${peso(Math.abs(remaining))} over ${peso(amount)}`}</p>
+          ${selected.length ? `<button class="combo-clear-button" type="button" data-combo-clear>Clear combo</button>` : ""}
+        </div>
+        <div class="custom-combo-list">${selectedMarkup}</div>
+      </div>
+      <div class="combo-section-heading">
+        <span>Add to combo</span>
+        <strong>${options.length} options</strong>
+      </div>
+      <div class="combo-single-grid custom-combo-options">
+        ${options.map(singlePickTemplate).join("") || `<p class="combo-empty">No more affordable items in the current filters.</p>`}
+      </div>
+    </section>
   `;
 }
 
@@ -889,6 +945,10 @@ function renderComboResults(amount) {
   if (!results) return;
   if (!amount || amount < 1) {
     results.innerHTML = `<p>Tell me what you have and I will build realistic, sulit combos from the menus showing now.</p>`;
+    return;
+  }
+  if (!state.foods.length) {
+    results.innerHTML = `<p>Menus are still loading. Try Build mine again in a moment.</p>`;
     return;
   }
 
@@ -917,10 +977,11 @@ function renderComboResults(amount) {
       <strong>${combos.length ? `${combos.length} combo${combos.length === 1 ? "" : "s"} for you` : `${singles.length} pick${singles.length === 1 ? "" : "s"} for you`}</strong>
       <p>${combos.length ? "I kept these same-store so ordering feels realistic, not random." : "No same-store combo fits yet, so I found the best single-item choices for your cash."}</p>
     </div>
+    ${renderCustomComboBuilder(amount, singles)}
     ${combos.length ? `
       <section class="combo-section">
         <div class="combo-section-heading">
-          <span>Your combo options</span>
+          <span>Ready-made options</span>
           <strong>Most sulit first</strong>
         </div>
         <div class="combo-card-grid">
@@ -1733,6 +1794,8 @@ function renderFoods(foods) {
   document.getElementById("resultCount").textContent = state.showingBookmarks
     ? `${stores.length} saved store${stores.length === 1 ? "" : "s"}`
     : `${stores.length} store${stores.length === 1 ? "" : "s"}`;
+  updateRailButtons("results", "[data-store-scroll]");
+  updateRailButtons("categoryRail", "[data-category-scroll]");
   updateBookmarkToggle();
   renderDecisionCoach(stores);
   renderClassBreakBrief(stores);
@@ -2012,6 +2075,37 @@ function restorePreferences() {
   updateFavoriteTypesButton();
 }
 
+function updateRailButtons(railId, buttonSelector) {
+  const rail = document.getElementById(railId);
+  if (!rail) return;
+  const buttons = [...document.querySelectorAll(buttonSelector)];
+  if (!buttons.length) return;
+  const maxScroll = Math.max(0, rail.scrollWidth - rail.clientWidth);
+  const canScroll = maxScroll > 2;
+  const atStart = rail.scrollLeft <= 2;
+  const atEnd = rail.scrollLeft >= maxScroll - 2;
+  buttons.forEach((button) => {
+    const direction = Number(button.dataset.categoryScroll || button.dataset.storeScroll || 1);
+    button.hidden = !canScroll || (direction < 0 ? atStart : atEnd);
+  });
+}
+
+function setupRailControls(railId, buttonSelector, stepRatio) {
+  const rail = document.getElementById(railId);
+  if (!rail) return;
+  const buttons = [...document.querySelectorAll(buttonSelector)];
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const direction = Number(button.dataset.categoryScroll || button.dataset.storeScroll || 1);
+      rail.scrollBy({ left: direction * Math.max(rail.clientWidth * stepRatio, 220), behavior: "smooth" });
+      window.setTimeout(() => updateRailButtons(railId, buttonSelector), 220);
+    });
+  });
+  rail.addEventListener("scroll", () => updateRailButtons(railId, buttonSelector), { passive: true });
+  window.addEventListener("resize", () => updateRailButtons(railId, buttonSelector));
+  window.setTimeout(() => updateRailButtons(railId, buttonSelector), 50);
+}
+
 function setupFilters() {
   document.querySelectorAll(".chip").forEach((chip) => {
     chip.setAttribute("aria-pressed", String(chip.classList.contains("active")));
@@ -2043,23 +2137,8 @@ function setupFilters() {
   });
   updateWeatherTiles();
 
-  document.querySelectorAll("[data-category-scroll]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const rail = document.getElementById("categoryRail");
-      if (!rail) return;
-      const direction = Number(button.dataset.categoryScroll || 1);
-      rail.scrollBy({ left: direction * Math.max(rail.clientWidth * 0.72, 220), behavior: "smooth" });
-    });
-  });
-
-  document.querySelectorAll("[data-store-scroll]").forEach((button) => {
-    button.addEventListener("click", () => {
-      const rail = document.getElementById("results");
-      if (!rail) return;
-      const direction = Number(button.dataset.storeScroll || 1);
-      rail.scrollBy({ left: direction * Math.max(rail.clientWidth * 0.82, 280), behavior: "smooth" });
-    });
-  });
+  setupRailControls("categoryRail", "[data-category-scroll]", 0.72);
+  setupRailControls("results", "[data-store-scroll]", 0.82);
 
   ["campus", "budget", "area", "sort", "weather", "antiRepeat", "timeAvailable", "mealMinutes"].forEach((id) => {
     const control = document.getElementById(id);
@@ -2186,14 +2265,31 @@ function setupFilters() {
   });
   document.getElementById("comboResults")?.addEventListener("click", (event) => {
     const storeButton = event.target.closest("[data-combo-store]");
-    const foodButton = event.target.closest("[data-combo-food]");
+    const addButton = event.target.closest("[data-combo-add]");
+    const removeButton = event.target.closest("[data-combo-remove]");
+    const clearButton = event.target.closest("[data-combo-clear]");
     if (storeButton) {
       openStoreFromCombo(storeButton.dataset.comboStore);
       return;
     }
-    if (foodButton) {
-      const food = state.foods.find((item) => item.id === Number(foodButton.dataset.comboFood));
-      if (food) openStoreFromCombo(storeIdFor(food.restaurant));
+    if (addButton) {
+      const id = Number(addButton.dataset.comboAdd);
+      if (!state.customComboIds.includes(id)) state.customComboIds.push(id);
+      const amount = Number(document.getElementById("comboBudgetAmount")?.value || 0);
+      renderComboResults(amount);
+      return;
+    }
+    if (removeButton) {
+      const id = Number(removeButton.dataset.comboRemove);
+      state.customComboIds = state.customComboIds.filter((itemId) => itemId !== id);
+      const amount = Number(document.getElementById("comboBudgetAmount")?.value || 0);
+      renderComboResults(amount);
+      return;
+    }
+    if (clearButton) {
+      state.customComboIds = [];
+      const amount = Number(document.getElementById("comboBudgetAmount")?.value || 0);
+      renderComboResults(amount);
     }
   });
   document.querySelectorAll("[data-combo-budget]").forEach((button) => {

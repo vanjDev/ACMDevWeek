@@ -179,7 +179,7 @@
           <i data-lucide="heart"></i>
           Bookmarks
         </button>
-        <button id="openComboFinder" class="secondary-button" type="button">
+        <button id="openComboFinder" class="secondary-button combo-action-button" type="button">
           <i data-lucide="coins"></i>
           Combo for Me?
         </button>
@@ -189,7 +189,6 @@
 
     <section id="pickResult" class="pick-result" hidden></section>
 
-    <!-- Home tracker glance moved into the stores header. -->
     <section class="habit-strip" aria-label="Food history and streaks">
       <div class="habit-stat">
         <i data-lucide="flame"></i>
@@ -251,38 +250,46 @@
             </button>
           </div>
         </div>
-        <div id="categoryRail" class="cuisine-rail cuisine-rail--filter" data-filter="category" aria-label="Filter by food type">
-          <button type="button" class="chip cuisine-chip" data-value="chicken">
-            <img src="https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=220&q=80" alt="">
-            <span>Chicken</span>
+        <div class="category-rail-wrap">
+          <button class="icon-button rail-arrow category-rail-nav category-rail-nav-left" type="button" data-category-scroll="-1" aria-label="Scroll food types left" title="Scroll food types left" hidden>
+            <i data-lucide="arrow-left"></i>
           </button>
-          <button type="button" class="chip cuisine-chip" data-value="rice_meals">
-            <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=220&q=80" alt="">
-            <span>Rice Meals</span>
-          </button>
-          <button type="button" class="chip cuisine-chip" data-value="street_food">
-            <img src="https://images.unsplash.com/photo-1577106263724-2c8e03bfe9cf?auto=format&fit=crop&w=220&q=80" alt="">
-            <span>Street Food</span>
-          </button>
-          <button type="button" class="chip cuisine-chip" data-value="dimsum">
-            <img src="https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=220&q=80" alt="">
-            <span>Dimsum</span>
-          </button>
-          <button type="button" class="chip cuisine-chip" data-value="coffee_drinks">
-            <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=220&q=80" alt="">
-            <span>Coffee</span>
-          </button>
-          <button type="button" class="chip cuisine-chip" data-value="burgers">
-            <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=220&q=80" alt="">
-            <span>Burgers</span>
-          </button>
-          <button type="button" class="chip cuisine-chip" data-value="unli_rice">
-            <img src="https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=220&q=80" alt="">
-            <span>Unli Rice</span>
-          </button>
-          <button type="button" class="chip cuisine-chip" data-value="snacks">
-            <img src="https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&w=220&q=80" alt="">
-            <span>Snacks</span>
+          <div id="categoryRail" class="cuisine-rail cuisine-rail--filter" data-filter="category" aria-label="Filter by food type">
+            <button type="button" class="chip cuisine-chip" data-value="chicken">
+              <img src="https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=220&q=80" alt="">
+              <span>Chicken</span>
+            </button>
+            <button type="button" class="chip cuisine-chip" data-value="rice_meals">
+              <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=220&q=80" alt="">
+              <span>Rice Meals</span>
+            </button>
+            <button type="button" class="chip cuisine-chip" data-value="street_food">
+              <img src="https://images.unsplash.com/photo-1577106263724-2c8e03bfe9cf?auto=format&fit=crop&w=220&q=80" alt="">
+              <span>Street Food</span>
+            </button>
+            <button type="button" class="chip cuisine-chip" data-value="dimsum">
+              <img src="https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=220&q=80" alt="">
+              <span>Dimsum</span>
+            </button>
+            <button type="button" class="chip cuisine-chip" data-value="coffee_drinks">
+              <img src="https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=220&q=80" alt="">
+              <span>Coffee</span>
+            </button>
+            <button type="button" class="chip cuisine-chip" data-value="burgers">
+              <img src="https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=220&q=80" alt="">
+              <span>Burgers</span>
+            </button>
+            <button type="button" class="chip cuisine-chip" data-value="unli_rice">
+              <img src="https://images.unsplash.com/photo-1603133872878-684f208fb84b?auto=format&fit=crop&w=220&q=80" alt="">
+              <span>Unli Rice</span>
+            </button>
+            <button type="button" class="chip cuisine-chip" data-value="snacks">
+              <img src="https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&w=220&q=80" alt="">
+              <span>Snacks</span>
+            </button>
+          </div>
+          <button class="icon-button rail-arrow category-rail-nav category-rail-nav-right" type="button" data-category-scroll="1" aria-label="Scroll food types right" title="Scroll food types right">
+            <i data-lucide="arrow-right"></i>
           </button>
         </div>
       <div id="menuDetailBackdrop" class="menu-detail-backdrop" hidden></div>
@@ -439,7 +446,7 @@
 <script>
   window.SAAN_CAMPUSES = {{ campuses | tojson }};
 </script>
-<script src="{{ url_for('static', path='/js/map.js') }}?v=home-store-header-20260507"></script>
-<script src="{{ url_for('static', path='/js/app.js') }}?v=home-store-header-20260507"></script>
+<script src="{{ url_for('static', path='/js/map.js') }}?v=rails-polish-20260507"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}?v=combo-builder-20260507"></script>
 <script src="{{ url_for('static', path='/js/pickforme.js') }}?v=picker-modes-20260507"></script>
 {% endblock %}

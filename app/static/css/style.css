@@ -1153,10 +1153,13 @@ input[type="range"] {
 }
 
 .action-strip {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) auto;
+  align-items: center;
+  justify-content: space-between;
   min-height: 68px;
   border-radius: 26px;
   padding: 12px 14px;
-  flex-wrap: wrap;
 }
 
 .habit-strip {
@@ -2121,6 +2124,11 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 
 .combo-card {
   gap: 14px;
+  border-color: rgba(255, 214, 49, 0.22);
+  background:
+    linear-gradient(180deg, rgba(8, 47, 42, 0.98), rgba(3, 27, 25, 0.98)),
+    var(--ink);
+  box-shadow: 0 28px 78px rgba(0, 0, 0, 0.42);
 }
 
 .combo-input-row {
@@ -2138,13 +2146,19 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 
 .combo-quick-row button {
   min-height: 34px;
-  border: 1px solid rgba(246, 241, 231, 0.16);
+  border: 1px solid rgba(246, 241, 231, 0.28);
   border-radius: 999px;
   padding: 0 12px;
-  color: var(--cream);
-  background: rgba(246, 241, 231, 0.08);
+  color: var(--white);
+  background: rgba(246, 241, 231, 0.12);
   font-size: 0.72rem;
   font-weight: 900;
+}
+
+.combo-quick-row button:hover {
+  border-color: rgba(255, 214, 49, 0.72);
+  color: var(--ink);
+  background: var(--yellow);
 }
 
 .combo-results {
@@ -2153,12 +2167,13 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
   max-height: min(62vh, 620px);
   overflow: auto;
   padding-right: 4px;
+  scrollbar-color: rgba(246, 241, 231, 0.5) rgba(255, 255, 255, 0.08);
 }
 
 .combo-results > p,
 .combo-empty {
   margin: 0;
-  color: var(--mint);
+  color: var(--cream);
   font-weight: 800;
   line-height: 1.45;
 }
@@ -2167,9 +2182,13 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
   display: grid;
   gap: 5px;
   border-radius: 16px 16px 6px 6px;
+  border: 1px solid rgba(255, 214, 49, 0.34);
   padding: 14px;
-  color: var(--ink);
-  background: var(--cream);
+  color: var(--white);
+  background:
+    linear-gradient(135deg, rgba(255, 214, 49, 0.16), rgba(117, 240, 181, 0.08)),
+    rgba(246, 241, 231, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .combo-summary span,
@@ -2183,10 +2202,11 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 
 .combo-summary span,
 .combo-section-heading span {
-  color: var(--green);
+  color: #75f0b5;
 }
 
 .combo-summary strong {
+  color: var(--white);
   font-family: Outfit, Inter, sans-serif;
   font-size: 1.3rem;
   line-height: 1;
@@ -2195,7 +2215,7 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 
 .combo-summary p {
   margin: 0;
-  color: #315f56;
+  color: rgba(246, 241, 231, 0.82);
   font-size: 0.82rem;
   font-weight: 850;
 }
@@ -2211,13 +2231,19 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  min-height: 24px;
 }
 
 .combo-section-heading strong {
-  color: var(--cream);
+  color: var(--white);
   font-size: 0.78rem;
   font-weight: 900;
   text-transform: uppercase;
+}
+
+.combo-section-heading span {
+  color: #75f0b5;
+  letter-spacing: 0;
 }
 
 .combo-card-grid {
@@ -2226,13 +2252,160 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
   gap: 10px;
 }
 
+.custom-combo-builder {
+  display: grid;
+  gap: 10px;
+  border: 1px solid rgba(117, 240, 181, 0.3);
+  border-radius: 16px 16px 6px 6px;
+  padding: 12px;
+  background:
+    linear-gradient(135deg, rgba(117, 240, 181, 0.12), rgba(255, 214, 49, 0.07)),
+    rgba(246, 241, 231, 0.055);
+}
+
+.custom-combo-builder.over {
+  border-color: rgba(255, 141, 128, 0.55);
+  background:
+    linear-gradient(135deg, rgba(255, 141, 128, 0.14), rgba(255, 214, 49, 0.06)),
+    rgba(246, 241, 231, 0.055);
+}
+
+.custom-combo-board {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.32fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.custom-combo-total {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  border-radius: 12px;
+  padding: 12px;
+  color: var(--ink);
+  background: var(--yellow);
+}
+
+.custom-combo-total span,
+.custom-combo-total p {
+  margin: 0;
+  color: rgba(4, 31, 29, 0.72);
+  font-size: 0.68rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.custom-combo-total strong {
+  font-family: Outfit, Inter, sans-serif;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.combo-clear-button {
+  width: fit-content;
+  min-height: 28px;
+  margin-top: 4px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 10px;
+  color: var(--white);
+  background: var(--ink);
+  font-size: 0.66rem;
+  font-weight: 900;
+}
+
+.custom-combo-list {
+  display: grid;
+  gap: 7px;
+  align-content: start;
+  min-height: 100px;
+}
+
+.custom-combo-list > p {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  border: 1px dashed rgba(246, 241, 231, 0.24);
+  border-radius: 12px;
+  color: rgba(246, 241, 231, 0.76);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-align: center;
+}
+
+.custom-combo-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 30px;
+  gap: 8px;
+  align-items: center;
+  border: 1px solid rgba(246, 241, 231, 0.18);
+  border-radius: 12px;
+  padding: 8px;
+  background: rgba(3, 27, 25, 0.34);
+}
+
+.custom-combo-item strong,
+.custom-combo-item span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-combo-item strong {
+  color: var(--white);
+  font-family: Outfit, Inter, sans-serif;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.custom-combo-item span {
+  color: rgba(246, 241, 231, 0.66);
+  font-size: 0.66rem;
+  font-weight: 850;
+}
+
+.custom-combo-item > b {
+  color: #ffdf5d;
+  font-size: 0.76rem;
+}
+
+.custom-combo-item button {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--cream);
+}
+
+.custom-combo-item button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.custom-combo-options .combo-single {
+  position: relative;
+  padding-right: 52px;
+}
+
 .combo-card-result {
   display: grid;
   gap: 10px;
-  border: 1px solid rgba(246, 241, 231, 0.14);
+  border: 1px solid rgba(246, 241, 231, 0.24);
   border-radius: 14px 14px 6px 6px;
   padding: 12px;
-  background: rgba(246, 241, 231, 0.08);
+  background: linear-gradient(180deg, rgba(246, 241, 231, 0.13), rgba(246, 241, 231, 0.08));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.combo-card-result:hover,
+.combo-single:hover {
+  border-color: rgba(255, 214, 49, 0.48);
+  background: linear-gradient(180deg, rgba(246, 241, 231, 0.16), rgba(246, 241, 231, 0.1));
 }
 
 .combo-card-heading {
@@ -2246,7 +2419,7 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--mint);
+  color: #eafbf2;
 }
 
 .combo-card-heading svg {
@@ -2264,7 +2437,7 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 }
 
 .combo-card-result h3 {
-  color: var(--cream);
+  color: var(--white);
   font-family: Outfit, Inter, sans-serif;
   font-size: 1rem;
   line-height: 1.05;
@@ -2273,14 +2446,14 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 
 .combo-card-result p {
   margin: 0;
-  color: rgba(246, 241, 231, 0.8);
+  color: rgba(255, 255, 255, 0.9);
   font-size: 0.8rem;
   font-weight: 800;
   line-height: 1.35;
 }
 
 .combo-card-result p small {
-  color: var(--mint);
+  color: #ffdf5d;
   font-size: 0.68rem;
   font-weight: 900;
 }
@@ -2294,21 +2467,21 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 .combo-meta-row span {
   border-radius: 999px;
   padding: 5px 8px;
-  color: var(--mint);
-  background: rgba(246, 241, 231, 0.08);
+  color: #f4fff9;
+  background: rgba(246, 241, 231, 0.14);
   font-size: 0.66rem;
   font-weight: 900;
   text-transform: uppercase;
 }
 
 .combo-meta-row span.open {
-  color: #bff5d7;
-  background: rgba(0, 166, 100, 0.22);
+  color: #061e1b;
+  background: #8cf2bd;
 }
 
 .combo-meta-row span.closed {
-  color: #ffd1c8;
-  background: rgba(255, 107, 74, 0.2);
+  color: #ffe9e3;
+  background: rgba(168, 75, 54, 0.78);
 }
 
 .combo-card-result .secondary-button {
@@ -2328,16 +2501,16 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
   display: grid;
   gap: 3px;
   min-width: 0;
-  border: 1px solid rgba(246, 241, 231, 0.12);
+  border: 1px solid rgba(246, 241, 231, 0.22);
   border-radius: 12px 12px 6px 6px;
   padding: 10px;
   color: var(--cream);
-  background: rgba(4, 31, 29, 0.6);
+  background: rgba(246, 241, 231, 0.075);
   text-align: left;
 }
 
 .combo-single span {
-  color: var(--mint);
+  color: #75f0b5;
 }
 
 .combo-single strong {
@@ -2352,11 +2525,25 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 
 .combo-single small {
   overflow: hidden;
-  color: rgba(246, 241, 231, 0.72);
+  color: rgba(255, 255, 255, 0.78);
   font-size: 0.7rem;
   font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.combo-single b {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: var(--ink);
+  background: #8cf2bd;
+  font-size: 0.66rem;
+  font-weight: 950;
+  text-transform: uppercase;
 }
 
 .meal-log-summary {
@@ -2425,9 +2612,9 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 
 .action-buttons {
   display: flex;
-  flex: 1 1 340px;
+  flex: 0 1 auto;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -2439,8 +2626,13 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 
 .action-strip .primary-button,
 .action-strip .secondary-button {
-  flex: 0 1 170px;
-  min-width: 150px;
+  flex: 0 0 auto;
+  min-width: 154px;
+  white-space: nowrap;
+}
+
+.action-strip .combo-action-button {
+  min-width: 188px;
 }
 
 .primary-button {
@@ -2515,21 +2707,44 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 .shops-heading-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   flex-shrink: 0;
 }
 
+.shops-heading-actions .mini-action,
+.shops-heading-actions .secondary-button {
+  min-height: 40px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.shops-heading-actions .mini-action {
+  margin: 0;
+  padding: 0 14px;
+  color: var(--cream);
+  background: var(--green);
+}
+
 /* Compact cuisine filter rail sitting directly below the stores heading */
+.category-rail-wrap {
+  position: relative;
+  overflow: visible;
+  border-radius: 0 0 18px 18px;
+  background: var(--cream);
+  margin-bottom: 20px;
+}
+
 .cuisine-rail--filter {
   display: flex !important;
   grid-auto-columns: unset !important;
   grid-auto-flow: unset !important;
   gap: 8px;
   overflow-x: auto;
-  padding: 10px 16px 14px;
+  padding: 12px 18px 16px;
   border-radius: 0 0 16px 16px;
   background: var(--cream);
-  margin-bottom: 20px;
+  margin-bottom: 0;
   scrollbar-width: none;
 }
 
@@ -2588,6 +2803,27 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 .cuisine-rail--filter .cuisine-chip.active img,
 .cuisine-rail--filter .cuisine-chip[aria-pressed="true"] img {
   outline: none;
+}
+
+.category-rail-nav {
+  position: absolute;
+  top: 50%;
+  z-index: 8;
+  width: 42px;
+  height: 42px;
+  transform: translateY(-50%);
+}
+
+.category-rail-nav-left {
+  left: -10px;
+}
+
+.category-rail-nav-right {
+  right: -10px;
+}
+
+.rail-arrow[hidden] {
+  display: none !important;
 }
 
 .shops-heading-copy {
@@ -5885,7 +6121,7 @@ body.menu-detail-open {
 
   .action-buttons {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: stretch;
     flex: 0 1 auto;
     width: 100%;
@@ -5897,6 +6133,10 @@ body.menu-detail-open {
     width: 100%;
     padding-inline: 10px;
     font-size: 0.82rem;
+  }
+
+  .action-strip .combo-action-button {
+    min-width: 0;
   }
 
   .wheel-layout {
@@ -6430,6 +6670,10 @@ body.menu-detail-open {
   white-space: nowrap;
 }
 
+.shops-panel .shops-heading {
+  margin-bottom: 0;
+}
+
 @media (max-width: 1100px) {
   .results-grid {
     grid-auto-columns: minmax(236px, 42%);
@@ -6469,31 +6713,19 @@ body.menu-detail-open {
   .shops-heading {
     display: grid;
     grid-template-columns: 1fr;
+    align-items: start;
+    gap: 8px;
   }
 
-  .shops-heading-side {
-    justify-content: flex-start;
-  }
-
-  .home-store-stats {
-    order: 3;
+  .shops-heading-actions {
     width: 100%;
-    justify-content: flex-start;
-    overflow-x: auto;
-    padding-bottom: 2px;
-    scrollbar-width: none;
+    justify-content: space-between;
   }
 
-  .home-store-stats::-webkit-scrollbar {
-    display: none;
-  }
-
-  .home-store-stat {
-    flex: 0 0 104px;
-  }
-
-  .home-save-status {
-    display: none;
+  .shops-heading-actions .mini-action {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-width: 0;
   }
 
   .shops-heading #scrollToMap {
