@@ -1327,6 +1327,14 @@ input[type="range"] {
   text-transform: uppercase;
 }
 
+.rating-reason {
+  margin: 0;
+  color: #4f726b;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
 .store-card-rating {
   border-radius: 12px;
   padding: 8px 9px;

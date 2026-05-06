@@ -343,19 +343,58 @@ function getUserRatings(key) {
   return raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
 }
 
+function normalizedRatingEntry(value) {
+  if (typeof value === "number" || typeof value === "string") {
+    const score = Number(value);
+    return Number.isFinite(score) && score >= 1 && score <= 5 ? { score, reason: "" } : { score: 0, reason: "" };
+  }
+  if (value && typeof value === "object") {
+    const score = Number(value.score || value.rating || 0);
+    return {
+      score: Number.isFinite(score) && score >= 1 && score <= 5 ? score : 0,
+      reason: String(value.reason || "").trim(),
+      updatedAt: value.updatedAt || "",
+    };
+  }
+  return { score: 0, reason: "" };
+}
+
+function getUserRatingEntry(key, id) {
+  return normalizedRatingEntry(getUserRatings(key)[String(id)]);
+}
+
+function getUserStoreRatingEntry(storeId) {
+  return getUserRatingEntry(USER_STORE_RATINGS_KEY, storeId);
+}
+
+function getUserFoodRatingEntry(foodId) {
+  return getUserRatingEntry(USER_FOOD_RATINGS_KEY, foodId);
+}
+
 function getUserStoreRating(storeId) {
-  return Number(getUserRatings(USER_STORE_RATINGS_KEY)[String(storeId)] || 0);
+  return getUserStoreRatingEntry(storeId).score;
 }
 
 function getUserFoodRating(foodId) {
-  return Number(getUserRatings(USER_FOOD_RATINGS_KEY)[String(foodId)] || 0);
+  return getUserFoodRatingEntry(foodId).score;
 }
 
-function setUserRating(key, id, rating) {
+function setUserRating(key, id, rating, reason = "") {
   const normalizedRating = Number(rating);
   if (!id || !Number.isFinite(normalizedRating) || normalizedRating < 1 || normalizedRating > 5) return;
-  const ratings = { ...getUserRatings(key), [String(id)]: normalizedRating };
+  const ratings = {
+    ...getUserRatings(key),
+    [String(id)]: {
+      score: normalizedRating,
+      reason: String(reason || "").trim(),
+      updatedAt: new Date().toISOString(),
+    },
+  };
   setJson(key, ratings);
+}
+
+function ratingReasonText(entry, fallback) {
+  return entry.reason || fallback;
 }
 
 function antiRepeatIds() {
@@ -568,7 +607,8 @@ function detailMenuItemTemplate(food) {
   const active = getBookmarks().includes(food.id);
   const foodLog = latestFoodLog(food.id);
   const eatenToday = Boolean(foodLog && foodLog.phDate === manilaParts().date);
-  const userRating = getUserFoodRating(food.id);
+  const userRatingEntry = getUserFoodRatingEntry(food.id);
+  const userRating = userRatingEntry.score;
   return `
     <article class="detail-menu-item" data-menu-food-id="${food.id}">
       <img src="${foodImageFor(food)}" alt="">
@@ -585,6 +625,7 @@ function detailMenuItemTemplate(food) {
           <div class="rating-panel compact-rating">
             <span>${userRating ? `Your food rating: ${userRating}/5` : "Rate food"}</span>
             ${ratingStarsTemplate({ id: food.id, type: "food", value: userRating, label: `Rate ${food.name}` })}
+            <p class="rating-reason">${ratingReasonText(userRatingEntry, "Add why: taste, serving, price, or sulit factor.")}</p>
           </div>
           <button class="icon-button ate-button ${eatenToday ? "active" : ""}" type="button" data-ate="${food.id}" aria-label="${eatenToday ? "Edit meal log for" : "Log"} ${food.name}" aria-pressed="${eatenToday}" title="${eatenToday ? `Logged PHP ${foodLog.price} today` : "Log eaten"}">
             <i data-lucide="utensils"></i>
@@ -605,7 +646,8 @@ function storeCardTemplate(store) {
   const image = foodImageFor(store);
   const frames = storeFrames(store);
   const isOpen = state.selectedStoreId === store.id;
-  const userRating = getUserStoreRating(store.id);
+  const userRatingEntry = getUserStoreRatingEntry(store.id);
+  const userRating = userRatingEntry.score;
   return `
     <article class="food-card store-card ${isOpen ? "open" : ""}" data-store-id="${store.id}">
       <div class="food-image">
@@ -628,6 +670,7 @@ function storeCardTemplate(store) {
         <div class="rating-panel store-card-rating">
           <span>${userRating ? `Your rating: ${userRating}/5` : "Rate store"}</span>
           ${ratingStarsTemplate({ id: store.id, type: "store", value: userRating, label: `Rate ${store.name}` })}
+          <p class="rating-reason">${ratingReasonText(userRatingEntry, "Based on the starting dataset until you add a reason.")}</p>
         </div>
         <div class="card-actions">
           <span class="pill price-pill">
@@ -652,14 +695,17 @@ function menuDetailTemplate(store) {
   if (!store) return "";
 
   const storeSaved = getStoreBookmarks().includes(store.id);
-  const userRating = getUserStoreRating(store.id);
+  const userRatingEntry = getUserStoreRatingEntry(store.id);
+  const userRating = userRatingEntry.score;
+  const displayRating = userRating || store.rating;
+  const ratingSource = userRating ? "Your rating" : "Store data rating";
   return `
     <div class="menu-detail-header">
       <img src="${foodImageFor(store)}" alt="">
       <div>
         <span>${formatLabel(store.area)}</span>
         <strong>${store.name}</strong>
-        <p>${store.menu.length} menu items - ${store.walking_minutes} min walk - store rating ${store.rating.toFixed(1)}/5</p>
+        <p>${store.menu.length} menu items - ${store.walking_minutes} min walk - ${ratingSource.toLowerCase()} ${displayRating.toFixed(1)}/5</p>
         <b class="detail-price-range">PHP ${store.price_min}-${store.price_max}</b>
       </div>
       <div class="menu-detail-header-actions">
@@ -674,12 +720,13 @@ function menuDetailTemplate(store) {
     <div class="decision-rating">
       <div>
         <span>Decision signal</span>
-        <strong><i data-lucide="star"></i> ${store.rating.toFixed(1)} store rating</strong>
-        <p>Good ratings can guide the choice, but compare price, walk time, and what you actually want.</p>
+        <strong><i data-lucide="star"></i> ${displayRating.toFixed(1)} ${ratingSource.toLowerCase()}</strong>
+        <p>${ratingReasonText(userRatingEntry, "This rating currently comes from the store dataset. Add your own score and reason to make the recommendation more personal.")}</p>
       </div>
       <div class="rating-panel">
         <span>${userRating ? `Your store rating: ${userRating}/5` : "Rate this store"}</span>
         ${ratingStarsTemplate({ id: store.id, type: "store", value: userRating, label: `Rate ${store.name}` })}
+        <p class="rating-reason">${ratingReasonText(userRatingEntry, "Explain the score so the rating is useful, not just a number.")}</p>
       </div>
     </div>
     <div class="detail-menu-list">
@@ -717,8 +764,8 @@ function applyClientRanking(foods) {
   return [...foods].sort((a, b) => {
     const score = (food) => {
       let total = food.rating * 8 - (food.walking_minutes || 0);
-      total += Number(foodRatings[String(food.id)] || 0) * 8;
-      total += Number(storeRatings[storeIdFor(food.restaurant)] || 0) * 5;
+      total += normalizedRatingEntry(foodRatings[String(food.id)]).score * 8;
+      total += normalizedRatingEntry(storeRatings[storeIdFor(food.restaurant)]).score * 5;
       if (favorites.includes(food.category)) total += 12;
       if (hotMood) total -= food.price_max / 16;
       if (treatMood) total += food.price_min >= 100 ? 8 : 0;
@@ -1136,7 +1183,10 @@ function setupFilters() {
       const rating = Number(storeRatingButton.dataset.rating);
       const store = groupFoodsByStore(state.foods).find((item) => item.id === id);
       if (!id || !Number.isFinite(rating)) return;
-      setUserRating(USER_STORE_RATINGS_KEY, id, rating);
+      const previous = getUserStoreRatingEntry(id);
+      const reason = window.prompt(`Why ${rating}/5 for ${store?.name || "this store"}?`, previous.reason || "");
+      if (reason === null) return;
+      setUserRating(USER_STORE_RATINGS_KEY, id, rating, reason);
       showToast(`Rated ${store?.name || "store"} ${rating}/5.`);
       renderFoods(state.foods);
       return;
@@ -1196,7 +1246,10 @@ function setupFilters() {
       const rating = Number(storeRatingButton.dataset.rating);
       const store = groupFoodsByStore(state.foods).find((item) => item.id === id);
       if (!id || !Number.isFinite(rating)) return;
-      setUserRating(USER_STORE_RATINGS_KEY, id, rating);
+      const previous = getUserStoreRatingEntry(id);
+      const reason = window.prompt(`Why ${rating}/5 for ${store?.name || "this store"}?`, previous.reason || "");
+      if (reason === null) return;
+      setUserRating(USER_STORE_RATINGS_KEY, id, rating, reason);
       showToast(`Rated ${store?.name || "store"} ${rating}/5.`);
       renderFoods(state.foods);
       return;
@@ -1206,7 +1259,10 @@ function setupFilters() {
       const rating = Number(foodRatingButton.dataset.rating);
       const food = state.foods.find((item) => item.id === id);
       if (!food || !Number.isFinite(rating)) return;
-      setUserRating(USER_FOOD_RATINGS_KEY, id, rating);
+      const previous = getUserFoodRatingEntry(id);
+      const reason = window.prompt(`Why ${rating}/5 for ${food.name}?`, previous.reason || "");
+      if (reason === null) return;
+      setUserRating(USER_FOOD_RATINGS_KEY, id, rating, reason);
       showToast(`Rated ${food.name} ${rating}/5.`);
       renderFoods(state.foods);
       return;
