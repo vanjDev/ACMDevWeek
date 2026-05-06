@@ -6625,10 +6625,10 @@ body.menu-detail-open {
 
   .menu-detail {
     position: fixed;
-    inset: auto 10px 10px;
+    inset: auto 8px 8px;
     width: auto;
     min-height: 0;
-    max-height: 76vh;
+    max-height: 86vh;
     padding: 12px;
     border-radius: 20px;
   }
@@ -6701,7 +6701,15 @@ body.menu-detail-open {
   }
 
   .detail-menu-item > img {
-    height: 150px;
+    height: 178px;
+  }
+
+  .menu-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .menu-filter-panel {
+    top: -12px;
   }
 
   .shops-heading {
