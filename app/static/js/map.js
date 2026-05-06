@@ -28,6 +28,10 @@ function markerLabel(food) {
   return `${food.name} - ${food.restaurant} - PHP ${food.price_min}-${food.price_max}`;
 }
 
+function formatMapArea(value) {
+  return value.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 function initSaanMap() {
   const map = document.getElementById("map");
   if (!map) return;
@@ -41,6 +45,7 @@ function initSaanMap() {
     <div class="map-street street-morayta"><span>Morayta</span></div>
     <div id="mapAnchors"></div>
     <div id="mapFoodMarkers"></div>
+    <aside id="mapSelected" class="map-selected" hidden></aside>
     <div id="mapSummary" class="map-summary">Loading nearby picks...</div>
   `;
 
@@ -55,12 +60,47 @@ function initSaanMap() {
   }).join("");
 }
 
+function selectedMapMarkup(food, index) {
+  return `
+    <span>Selected Shop</span>
+    <strong>${index + 1}. ${food.name}</strong>
+    <p>${food.restaurant} - PHP ${food.price_min}-${food.price_max} - ${food.walking_minutes} min walk</p>
+    <button class="primary-button compact-button" type="button" data-map-view="${food.id}">
+      View shop
+    </button>
+  `;
+}
+
+function selectFoodOnMap(foodId, shouldScroll = false) {
+  const target = document.querySelector(`[data-food-id="${foodId}"]`);
+  const foods = window.SaanMapFoods || [];
+  const foodIndex = foods.findIndex((food) => String(food.id) === String(foodId));
+  const selectedPanel = document.getElementById("mapSelected");
+  if (selectedPanel && foodIndex >= 0) {
+    selectedPanel.innerHTML = selectedMapMarkup(foods[foodIndex], foodIndex);
+    selectedPanel.hidden = false;
+  }
+
+  document.querySelectorAll(".map-food-dot.active").forEach((pin) => pin.classList.remove("active"));
+  document.querySelector(`[data-food-target="${foodId}"]`)?.classList.add("active");
+  document.querySelectorAll(".food-card.map-selected-card").forEach((card) => card.classList.remove("map-selected-card"));
+
+  if (target) {
+    target.classList.add("map-selected-card");
+    if (shouldScroll) {
+      target.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+}
+
 function updateMap(foods, campusKey) {
   const markerLayer = document.getElementById("mapFoodMarkers");
   const summary = document.getElementById("mapSummary");
-  if (!markerLayer || !summary) return;
+  const selectedPanel = document.getElementById("mapSelected");
+  if (!markerLayer || !summary || !selectedPanel) return;
 
   const visibleFoods = foods.slice(0, 24);
+  window.SaanMapFoods = visibleFoods;
   markerLayer.innerHTML = visibleFoods.map((food, index) => {
     const point = mapPoint(food.latitude, food.longitude);
     return `
@@ -69,6 +109,7 @@ function updateMap(foods, campusKey) {
         type="button"
         style="left:${point.x}%;top:${point.y}%;--delay:${index * 16}ms;"
         data-food-target="${food.id}"
+        data-food-index="${index}"
         aria-label="${markerLabel(food)}"
         title="${markerLabel(food)}"
       >
@@ -78,15 +119,27 @@ function updateMap(foods, campusKey) {
   }).join("");
 
   summary.textContent = `${visibleFoods.length} nearby picks`;
+  selectedPanel.hidden = !visibleFoods.length;
+  if (visibleFoods.length) {
+    selectedPanel.innerHTML = selectedMapMarkup(visibleFoods[0], 0);
+    selectFoodOnMap(visibleFoods[0].id, false);
+  }
 
   markerLayer.querySelectorAll("[data-food-target]").forEach((button) => {
     button.addEventListener("click", () => {
-      document.querySelector(`[data-food-id="${button.dataset.foodTarget}"]`)?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
+      const food = visibleFoods[Number(button.dataset.foodIndex)];
+      selectedPanel.innerHTML = selectedMapMarkup(food, Number(button.dataset.foodIndex));
+      selectedPanel.hidden = false;
+      selectFoodOnMap(button.dataset.foodTarget, true);
     });
   });
+
+  selectedPanel.onclick = (event) => {
+    const button = event.target.closest("[data-map-view]");
+    if (!button) return;
+    selectFoodOnMap(button.dataset.mapView, true);
+  };
 }
 
 document.addEventListener("DOMContentLoaded", initSaanMap);
+window.selectFoodOnMap = selectFoodOnMap;

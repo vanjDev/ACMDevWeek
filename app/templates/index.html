@@ -228,20 +228,31 @@
       <span id="saveStatus" class="save-status">Guest saves stay on this device</span>
     </section>
 
+    <section class="map-wrap top-map-wrap" aria-label="Food map">
+      <div class="map-heading">
+        <span>FEU Area</span>
+        <strong>Campus Food Map</strong>
+      </div>
+      <div id="map"></div>
+    </section>
+
     <div class="content-grid">
-      <section>
+      <section class="shops-panel">
+        <div class="shops-heading">
+          <div>
+            <span>Shops Available</span>
+            <strong>Matches From Your Filters</strong>
+          </div>
+          <button id="scrollToMap" class="secondary-button compact-button" type="button">
+            <i data-lucide="map"></i>
+            Map
+          </button>
+        </div>
         <div id="results" class="results-grid" aria-live="polite"></div>
         <button id="loadMore" class="load-more" type="button" hidden>
           <i data-lucide="chevrons-down"></i>
           Show More
         </button>
-      </section>
-      <section class="map-wrap" aria-label="Food map">
-        <div class="map-heading">
-          <span>FEU Area</span>
-          <strong>Campus Food Map</strong>
-        </div>
-        <div id="map"></div>
       </section>
     </div>
   </section>

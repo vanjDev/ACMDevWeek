@@ -451,6 +451,10 @@ function setupFilters() {
     renderFoods(state.foods);
   });
 
+  document.getElementById("scrollToMap").addEventListener("click", () => {
+    document.getElementById("map")?.scrollIntoView({ behavior: "smooth", block: "center" });
+  });
+
   document.getElementById("heroPickForMe")?.addEventListener("click", () => {
     document.getElementById("pickForMe")?.click();
     document.getElementById("pickResult")?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -459,6 +463,7 @@ function setupFilters() {
   document.getElementById("results").addEventListener("click", async (event) => {
     const bookmarkButton = event.target.closest("[data-bookmark]");
     const ateButton = event.target.closest("[data-ate]");
+    const card = event.target.closest("[data-food-id]");
     if (bookmarkButton) {
       const id = Number(bookmarkButton.dataset.bookmark);
       const bookmarks = getBookmarks();
@@ -470,6 +475,8 @@ function setupFilters() {
     if (ateButton) {
       const food = state.foods.find((item) => item.id === Number(ateButton.dataset.ate));
       if (food) logFood(food);
+    } else if (card) {
+      window.selectFoodOnMap?.(card.dataset.foodId, false);
     }
   });
 }
