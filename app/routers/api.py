@@ -12,6 +12,7 @@ from app.models import FoodRating, FoodSpot, SavedFood, Store, StoreRating, User
 from app.schemas import (
     AdminFoodSpotPayload,
     AdminFoodSpotResponse,
+    AdminStoreResponse,
     AuthRequest,
     AuthResponse,
     BookmarkPayload,
@@ -64,6 +65,10 @@ def admin_food_response(food: FoodSpot) -> AdminFoodSpotResponse:
     return response
 
 
+def admin_store_response(store: Store) -> AdminStoreResponse:
+    return AdminStoreResponse.model_validate(store)
+
+
 def safe_upload_stem(filename: str) -> str:
     stem = Path(filename or "food-image").stem.lower()
     stem = re.sub(r"[^a-z0-9]+", "-", stem).strip("-")
@@ -93,8 +98,8 @@ def get_or_create_store(db: Session, payload: AdminFoodSpotPayload) -> Store:
     store.latitude = payload.latitude
     store.longitude = payload.longitude
     store.area = payload.area.strip()
-    store.rating = payload.rating
-    store.image_url = payload.image_url.strip() if payload.image_url else None
+    if payload.image_url or not payload.store_id:
+        store.image_url = payload.image_url.strip() if payload.image_url else None
     store.opens_at = validate_time_value(payload.opens_at, "Opens")
     store.closes_at = validate_time_value(payload.closes_at, "Closes")
     store.is_active = payload.is_active
@@ -116,7 +121,6 @@ def apply_food_payload(db: Session, food: FoodSpot, payload: AdminFoodSpotPayloa
     food.latitude = store.latitude
     food.longitude = store.longitude
     food.area = store.area
-    food.rating = payload.rating
     food.image_url = payload.image_url.strip() if payload.image_url else None
     food.description = payload.description.strip()
     food.is_active = payload.is_active
@@ -365,6 +369,19 @@ def admin_list_foods(
         query = query.filter((FoodSpot.name.ilike(term)) | (FoodSpot.restaurant.ilike(term)))
     rows = query.order_by(FoodSpot.restaurant.asc(), FoodSpot.name.asc()).limit(250).all()
     return [admin_food_response(row) for row in rows]
+
+
+@router.get("/admin/stores", response_model=list[AdminStoreResponse])
+def admin_list_stores(
+    include_inactive: bool = Query(default=True),
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    query = db.query(Store)
+    if not include_inactive:
+        query = query.filter(Store.is_active.is_(True))
+    rows = query.order_by(Store.name.asc()).all()
+    return [admin_store_response(row) for row in rows]
 
 
 @router.post("/admin/uploads/image")

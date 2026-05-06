@@ -1,4 +1,5 @@
 let adminFoods = [];
+let adminStores = [];
 let adminSearchTimer = null;
 let adminMap = null;
 let adminMapMarker = null;
@@ -82,6 +83,43 @@ function formatLabel(value) {
   return String(value || "").replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function selectedStore() {
+  const selectedId = document.getElementById("adminExistingStore")?.value;
+  if (!selectedId) return null;
+  return adminStores.find((store) => String(store.id) === String(selectedId)) || null;
+}
+
+function renderAdminStores() {
+  const select = document.getElementById("adminExistingStore");
+  if (!select) return;
+  const currentValue = select.value;
+  select.replaceChildren(new Option("Add as new store", ""));
+  adminStores.forEach((store) => {
+    const label = `${store.name} - ${formatLabel(store.area)}`;
+    select.append(new Option(label, String(store.id)));
+  });
+  select.value = adminStores.some((store) => String(store.id) === currentValue) ? currentValue : "";
+}
+
+function applyExistingStoreSelection() {
+  const store = selectedStore();
+  document.getElementById("adminStoreId").value = store?.id || "";
+  if (!store) return;
+
+  document.getElementById("adminRestaurant").value = store.name;
+  document.getElementById("adminArea").value = store.area;
+  document.getElementById("adminLatitude").value = store.latitude;
+  document.getElementById("adminLongitude").value = store.longitude;
+  document.getElementById("adminOpensAt").value = store.opens_at || "08:00";
+  document.getElementById("adminClosesAt").value = store.closes_at || "21:00";
+  if (!document.getElementById("adminImageUrl").value.trim() && store.image_url) {
+    document.getElementById("adminImageUrl").value = store.image_url;
+    setImagePreview(store.image_url);
+  }
+  document.getElementById("adminMapHint").textContent = `Using ${store.name}'s saved location.`;
+  setMapPosition({ lat: store.latitude, lng: store.longitude });
+}
+
 function foodPayloadFromForm() {
   return {
     store_id: document.getElementById("adminStoreId").value ? Number(document.getElementById("adminStoreId").value) : null,
@@ -92,7 +130,6 @@ function foodPayloadFromForm() {
     category: document.getElementById("adminCategory").value,
     mood: document.getElementById("adminMood").value,
     area: document.getElementById("adminArea").value,
-    rating: Number(document.getElementById("adminRating").value || 0),
     latitude: Number(document.getElementById("adminLatitude").value),
     longitude: Number(document.getElementById("adminLongitude").value),
     image_url: document.getElementById("adminImageUrl").value.trim() || null,
@@ -107,7 +144,7 @@ function resetAdminForm() {
   document.getElementById("adminFoodForm").reset();
   document.getElementById("adminFoodId").value = "";
   document.getElementById("adminStoreId").value = "";
-  document.getElementById("adminRating").value = "4.0";
+  document.getElementById("adminExistingStore").value = "";
   document.getElementById("adminOpensAt").value = "08:00";
   document.getElementById("adminClosesAt").value = "21:00";
   document.getElementById("adminIsActive").checked = true;
@@ -122,6 +159,7 @@ function resetAdminForm() {
 function fillAdminForm(food) {
   document.getElementById("adminFoodId").value = food.id;
   document.getElementById("adminStoreId").value = food.store_id || "";
+  document.getElementById("adminExistingStore").value = food.store_id || "";
   document.getElementById("adminRestaurant").value = food.restaurant;
   document.getElementById("adminName").value = food.name;
   document.getElementById("adminPriceMin").value = food.price_min;
@@ -129,7 +167,6 @@ function fillAdminForm(food) {
   document.getElementById("adminCategory").value = food.category;
   document.getElementById("adminMood").value = food.mood;
   document.getElementById("adminArea").value = food.area;
-  document.getElementById("adminRating").value = food.rating;
   document.getElementById("adminLatitude").value = food.latitude;
   document.getElementById("adminLongitude").value = food.longitude;
   document.getElementById("adminImageUrl").value = food.image_url || "";
@@ -219,7 +256,13 @@ async function loadAdminFoods() {
   const search = document.getElementById("adminSearch")?.value.trim();
   const params = new URLSearchParams({ include_inactive: "true" });
   if (search) params.set("q", search);
-  adminFoods = await adminFetch(`/api/admin/foods?${params.toString()}`);
+  const [stores, foods] = await Promise.all([
+    adminFetch("/api/admin/stores?include_inactive=true"),
+    adminFetch(`/api/admin/foods?${params.toString()}`),
+  ]);
+  adminStores = stores;
+  adminFoods = foods;
+  renderAdminStores();
   renderAdminFoods();
   setupAdminMap();
 }
@@ -256,6 +299,11 @@ function setupAdmin() {
     saveAdminFood(event).catch((error) => showToast(error.message));
   });
   document.getElementById("adminResetForm")?.addEventListener("click", resetAdminForm);
+  document.getElementById("adminExistingStore")?.addEventListener("change", applyExistingStoreSelection);
+  document.getElementById("adminRestaurant")?.addEventListener("input", () => {
+    document.getElementById("adminExistingStore").value = "";
+    document.getElementById("adminStoreId").value = "";
+  });
   document.getElementById("adminImageUrl")?.addEventListener("input", (event) => {
     setImagePreview(event.target.value.trim());
   });

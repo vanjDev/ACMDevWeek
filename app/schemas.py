@@ -42,7 +42,6 @@ class AdminFoodSpotPayload(BaseModel):
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
     area: str = Field(..., min_length=1, max_length=100)
-    rating: float = Field(default=4.0, ge=0, le=5)
     image_url: str | None = Field(default=None, max_length=500)
     opens_at: str = Field(default="08:00", pattern=r"^\d{2}:\d{2}$")
     closes_at: str = Field(default="21:00", pattern=r"^\d{2}:\d{2}$")
@@ -67,6 +66,21 @@ class AdminFoodSpotResponse(BaseModel):
     opens_at: str | None = None
     closes_at: str | None = None
     description: str
+    is_active: bool
+
+    model_config = {"from_attributes": True}
+
+
+class AdminStoreResponse(BaseModel):
+    id: int
+    name: str
+    latitude: float
+    longitude: float
+    area: str
+    rating: float
+    image_url: str | None = None
+    opens_at: str | None = None
+    closes_at: str | None = None
     is_active: bool
 
     model_config = {"from_attributes": True}

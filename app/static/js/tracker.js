@@ -153,6 +153,24 @@ function mealPeriod() {
   return "dinner";
 }
 
+function mostSpentBy(items, keyFn) {
+  const totals = {};
+  items.forEach((item) => {
+    const key = keyFn(item);
+    if (!key) return;
+    totals[key] = (totals[key] || 0) + Number(item.price || 0);
+  });
+  return Object.entries(totals).sort((a, b) => b[1] - a[1])[0] || null;
+}
+
+function mealPeriodForEntry(item) {
+  const hour = Number(String(item.phTime || "12:00").split(":")[0]);
+  if (hour < 10) return "breakfast";
+  if (hour < 14) return "lunch";
+  if (hour < 18) return "merienda";
+  return "dinner";
+}
+
 function budgetCoachMessages(spent, weekly) {
   const week = thisWeekHistory();
   const today = todayHistory();
@@ -160,6 +178,8 @@ function budgetCoachMessages(spent, weekly) {
   const percent = weekly ? spent / weekly : 0;
   const todaySpent = dailySpentTotal();
   const average = averageMealSpend(week);
+  const topStore = mostSpentBy(week, (item) => item.restaurant);
+  const topPeriod = mostSpentBy(week, mealPeriodForEntry);
   const messages = [];
 
   if (!weekly) {
@@ -230,7 +250,24 @@ function budgetCoachMessages(spent, weekly) {
     });
   }
 
-  return messages.slice(0, 3);
+  if (topStore && week.length >= 3) {
+    messages.push({
+      tone: "neutral",
+      title: "Biggest spend spot",
+      body: `${topStore[0]} is your top spend this week at PHP ${topStore[1]}. If budget feels tight, rotate in a lower-cost pick tomorrow.`,
+    });
+  }
+
+  if (topPeriod && weekly) {
+    const dayCap = Math.max(60, Math.floor(Math.max(0, remaining) / 3));
+    messages.push({
+      tone: topPeriod[1] > weekly * 0.35 ? "warning" : "neutral",
+      title: `${topPeriod[0]} spending pattern`,
+      body: `Most spending happens during ${topPeriod[0]}. Suggested next-meal cap: PHP ${dayCap}.`,
+    });
+  }
+
+  return messages.slice(0, 4);
 }
 
 function streakDays() {

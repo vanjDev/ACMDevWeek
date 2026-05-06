@@ -18,8 +18,8 @@ class Settings(BaseSettings):
 
     feu_tech_lat: float = 14.6042
     feu_tech_lng: float = 120.9882
-    feu_manila_lat: float = 14.6033
-    feu_manila_lng: float = 120.9892
+    feu_manila_lat: float = 14.60356
+    feu_manila_lng: float = 120.98648
 
     model_config = SettingsConfigDict(env_file=ROOT_DIR / ".env", env_file_encoding="utf-8")
 

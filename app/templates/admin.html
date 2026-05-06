@@ -42,6 +42,13 @@
       <input id="adminStoreId" type="hidden">
 
       <label>
+        Use existing store
+        <select id="adminExistingStore" name="existing_store">
+          <option value="">Add as new store</option>
+        </select>
+      </label>
+
+      <label>
         Store / restaurant
         <input id="adminRestaurant" name="restaurant" required placeholder="Example: 1008 Kopi">
       </label>
@@ -110,10 +117,6 @@
             <option value="hepa_lane">Hepa Lane</option>
             <option value="inside_campus">Inside campus</option>
           </select>
-        </label>
-        <label>
-          Rating
-          <input id="adminRating" name="rating" type="number" min="0" max="5" step="0.1" value="4.0" required>
         </label>
       </div>
 
@@ -196,5 +199,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', path='/js/admin.js') }}?v=opening-hours-20260506"></script>
+<script src="{{ url_for('static', path='/js/admin.js') }}?v=admin-rating-removed-20260506"></script>
 {% endblock %}

@@ -1,6 +1,40 @@
+let pickForMeMode = "smart";
+
 function currentStoresForWheel() {
   const foods = state.foods?.length ? applyClientRanking(state.foods) : [];
   return groupFoodsByStore(foods).slice(0, 12);
+}
+
+function storeScoreForMode(store) {
+  const food = store.menu[0];
+  let score = store.rating * 10 - (store.walking_minutes || 0);
+  if (pickForMeMode === "tipid") score -= store.price_max / 5;
+  if (pickForMeMode === "fast") score -= (store.walking_minutes || 0) * 6;
+  if (pickForMeMode === "filling") score += food.category === "rice_meals" || food.category === "chicken" ? 18 : 0;
+  if (pickForMeMode === "new") score += antiRepeatIds().includes(food.id) ? -80 : 10;
+  const breakInfo = breakDecisionFor(store);
+  if (breakInfo?.tone === "safe") score += 20;
+  if (breakInfo?.tone === "risky") score -= 30;
+  return score;
+}
+
+function smartPickedFood(stores) {
+  if (!stores.length) return null;
+  const ranked = [...stores].sort((a, b) => storeScoreForMode(b) - storeScoreForMode(a));
+  const pool = ranked.slice(0, Math.min(5, ranked.length));
+  const store = pool[Math.floor(Math.random() * pool.length)];
+  return store?.menu?.[0] || null;
+}
+
+function pickModeReason(food) {
+  const breakInfo = breakDecisionFor(food);
+  if (pickForMeMode === "tipid") return `Picked because it protects your budget: ${recommendationReason(food)}.`;
+  if (pickForMeMode === "fast") return breakInfo
+    ? `Picked for speed: ${breakInfo.total} min total for your class break.`
+    : `Picked for speed: about ${food.walking_minutes} min away.`;
+  if (pickForMeMode === "filling") return `Picked because it is more likely to be filling for ${food.price_min <= 120 ? "student budget" : "a proper meal"}.`;
+  if (pickForMeMode === "new") return "Picked to avoid your recent meal history.";
+  return `Picked because ${recommendationReason(food)}.`;
 }
 
 function wheelSegments(stores) {
@@ -23,6 +57,17 @@ function showWheelPanel(stores, mode = "ready") {
         <span>${mode === "spinning" ? "Randomizer" : "Undecided?"}</span>
         <h2>${mode === "spinning" ? "Spinning..." : "Ready to pick?"}</h2>
         <p>${mode === "spinning" ? "Checking your current filters and nearby FEU stores." : "Your filters are set. Press start when you want Saan? to choose."}</p>
+        <div class="pick-mode-row" aria-label="Pick mode">
+          ${[
+            ["smart", "Best"],
+            ["tipid", "Tipid"],
+            ["fast", "Fast"],
+            ["filling", "Busog"],
+            ["new", "New"],
+          ].map(([value, label]) => `
+            <button type="button" data-pick-mode="${value}" class="${pickForMeMode === value ? "active" : ""}">${label}</button>
+          `).join("")}
+        </div>
       </div>
       <div class="wheel-store-list" aria-label="Stores in the randomizer">
         ${stores.slice(0, 6).map((store, index) => `<span>${index + 1}. ${store.name}</span>`).join("")}
@@ -79,16 +124,15 @@ async function pickForMe() {
   }, 95);
 
   try {
-    const response = await fetch(`/api/foods/random?${buildParams().toString()}`);
-    if (!response.ok) throw new Error("No match");
-    const food = await response.json();
+    const food = smartPickedFood(stores);
+    if (!food) throw new Error("No match");
     const storeName = food.restaurant;
 
     setTimeout(() => {
       clearInterval(spin);
       wheel.classList.add("landed");
       heading.textContent = storeName;
-      copy.textContent = `${food.name} - PHP ${food.price_min}-${food.price_max} - ${food.walking_minutes} min walk`;
+      copy.textContent = `${food.name} - PHP ${food.price_min}-${food.price_max} - ${food.walking_minutes} min walk. ${pickModeReason(food)}`;
       panel.insertAdjacentHTML("beforeend", `
         <div class="wheel-actions">
           <button class="primary-button compact-button" type="button" data-picked-store="${storeIdFor(storeName)}">
@@ -128,6 +172,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("pickForMe")?.addEventListener("click", openPicker);
   document.getElementById("footerPickForMe")?.addEventListener("click", openPicker);
   document.getElementById("pickResult")?.addEventListener("click", (event) => {
+    const modeButton = event.target.closest("[data-pick-mode]");
+    if (modeButton) {
+      pickForMeMode = modeButton.dataset.pickMode || "smart";
+      showWheelPanel(currentStoresForWheel(), "ready");
+      return;
+    }
     if (event.target.closest("#startPickForMe")) {
       pickForMe();
       return;

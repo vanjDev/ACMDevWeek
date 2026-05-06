@@ -73,13 +73,20 @@
         <div class="budget-row">
           <label>
             I have
-            <input type="number" id="timeAvailable" min="10" max="180" step="5" placeholder="Minutes">
+            <input type="number" id="timeAvailable" min="5" max="180" step="5" placeholder="Minutes">
           </label>
           <label>
             Meal time
             <input type="number" id="mealMinutes" min="5" max="90" step="5" value="20">
           </label>
         </div>
+        <div class="break-presets" aria-label="Class break presets">
+          <button type="button" data-break-minutes="5">5m</button>
+          <button type="button" data-break-minutes="10">10m</button>
+          <button type="button" data-break-minutes="15">15m</button>
+          <button type="button" data-break-minutes="30">30m</button>
+        </div>
+        <p id="classBreakBrief">Add break minutes to see safe, tight, and risky picks.</p>
       </div>
 
       <label>
@@ -232,6 +239,8 @@
       <span id="saveStatus" class="save-status">Guest saves stay on this device</span>
     </section>
 
+    <section id="decisionCoach" class="decision-coach" aria-live="polite"></section>
+
     <section class="map-wrap top-map-wrap" aria-label="Food map">
       <div class="map-heading">
         <span>FEU Area</span>
@@ -357,7 +366,7 @@
 <script>
   window.SAAN_CAMPUSES = {{ campuses | tojson }};
 </script>
-<script src="{{ url_for('static', path='/js/map.js') }}?v=pedestrian-graph-20260506"></script>
-<script src="{{ url_for('static', path='/js/app.js') }}?v=filters-header-cleanup-20260506"></script>
-<script src="{{ url_for('static', path='/js/pickforme.js') }}?v=price-emphasis-20260506"></script>
+<script src="{{ url_for('static', path='/js/map.js') }}?v=pedestrian-corridor-20260506"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}?v=decision-coach-20260506"></script>
+<script src="{{ url_for('static', path='/js/pickforme.js') }}?v=smart-picker-20260506"></script>
 {% endblock %}

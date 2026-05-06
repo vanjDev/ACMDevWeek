@@ -1,6 +1,17 @@
+function buildCampusAnchor(key, fallback) {
+  const campus = window.SAAN_CAMPUSES?.[key];
+  if (!campus) return fallback;
+  return {
+    key,
+    label: campus.name,
+    lat: Number(campus.latitude),
+    lng: Number(campus.longitude),
+  };
+}
+
 const MAP_ANCHORS = [
-  { key: "feu_tech", label: "FEU Tech", lat: 14.6042, lng: 120.9882 },
-  { key: "feu_manila", label: "FEU Manila", lat: 14.6033, lng: 120.9892 },
+  buildCampusAnchor("feu_tech", { key: "feu_tech", label: "FEU Tech", lat: 14.6042, lng: 120.9882 }),
+  buildCampusAnchor("feu_manila", { key: "feu_manila", label: "FEU Manila", lat: 14.60356, lng: 120.98648 }),
   { key: "enb", label: "ENB", lat: 14.60417, lng: 120.98722 },
 ];
 

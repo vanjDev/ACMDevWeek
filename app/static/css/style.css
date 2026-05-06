@@ -790,6 +790,32 @@ input[type="range"] {
   text-transform: none;
 }
 
+.break-presets,
+.pick-mode-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.break-presets button,
+.pick-mode-row button {
+  border: 1px solid rgba(246, 241, 231, 0.18);
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: var(--cream);
+  background: rgba(246, 241, 231, 0.08);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.break-presets button.active,
+.pick-mode-row button.active {
+  color: var(--ink);
+  background: var(--yellow);
+}
+
 .toggle-row {
   grid-template-columns: auto 1fr;
   align-items: center;
@@ -869,6 +895,49 @@ input[type="range"] {
   font-size: 0.92rem;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.decision-coach {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 18px 18px 8px 8px;
+  padding: 12px;
+  background: rgba(4, 31, 29, 0.82);
+  box-shadow: var(--shadow);
+}
+
+.decision-coach:empty {
+  display: none;
+}
+
+.decision-coach div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.decision-coach span {
+  color: var(--mint);
+  font-size: 0.65rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.decision-coach strong {
+  overflow: hidden;
+  color: var(--cream);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.decision-coach p {
+  margin: 0;
+  color: rgba(246, 241, 231, 0.76);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.35;
 }
 
 .save-status {
@@ -1399,6 +1468,42 @@ input[type="range"] {
   color: #9d2b1f;
 }
 
+.why-pick {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(0, 117, 78, 0.12);
+  border-radius: 8px;
+  padding: 9px 10px;
+  color: #315c54;
+  background: rgba(0, 117, 78, 0.06);
+  font-size: 0.78rem;
+  font-weight: 850;
+  line-height: 1.25;
+}
+
+.why-pick svg {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  color: var(--green);
+}
+
+.why-pick.safe {
+  border-color: rgba(0, 166, 100, 0.24);
+  background: rgba(0, 166, 100, 0.1);
+}
+
+.why-pick.tight {
+  border-color: rgba(255, 207, 67, 0.28);
+  background: rgba(255, 207, 67, 0.14);
+}
+
+.why-pick.risky {
+  border-color: rgba(255, 107, 74, 0.28);
+  background: rgba(255, 107, 74, 0.12);
+}
+
 .detail-open-status {
   width: fit-content;
   margin-top: 7px;
@@ -1790,6 +1895,18 @@ input[type="range"] {
   line-height: 1.3;
 }
 
+.break-detail.safe {
+  color: #0b7a4b;
+}
+
+.break-detail.tight {
+  color: #9c7200;
+}
+
+.break-detail.risky {
+  color: #b14230;
+}
+
 .review-list {
   display: grid;
   gap: 6px;
@@ -1816,6 +1933,22 @@ input[type="range"] {
   font-family: Outfit, Inter, sans-serif;
   font-size: 0.82rem;
   line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.review-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.review-keywords span {
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: var(--green);
+  background: rgba(0, 117, 78, 0.1);
+  font-size: 0.64rem;
+  font-weight: 950;
   text-transform: uppercase;
 }
 
@@ -3602,6 +3735,10 @@ input[type="range"] {
     grid-template-columns: 1fr;
     gap: 10px;
     padding: 22px 18px;
+  }
+
+  .decision-coach {
+    grid-template-columns: 1fr;
   }
 
   .hero-board::before,
