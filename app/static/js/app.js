@@ -1237,6 +1237,10 @@ function setupFilterToggle() {
     button.setAttribute("aria-expanded", String(!collapsed));
     button.setAttribute("aria-label", collapsed ? "Show filters" : "Hide filters");
     button.title = collapsed ? "Show filters" : "Hide filters";
+    button.innerHTML = collapsed
+      ? `<i data-lucide="panel-left-open"></i><span>Show filters</span>`
+      : `<i data-lucide="panel-left-close"></i><span>Hide filters</span>`;
+    if (window.lucide) window.lucide.createIcons();
   };
   const syncForViewport = () => setCollapsed(compactQuery.matches);
 

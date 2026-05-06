@@ -37,6 +37,24 @@ const PEDESTRIAN_EDGES = [
   ["feu_tech", "campus_east"],
 ];
 
+const PEDESTRIAN_CORRIDORS = {
+  west: [
+    "feu_tech",
+    "feu_sidewalk",
+    "paredes_corner",
+    "crossing_east",
+    "crossing_west",
+    "nicanor_south",
+    "nicanor_mid",
+    "nicanor_lerma",
+    "lerma_west",
+  ],
+  east: [
+    "feu_tech",
+    "campus_east",
+  ],
+};
+
 let saanLeafletMap = null;
 let foodLayer = null;
 let campusLayer = null;
@@ -120,9 +138,14 @@ function customPedestrianRoute(food) {
   const destination = [food.latitude, food.longitude];
   const nearest = nearestPedestrianNode(destination);
   if (!nearest.key || nearest.distance > 95) return null;
-  const graphPath = shortestPedestrianPath("feu_tech", nearest.key);
+  const isWestSide = destination[1] < 120.98815;
+  const corridor = isWestSide ? PEDESTRIAN_CORRIDORS.west : PEDESTRIAN_CORRIDORS.east;
+  const graphPath = corridor.map((key) => PEDESTRIAN_NODES[key]).filter(Boolean);
   if (graphPath.length < 2) return null;
-  return [...graphPath, destination];
+  if (destination[0] !== graphPath.at(-1)[0] || destination[1] !== graphPath.at(-1)[1]) {
+    graphPath.push(destination);
+  }
+  return graphPath;
 }
 
 function mapIconForFood(food) {

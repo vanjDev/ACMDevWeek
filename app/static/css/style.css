@@ -496,6 +496,17 @@ h3 {
 
 .filter-toggle {
   display: none;
+  width: auto;
+  min-width: 0;
+  gap: 6px;
+  padding-inline: 12px;
+  border-radius: 999px;
+}
+
+.filter-toggle span {
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
 }
 
 .filters {
@@ -3780,7 +3791,7 @@ body.menu-detail-open {
   }
 
   .filter-toggle {
-    display: grid;
+    display: inline-flex;
   }
 
   .filter-panel.is-collapsed .filters {
