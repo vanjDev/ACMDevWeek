@@ -73,6 +73,11 @@ class GoogleAuthRequest(BaseModel):
     credential: str
 
 
+class PublicConfigResponse(BaseModel):
+    google_client_id: str = ""
+    google_enabled: bool = False
+
+
 class BookmarkPayload(BaseModel):
     food_ids: list[int] = Field(default_factory=list)
 

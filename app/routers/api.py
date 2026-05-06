@@ -4,6 +4,7 @@ import secrets
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.database import get_db
 from app.models import FoodSpot, SavedFood, User, UserPreference
 from app.schemas import (
@@ -11,6 +12,7 @@ from app.schemas import (
     AuthResponse,
     BookmarkPayload,
     GoogleAuthRequest,
+    PublicConfigResponse,
     TimerRecommendation,
     TimerRequest,
     TimerResponse,
@@ -34,6 +36,13 @@ router = APIRouter(prefix="/api", tags=["api"])
 
 def user_response(user: User) -> UserResponse:
     return UserResponse(id=user.id, name=user.name, email=user.email)
+
+
+@router.get("/config", response_model=PublicConfigResponse)
+def public_config():
+    settings = get_settings()
+    client_id = settings.google_client_id.strip()
+    return PublicConfigResponse(google_client_id=client_id, google_enabled=bool(client_id))
 
 
 @router.post("/auth/register", response_model=AuthResponse)

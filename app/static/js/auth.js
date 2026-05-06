@@ -86,6 +86,19 @@ async function handleGoogleCredential(response) {
   }
 }
 
+async function loadGoogleClientId() {
+  if (window.SAAN_GOOGLE_CLIENT_ID) return window.SAAN_GOOGLE_CLIENT_ID;
+
+  try {
+    const config = await authFetch("/api/config");
+    window.SAAN_GOOGLE_CLIENT_ID = config.google_client_id || "";
+  } catch {
+    window.SAAN_GOOGLE_CLIENT_ID = "";
+  }
+
+  return window.SAAN_GOOGLE_CLIENT_ID;
+}
+
 function updateAuthUi() {
   const status = document.getElementById("authStatus");
   const openButton = document.getElementById("openAuth");
@@ -105,14 +118,16 @@ function updateAuthUi() {
   if (window.lucide) window.lucide.createIcons();
 }
 
-function renderGoogleButton() {
+async function renderGoogleButton() {
   const button = document.getElementById("googleSignInButton");
   const hint = document.getElementById("googleAuthHint");
   if (!button || !hint) return;
 
-  const clientId = window.SAAN_GOOGLE_CLIENT_ID;
+  hint.textContent = "Loading Google sign in...";
+  const clientId = await loadGoogleClientId();
   if (!clientId) {
     button.hidden = true;
+    hint.textContent = "Google sign in is unavailable right now.";
     hint.hidden = false;
     return;
   }
@@ -176,7 +191,7 @@ function setupAuthControls() {
   document.getElementById("openAuth")?.addEventListener("click", () => {
     message.textContent = "Continue as guest anytime. Login only if you want bookmarks saved across devices.";
     dialog.showModal();
-    renderGoogleButton();
+    void renderGoogleButton();
   });
 
   document.getElementById("closeAuth")?.addEventListener("click", () => dialog.close());
@@ -215,7 +230,7 @@ function setupAuthControls() {
 
   setAuthMode("login");
   updateAuthUi();
-  renderGoogleButton();
+  void renderGoogleButton();
 }
 
 SaanAuth.getBookmarks = () => (SaanAuth.user ? SaanAuth.bookmarks || [] : readGuestBookmarks());
@@ -226,4 +241,4 @@ SaanAuth.ready = refreshAuth();
 window.SaanAuth = SaanAuth;
 
 document.addEventListener("DOMContentLoaded", setupAuthControls);
-window.addEventListener("load", renderGoogleButton);
+window.addEventListener("load", () => void renderGoogleButton());
