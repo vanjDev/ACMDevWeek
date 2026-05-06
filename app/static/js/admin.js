@@ -1,5 +1,7 @@
 let adminFoods = [];
 let adminSearchTimer = null;
+let adminMap = null;
+let adminMapMarker = null;
 
 function showToast(message) {
   const toast = document.getElementById("toast");
@@ -23,6 +25,38 @@ async function adminFetch(url, options = {}) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.detail || "Admin request failed.");
   return data;
+}
+
+function setAdminAccessState(state, message = "") {
+  const accessPanel = document.getElementById("adminAccessPanel");
+  const workspace = document.getElementById("adminWorkspace");
+  if (state === "ready") {
+    if (accessPanel) accessPanel.hidden = true;
+    if (workspace) workspace.hidden = false;
+    return;
+  }
+
+  if (accessPanel) {
+    accessPanel.hidden = false;
+    const copy = accessPanel.querySelector("span");
+    if (copy && message) copy.textContent = message;
+  }
+  if (workspace) workspace.hidden = true;
+}
+
+async function ensureAdminAccess() {
+  try {
+    const session = await adminFetch("/api/auth/me");
+    if (!session.user?.is_admin) {
+      setAdminAccessState("blocked", "You are signed in, but this account is not listed in ADMIN_EMAILS.");
+      return false;
+    }
+    setAdminAccessState("ready");
+    return true;
+  } catch {
+    setAdminAccessState("login", "Sign in with an admin email to edit stores, prices, map locations, and menu items.");
+    return false;
+  }
 }
 
 function formatLabel(value) {
@@ -55,6 +89,7 @@ function resetAdminForm() {
   document.getElementById("adminFormMode").textContent = "New item";
   document.getElementById("adminFormTitle").textContent = "Add food spot";
   document.getElementById("adminDisableFood").hidden = true;
+  setMapPosition(null);
 }
 
 function fillAdminForm(food) {
@@ -75,7 +110,49 @@ function fillAdminForm(food) {
   document.getElementById("adminFormMode").textContent = `Editing #${food.id}`;
   document.getElementById("adminFormTitle").textContent = food.name;
   document.getElementById("adminDisableFood").hidden = false;
+  setMapPosition({ lat: food.latitude, lng: food.longitude });
   document.getElementById("adminFoodForm").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function setMapPosition(position) {
+  if (!adminMap || !window.L) return;
+  if (!position) {
+    if (adminMapMarker) {
+      adminMap.removeLayer(adminMapMarker);
+      adminMapMarker = null;
+    }
+    return;
+  }
+  const latLng = [position.lat, position.lng];
+  if (!adminMapMarker) {
+    adminMapMarker = L.marker(latLng).addTo(adminMap);
+  } else {
+    adminMapMarker.setLatLng(latLng);
+  }
+  adminMap.setView(latLng, Math.max(adminMap.getZoom(), 17));
+}
+
+function setFormCoordinates(lat, lng) {
+  document.getElementById("adminLatitude").value = Number(lat).toFixed(6);
+  document.getElementById("adminLongitude").value = Number(lng).toFixed(6);
+  document.getElementById("adminMapHint").textContent = `Pinned ${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`;
+  setMapPosition({ lat, lng });
+}
+
+function setupAdminMap() {
+  const mapElement = document.getElementById("adminMap");
+  if (!mapElement || !window.L || adminMap) return;
+  adminMap = L.map(mapElement, {
+    scrollWheelZoom: false,
+  }).setView([14.6042, 120.9888], 17);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
+    maxZoom: 20,
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+  }).addTo(adminMap);
+  adminMap.on("click", (event) => {
+    setFormCoordinates(event.latlng.lat, event.latlng.lng);
+  });
+  setTimeout(() => adminMap.invalidateSize(), 0);
 }
 
 function adminFoodRow(food) {
@@ -111,6 +188,7 @@ async function loadAdminFoods() {
   if (search) params.set("q", search);
   adminFoods = await adminFetch(`/api/admin/foods?${params.toString()}`);
   renderAdminFoods();
+  setupAdminMap();
 }
 
 async function saveAdminFood(event) {
@@ -138,6 +216,9 @@ async function disableCurrentFood() {
 }
 
 function setupAdmin() {
+  document.getElementById("adminOpenLogin")?.addEventListener("click", () => {
+    document.getElementById("openAuth")?.click();
+  });
   document.getElementById("adminFoodForm")?.addEventListener("submit", (event) => {
     saveAdminFood(event).catch((error) => showToast(error.message));
   });
@@ -159,7 +240,18 @@ function setupAdmin() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("saan:auth-changed", () => {
+  ensureAdminAccess()
+    .then((hasAccess) => {
+      if (hasAccess) return loadAdminFoods();
+      return null;
+    })
+    .catch((error) => showToast(error.message));
+});
+
+document.addEventListener("DOMContentLoaded", async () => {
+  await window.SaanAuth?.ready;
   setupAdmin();
-  loadAdminFoods().catch((error) => showToast(error.message));
+  const hasAccess = await ensureAdminAccess();
+  if (hasAccess) loadAdminFoods().catch((error) => showToast(error.message));
 });

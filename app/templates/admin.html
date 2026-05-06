@@ -2,6 +2,18 @@
 
 {% block content %}
 <section class="admin-page">
+  <section id="adminAccessPanel" class="admin-access-panel">
+    <div>
+      <p>Admin access</p>
+      <h1>Sign in to manage stores</h1>
+      <span>Use an email listed in ADMIN_EMAILS to edit prices, store locations, menu items, and visibility.</span>
+    </div>
+    <button id="adminOpenLogin" class="primary-button compact-button" type="button">
+      <i data-lucide="log-in"></i>
+      Sign in
+    </button>
+  </section>
+
   <div class="admin-heading">
     <div>
       <p>Admin</p>
@@ -14,7 +26,7 @@
     </a>
   </div>
 
-  <section class="admin-layout">
+  <section id="adminWorkspace" class="admin-layout" hidden>
     <form id="adminFoodForm" class="admin-form">
       <div class="admin-card-heading">
         <div>
@@ -48,6 +60,17 @@
           <input id="adminPriceMax" name="price_max" type="number" min="0" step="1" required placeholder="PHP">
         </label>
       </div>
+
+      <section class="admin-map-card">
+        <div class="admin-card-heading">
+          <div>
+            <span>Location picker</span>
+            <strong>Click the map</strong>
+          </div>
+        </div>
+        <div id="adminMap" class="admin-map"></div>
+        <p id="adminMapHint">Click the map to fill latitude and longitude.</p>
+      </section>
 
       <div class="budget-row">
         <label>

@@ -925,6 +925,69 @@ input[type="range"] {
   line-height: 1.45;
 }
 
+.budget-coach-list {
+  display: grid;
+  gap: 10px;
+}
+
+.budget-coach-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--cream);
+  font-size: 0.72rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.budget-coach-heading svg {
+  width: 15px;
+  height: 15px;
+  color: var(--yellow);
+}
+
+.budget-coach-messages {
+  display: grid;
+  gap: 8px;
+}
+
+.budget-coach-message {
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(246, 241, 231, 0.14);
+  border-left: 4px solid var(--mint);
+  border-radius: 12px 12px 6px 6px;
+  padding: 10px 12px;
+  background: rgba(4, 31, 29, 0.52);
+}
+
+.budget-coach-message.good {
+  border-left-color: var(--green);
+}
+
+.budget-coach-message.warning {
+  border-left-color: var(--yellow);
+}
+
+.budget-coach-message.danger {
+  border-left-color: #ff6b4a;
+}
+
+.budget-coach-message strong {
+  color: var(--white);
+  font-size: 0.8rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.budget-coach-message p {
+  margin: 0;
+  color: var(--mint);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
 .tracker-history-card .weekly-history {
   min-height: 120px;
   align-content: start;
