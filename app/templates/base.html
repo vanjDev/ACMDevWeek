@@ -73,7 +73,7 @@
         <div class="auth-divider"><span>or</span></div>
         <div class="google-auth-wrap">
           <div id="googleSignInButton"></div>
-          <p id="googleAuthHint">Add GOOGLE_CLIENT_ID to enable Google sign in.</p>
+          <p id="googleAuthHint">Google sign in is unavailable right now.</p>
         </div>
         <button id="authSubmit" class="primary-button" type="submit">
           <i data-lucide="save"></i>
@@ -92,7 +92,7 @@
       window.SAAN_GOOGLE_CLIENT_ID = {{ google_client_id | tojson }};
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="{{ url_for('static', path='/js/auth.js') }}?v=auth-20260506"></script>
+    <script src="{{ url_for('static', path='/js/auth.js') }}?v=auth-env-20260506"></script>
     {% block scripts %}{% endblock %}
     <script>
       if (window.lucide) window.lucide.createIcons();
