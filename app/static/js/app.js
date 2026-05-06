@@ -47,6 +47,11 @@ function selectedValues(filterName) {
   return [...document.querySelectorAll(`[data-filter="${filterName}"] .chip.active`)].map((chip) => chip.dataset.value);
 }
 
+function setChipActive(chip, active) {
+  chip.classList.toggle("active", active);
+  chip.setAttribute("aria-pressed", String(active));
+}
+
 function getJson(key, fallback) {
   try {
     const synced = window.SaanAuth?.getData?.() || {};
@@ -369,7 +374,7 @@ function buildParams() {
   const budget = document.getElementById("budget").value;
   const area = document.getElementById("area").value;
   const q = document.getElementById("foodSearch").value.trim();
-  const dining = selectedValues("dining")[0];
+  const dining = selectedValues("dining");
   const features = selectedValues("feature");
   const weather = state.weatherMode || document.getElementById("weather").value;
   const antiRepeat = antiRepeatIds();
@@ -392,7 +397,7 @@ function buildParams() {
     params.set("budget_max", max);
   }
   if (area && area !== "all") params.set("area", area);
-  if (dining) params.set("dining", dining);
+  if (dining.length) params.set("dining", dining.join(","));
   if (features.length) params.set("feature", features.join(","));
   if (weather && weather !== "any") params.set("weather", weather);
   if (antiRepeat.length) params.set("avoid_ids", antiRepeat.join(","));
@@ -936,7 +941,8 @@ function restorePreferences() {
   if (timeAvailableInput) timeAvailableInput.value = getJson("saanTimeAvailable", "");
   if (mealMinutesInput) mealMinutesInput.value = getJson("saanMealMinutes", "20");
   getJson(FAVORITES_KEY, []).forEach((category) => {
-    document.querySelector(`[data-filter="category"] [data-value="${category}"]`)?.classList.add("active");
+    const chip = document.querySelector(`[data-filter="category"] [data-value="${category}"]`);
+    if (chip) setChipActive(chip, true);
   });
 }
 
@@ -966,12 +972,9 @@ function setupFilters() {
   setupFilterToggle();
 
   document.querySelectorAll(".chip").forEach((chip) => {
+    chip.setAttribute("aria-pressed", String(chip.classList.contains("active")));
     chip.addEventListener("click", () => {
-      const group = chip.closest("[data-filter]");
-      if (group?.dataset.filter === "dining") {
-        group.querySelectorAll(".chip.active").forEach((item) => item.classList.remove("active"));
-      }
-      chip.classList.toggle("active");
+      setChipActive(chip, !chip.classList.contains("active"));
 
       const alias = moodAliases[chip.dataset.value];
       if (alias?.budget) document.getElementById("budget").value = alias.budget;
@@ -1008,7 +1011,7 @@ function setupFilters() {
 
   document.getElementById("resetFilters").addEventListener("click", () => {
     document.getElementById("filters").reset();
-    document.querySelectorAll(".chip.active").forEach((chip) => chip.classList.remove("active"));
+    document.querySelectorAll(".chip").forEach((chip) => setChipActive(chip, false));
     state.weatherMode = "auto";
     state.showingBookmarks = false;
     state.visibleLimit = 12;

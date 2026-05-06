@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.database import get_db
-from app.models import FoodSpot, SavedFood, User, UserPreference
+from app.models import FoodSpot, SavedFood, Store, User, UserPreference
 from app.schemas import (
     AdminFoodSpotPayload,
     AdminFoodSpotResponse,
@@ -46,19 +46,41 @@ def admin_food_response(food: FoodSpot) -> AdminFoodSpotResponse:
     return AdminFoodSpotResponse.model_validate(food)
 
 
-def apply_food_payload(food: FoodSpot, payload: AdminFoodSpotPayload) -> FoodSpot:
+def get_or_create_store(db: Session, payload: AdminFoodSpotPayload) -> Store:
+    store = db.get(Store, payload.store_id) if payload.store_id else None
+    name = payload.restaurant.strip()
+    existing = db.query(Store).filter(Store.name == name).first()
+    if existing and (not store or existing.id != store.id):
+        store = existing
+    if not store:
+        store = Store(name=name)
+        db.add(store)
+
+    store.name = name
+    store.latitude = payload.latitude
+    store.longitude = payload.longitude
+    store.area = payload.area.strip()
+    store.rating = payload.rating
+    store.image_url = payload.image_url.strip() if payload.image_url else None
+    store.is_active = payload.is_active
+    return store
+
+
+def apply_food_payload(db: Session, food: FoodSpot, payload: AdminFoodSpotPayload) -> FoodSpot:
     if payload.price_max < payload.price_min:
         raise HTTPException(status_code=422, detail="Max price must be greater than or equal to min price.")
 
+    store = get_or_create_store(db, payload)
+    food.store = store
     food.name = payload.name.strip()
-    food.restaurant = payload.restaurant.strip()
+    food.restaurant = store.name
     food.price_min = payload.price_min
     food.price_max = payload.price_max
     food.category = payload.category.strip()
     food.mood = payload.mood.strip()
-    food.latitude = payload.latitude
-    food.longitude = payload.longitude
-    food.area = payload.area.strip()
+    food.latitude = store.latitude
+    food.longitude = store.longitude
+    food.area = store.area
     food.rating = payload.rating
     food.image_url = payload.image_url.strip() if payload.image_url else None
     food.description = payload.description.strip()
@@ -205,7 +227,7 @@ def admin_create_food(
     admin: User = Depends(require_admin),
     db: Session = Depends(get_db),
 ):
-    food = apply_food_payload(FoodSpot(), payload)
+    food = apply_food_payload(db, FoodSpot(), payload)
     db.add(food)
     db.commit()
     db.refresh(food)
@@ -222,7 +244,7 @@ def admin_update_food(
     food = db.get(FoodSpot, food_id)
     if not food:
         raise HTTPException(status_code=404, detail="Food spot not found.")
-    apply_food_payload(food, payload)
+    apply_food_payload(db, food, payload)
     db.commit()
     db.refresh(food)
     return admin_food_response(food)

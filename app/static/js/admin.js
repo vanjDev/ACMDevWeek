@@ -65,6 +65,7 @@ function formatLabel(value) {
 
 function foodPayloadFromForm() {
   return {
+    store_id: document.getElementById("adminStoreId").value ? Number(document.getElementById("adminStoreId").value) : null,
     restaurant: document.getElementById("adminRestaurant").value.trim(),
     name: document.getElementById("adminName").value.trim(),
     price_min: Number(document.getElementById("adminPriceMin").value || 0),
@@ -84,6 +85,7 @@ function foodPayloadFromForm() {
 function resetAdminForm() {
   document.getElementById("adminFoodForm").reset();
   document.getElementById("adminFoodId").value = "";
+  document.getElementById("adminStoreId").value = "";
   document.getElementById("adminRating").value = "4.0";
   document.getElementById("adminIsActive").checked = true;
   document.getElementById("adminFormMode").textContent = "New item";
@@ -94,6 +96,7 @@ function resetAdminForm() {
 
 function fillAdminForm(food) {
   document.getElementById("adminFoodId").value = food.id;
+  document.getElementById("adminStoreId").value = food.store_id || "";
   document.getElementById("adminRestaurant").value = food.restaurant;
   document.getElementById("adminName").value = food.name;
   document.getElementById("adminPriceMin").value = food.price_min;

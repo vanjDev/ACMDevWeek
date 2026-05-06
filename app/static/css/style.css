@@ -3810,6 +3810,16 @@ body.menu-detail-open {
     justify-items: center;
   }
 
+  .decision-rating {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .decision-rating strong,
+  .decision-rating .rating-stars {
+    justify-content: center;
+  }
+
   .detail-menu-item > img {
     height: 150px;
   }
@@ -3881,6 +3891,15 @@ body.menu-detail-open {
 
   .food-meta small {
     font-size: 0.52rem;
+  }
+
+  .store-card-rating {
+    padding: 7px;
+  }
+
+  .rating-star {
+    width: 26px;
+    height: 26px;
   }
 
   .pill {

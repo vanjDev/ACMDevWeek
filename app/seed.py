@@ -1,5 +1,5 @@
 from app.database import SessionLocal, init_db
-from app.models import FoodSpot
+from app.models import FoodSpot, Store
 
 
 FOOD_SPOTS = [
@@ -59,9 +59,27 @@ def seed() -> None:
             print("Seed skipped: food_spots already has data.")
             return
 
+        stores: dict[str, Store] = {}
         for item in FOOD_SPOTS:
+            store = stores.get(item[1])
+            if not store:
+                store = Store(
+                    name=item[1],
+                    latitude=item[6],
+                    longitude=item[7],
+                    area=item[8],
+                    rating=item[9],
+                    image_url=None,
+                    is_active=True,
+                )
+                stores[item[1]] = store
+                db.add(store)
+
+            store.rating = max(store.rating, item[9])
+
             db.add(
                 FoodSpot(
+                    store=store,
                     name=item[0],
                     restaurant=item[1],
                     price_min=item[2],

@@ -50,14 +50,18 @@ def _matches_any(food: FoodSpot | FoodSpotResponse, terms: tuple[str, ...]) -> b
 def _dish_matches(food: FoodSpotResponse, dishes: list[str]) -> bool:
     if not dishes:
         return True
+    if "halal" in dishes and "halal_friendly" not in food.diet_tags:
+        return False
+    specific_dishes = [dish for dish in dishes if dish != "halal"]
+    if not specific_dishes:
+        return True
     checks = {
         "pork": _matches_any(food, PORK_TERMS),
         "beef": _matches_any(food, BEEF_TERMS),
         "chicken": food.category == "chicken" or "chicken" in _haystack(food),
         "snacks": food.category in {"snacks", "street_food", "dimsum", "coffee_drinks", "burgers"},
-        "halal": "pork" not in food.diet_tags,
     }
-    return any(checks.get(dish, False) for dish in dishes)
+    return any(checks.get(dish, False) for dish in specific_dishes)
 
 
 def _weather_matches(food: FoodSpotResponse, weather: str | None) -> bool:
@@ -70,7 +74,12 @@ def _weather_matches(food: FoodSpotResponse, weather: str | None) -> bool:
     return True
 
 
-def _dining_matches(food: FoodSpotResponse, dining: str | None) -> bool:
+def _dining_matches(food: FoodSpotResponse, dining_options: list[str]) -> bool:
+    if not dining_options:
+        return True
+    if len(set(dining_options)) > 1:
+        return True
+    dining = dining_options[0]
     if dining == "solo":
         return not (food.shareable and food.price_min >= 130)
     if dining == "barkada":
@@ -230,8 +239,9 @@ def filter_foods(
     if dishes:
         foods = [food for food in foods if _dish_matches(food, dishes)]
 
-    if dining:
-        foods = [food for food in foods if _dining_matches(food, dining)]
+    dining_options = _split_csv(dining)
+    if dining_options:
+        foods = [food for food in foods if _dining_matches(food, dining_options)]
 
     if weather:
         foods = [food for food in foods if _weather_matches(food, weather)]
