@@ -459,6 +459,16 @@ h3 {
   text-transform: uppercase;
 }
 
+.panel-title-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-toggle {
+  display: none;
+}
+
 .filters {
   display: grid;
   gap: 16px;
@@ -2416,7 +2426,8 @@ input[type="range"] {
   }
 
   #map,
-  .campus-map {
+  .campus-map,
+  .leaflet-campus-map {
     min-height: 430px;
     height: 430px;
   }
@@ -2466,12 +2477,97 @@ input[type="range"] {
     width: min(100% - 20px, 1120px);
   }
 
+  .hero-board {
+    min-height: 0;
+    gap: 14px;
+    padding: 24px 18px;
+  }
+
+  .hero-copy h1 {
+    font-size: 2.45rem;
+  }
+
+  .brand-ribbon {
+    height: 34px;
+    gap: 18px;
+    font-size: 0.95rem;
+  }
+
+  .filter-panel {
+    padding: 14px;
+    border-radius: 8px;
+  }
+
+  .filter-toggle {
+    display: grid;
+  }
+
+  .filter-panel.is-collapsed .filters {
+    display: none;
+  }
+
+  .filter-panel.is-collapsed {
+    position: sticky;
+    top: 8px;
+    z-index: 20;
+  }
+
+  .filter-panel.is-collapsed .panel-title h1 {
+    font-size: 1.05rem;
+  }
+
+  .main-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .section-label {
+    order: 1;
+    min-height: 48px;
+    padding: 0 14px;
+    border-radius: 8px;
+  }
+
+  .section-label strong {
+    font-size: 1rem;
+  }
+
+  .top-map-wrap {
+    order: 2;
+    margin-bottom: 8px;
+  }
+
+  .action-strip {
+    order: 3;
+    min-height: 0;
+    padding: 10px;
+  }
+
+  .pick-result {
+    order: 4;
+  }
+
+  .habit-strip {
+    order: 5;
+  }
+
+  .content-grid {
+    order: 6;
+  }
+
   .hero-visual {
-    min-height: 220px;
+    min-height: 140px;
+  }
+
+  .hero-visual img {
+    width: 132px;
+    border-width: 8px;
   }
 
   .vertical-word {
-    right: -8px;
+    right: -4px;
+    font-size: 1.75rem;
   }
 
   .result-count {
@@ -2488,6 +2584,8 @@ input[type="range"] {
   .action-buttons {
     flex-direction: column;
     align-items: stretch;
+    flex: 0 1 auto;
+    width: 100%;
   }
 
   .action-strip .primary-button,
@@ -2515,6 +2613,42 @@ input[type="range"] {
     padding: 12px;
   }
 
+  .map-heading {
+    margin: 10px;
+    padding: 9px 12px;
+    font-size: 0.78rem;
+  }
+
+  #map,
+  .campus-map,
+  .leaflet-campus-map {
+    height: 350px;
+    min-height: 350px;
+    margin: 0 10px 10px;
+  }
+
+  .leaflet-food-pin {
+    width: 34px;
+    height: 34px;
+    box-shadow: 0 0 0 4px rgba(0, 138, 84, 0.24), 0 10px 14px rgba(0, 0, 0, 0.22);
+  }
+
+  .leaflet-food-pin svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .leaflet-food-pin small {
+    padding: 2px 5px;
+    font-size: 0.46rem;
+  }
+
+  .leaflet-campus-pin {
+    min-height: 28px;
+    padding: 0 8px;
+    font-size: 0.5rem;
+  }
+
   .menu-detail-header,
   .detail-menu-item {
     grid-template-columns: 1fr;
@@ -2538,6 +2672,9 @@ input[type="range"] {
 
   .map-selected {
     grid-template-columns: 1fr;
+    gap: 7px;
+    margin: 0 10px 10px;
+    padding: 12px;
   }
 
   .map-selected > span,
@@ -2553,6 +2690,7 @@ input[type="range"] {
   .map-close-button {
     justify-self: end;
     width: 44px;
+    grid-row: 1;
   }
 
   .map-road {

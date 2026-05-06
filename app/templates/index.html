@@ -29,9 +29,14 @@
   <aside class="filter-panel" aria-label="Food filters">
     <div class="panel-title">
       <h1>Saan tayo kakain?</h1>
-      <button id="resetFilters" class="icon-button" type="button" aria-label="Reset filters" title="Reset filters">
-        <i data-lucide="rotate-ccw"></i>
-      </button>
+      <div class="panel-title-actions">
+        <button id="toggleFilters" class="filter-toggle icon-button" type="button" aria-expanded="true" aria-controls="filters" aria-label="Hide filters" title="Show or hide filters">
+          <i data-lucide="sliders-horizontal"></i>
+        </button>
+        <button id="resetFilters" class="icon-button" type="button" aria-label="Reset filters" title="Reset filters">
+          <i data-lucide="rotate-ccw"></i>
+        </button>
+      </div>
     </div>
 
     <form id="filters" class="filters">
@@ -284,7 +289,7 @@
 <script>
   window.SAAN_CAMPUSES = {{ campuses | tojson }};
 </script>
-<script src="{{ url_for('static', path='/js/map.js') }}?v=leaflet-route-map-20260506"></script>
-<script src="{{ url_for('static', path='/js/app.js') }}?v=compact-menu-20260506"></script>
+<script src="{{ url_for('static', path='/js/map.js') }}?v=mobile-map-ux-20260506"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}?v=mobile-map-ux-20260506"></script>
 <script src="{{ url_for('static', path='/js/pickforme.js') }}?v=pick-ready-20260506"></script>
 {% endblock %}

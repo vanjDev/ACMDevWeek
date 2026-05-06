@@ -630,7 +630,31 @@ function restorePreferences() {
   });
 }
 
+function setupFilterToggle() {
+  const panel = document.querySelector(".filter-panel");
+  const button = document.getElementById("toggleFilters");
+  if (!panel || !button) return;
+
+  const compactQuery = window.matchMedia("(max-width: 640px)");
+  const setCollapsed = (collapsed) => {
+    panel.classList.toggle("is-collapsed", collapsed);
+    button.setAttribute("aria-expanded", String(!collapsed));
+    button.setAttribute("aria-label", collapsed ? "Show filters" : "Hide filters");
+    button.title = collapsed ? "Show filters" : "Hide filters";
+  };
+  const syncForViewport = () => setCollapsed(compactQuery.matches);
+
+  syncForViewport();
+  compactQuery.addEventListener?.("change", syncForViewport);
+  button.addEventListener("click", () => {
+    setCollapsed(!panel.classList.contains("is-collapsed"));
+    if (window.lucide) window.lucide.createIcons();
+  });
+}
+
 function setupFilters() {
+  setupFilterToggle();
+
   document.querySelectorAll(".chip").forEach((chip) => {
     chip.addEventListener("click", () => {
       const group = chip.closest("[data-filter]");
