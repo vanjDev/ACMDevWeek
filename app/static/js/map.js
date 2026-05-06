@@ -11,6 +11,12 @@ const MAP_ANCHORS = [
   { key: "enb", label: "ENB", lat: 14.6047, lng: 120.9885 },
 ];
 
+const MAP_ROADS = [
+  { className: "road-morayta", label: "Morayta", note: "main food strip" },
+  { className: "road-lerma", label: "Lerma", note: "quick walk" },
+  { className: "road-campa", label: "P. Campa", note: "budget row" },
+];
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
@@ -32,21 +38,73 @@ function formatMapArea(value) {
   return value.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function campusLabel(campusKey) {
+  return MAP_ANCHORS.find((anchor) => anchor.key === campusKey)?.label || "FEU";
+}
+
+function areaClass(value = "") {
+  return `area-${value.replaceAll("_", "-") || "nearby"}`;
+}
+
+function currentCampusPoint() {
+  const campus = MAP_ANCHORS.find((anchor) => anchor.key === window.SaanMapCampus) || MAP_ANCHORS[0];
+  return mapPoint(campus.lat, campus.lng);
+}
+
+function renderWalkingRoute(food = null) {
+  const route = document.getElementById("mapRoute");
+  if (!route) return;
+
+  if (!food) {
+    route.hidden = true;
+    route.removeAttribute("style");
+    return;
+  }
+
+  const start = currentCampusPoint();
+  const end = mapPoint(food.latitude, food.longitude);
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const length = Math.sqrt(dx * dx + dy * dy);
+  const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+  route.hidden = false;
+  route.style.cssText = `
+    left:${start.x}%;
+    top:${start.y}%;
+    width:${length}%;
+    transform:rotate(${angle}deg);
+  `;
+}
+
 function initSaanMap() {
   const map = document.getElementById("map");
   if (!map) return;
 
   map.className = "campus-map";
   map.innerHTML = `
-    <div class="campus-orbit orbit-outer"></div>
-    <div class="campus-orbit orbit-inner"></div>
-    <div class="map-street street-lerma"><span>Lerma</span></div>
-    <div class="map-street street-campa"><span>P. Campa</span></div>
-    <div class="map-street street-morayta"><span>Morayta</span></div>
+    <div class="map-skyline" aria-hidden="true"></div>
+    <div class="map-compass" aria-hidden="true">N</div>
+    <div class="walk-ring walk-ring-near"><span>3-5 min</span></div>
+    <div class="walk-ring walk-ring-far"><span>8-12 min</span></div>
+    <div class="map-roads" aria-hidden="true">
+      ${MAP_ROADS.map((road) => `
+        <div class="map-road ${road.className}">
+          <strong>${road.label}</strong>
+          <span>${road.note}</span>
+        </div>
+      `).join("")}
+    </div>
+    <div class="map-route" id="mapRoute" hidden></div>
     <div id="mapAnchors"></div>
     <div id="mapFoodMarkers"></div>
     <aside id="mapSelected" class="map-selected" hidden></aside>
-    <div id="mapSummary" class="map-summary">Loading nearby picks...</div>
+    <div class="map-legend" aria-hidden="true">
+      <span><i class="legend-campus"></i>Campus</span>
+      <span><i class="legend-pin"></i>Food spot</span>
+      <span><i class="legend-route"></i>Walk route</span>
+    </div>
+    <div id="mapSummary" class="map-summary">Loading nearby stores...</div>
   `;
 
   const anchors = document.getElementById("mapAnchors");
@@ -55,6 +113,7 @@ function initSaanMap() {
     return `
       <button class="map-anchor ${anchor.key}" type="button" style="left:${point.x}%;top:${point.y}%;" title="${anchor.label}">
         <span>${anchor.label}</span>
+        <small>${anchor.key === "enb" ? "landmark" : "start point"}</small>
       </button>
     `;
   }).join("");
@@ -64,9 +123,13 @@ function selectedMapMarkup(food, index) {
   return `
     <span>Selected Shop</span>
     <strong>${index + 1}. ${food.name}</strong>
-    <p>${food.menu.length} menu items - PHP ${food.price_min}-${food.price_max} - ${food.walking_minutes} min walk</p>
-    <button class="primary-button compact-button" type="button" data-map-view="${food.id}">
-      View menu
+    <p>${formatMapArea(food.area)} - ${food.menu.length} menu items - PHP ${food.price_min}-${food.price_max}</p>
+    <div class="map-selected-meta">
+      <span>${food.walking_minutes} min walk</span>
+      <span>${Math.round(food.distance_m)} m</span>
+    </div>
+    <button class="primary-button compact-button" type="button" data-map-view="${food.id}" aria-label="View menu for ${food.name}">
+      Open menu
     </button>
   `;
 }
@@ -76,14 +139,24 @@ function selectFoodOnMap(foodId, shouldScroll = false) {
   const foods = window.SaanMapFoods || [];
   const foodIndex = foods.findIndex((food) => String(food.id) === String(foodId));
   const selectedPanel = document.getElementById("mapSelected");
+  document.querySelectorAll(".map-food-dot.active").forEach((pin) => pin.classList.remove("active"));
+  document.querySelectorAll(".store-card.map-selected-card").forEach((card) => card.classList.remove("map-selected-card"));
+  if (!foodId || foodIndex < 0) {
+    if (selectedPanel) {
+      selectedPanel.hidden = true;
+      selectedPanel.innerHTML = "";
+    }
+    renderWalkingRoute(null);
+    return;
+  }
+
   if (selectedPanel && foodIndex >= 0) {
     selectedPanel.innerHTML = selectedMapMarkup(foods[foodIndex], foodIndex);
     selectedPanel.hidden = false;
   }
 
-  document.querySelectorAll(".map-food-dot.active").forEach((pin) => pin.classList.remove("active"));
   document.querySelector(`[data-food-target="${foodId}"]`)?.classList.add("active");
-  document.querySelectorAll(".store-card.map-selected-card").forEach((card) => card.classList.remove("map-selected-card"));
+  renderWalkingRoute(foods[foodIndex]);
 
   if (target) {
     target.classList.add("map-selected-card");
@@ -100,12 +173,17 @@ function updateMap(foods, campusKey) {
   if (!markerLayer || !summary || !selectedPanel) return;
 
   const visibleFoods = foods.slice(0, 24);
+  window.SaanMapCampus = campusKey;
   window.SaanMapFoods = visibleFoods;
+  document.getElementById("map")?.setAttribute("data-campus", campusKey);
+  document.querySelectorAll(".map-anchor").forEach((anchor) => anchor.classList.remove("active-campus"));
+  document.querySelector(`.map-anchor.${campusKey}`)?.classList.add("active-campus");
+
   markerLayer.innerHTML = visibleFoods.map((food, index) => {
     const point = mapPoint(food.latitude, food.longitude);
     return `
       <button
-        class="map-food-dot"
+        class="map-food-dot ${areaClass(food.area)}"
         type="button"
         style="left:${point.x}%;top:${point.y}%;--delay:${index * 16}ms;"
         data-food-target="${food.id}"
@@ -114,16 +192,15 @@ function updateMap(foods, campusKey) {
         title="${markerLabel(food)}"
       >
         <span>${index + 1}</span>
+        <small>${food.walking_minutes}m</small>
       </button>
     `;
   }).join("");
 
-  summary.textContent = `${visibleFoods.length} nearby picks`;
-  selectedPanel.hidden = !visibleFoods.length;
-  if (visibleFoods.length) {
-    selectedPanel.innerHTML = selectedMapMarkup(visibleFoods[0], 0);
-    selectFoodOnMap(visibleFoods[0].id, false);
-  }
+  summary.textContent = `${visibleFoods.length} stores near ${campusLabel(campusKey)}`;
+  selectedPanel.hidden = true;
+  selectedPanel.innerHTML = "";
+  selectFoodOnMap(null, false);
 
   markerLayer.querySelectorAll("[data-food-target]").forEach((button) => {
     button.addEventListener("click", () => {

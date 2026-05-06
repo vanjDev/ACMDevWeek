@@ -257,13 +257,24 @@ button {
 .google-auth-wrap {
   display: grid;
   justify-items: center;
-  min-height: 42px;
+  gap: 8px;
+  min-height: 58px;
+  border: 1px solid rgba(246, 241, 231, 0.14);
+  border-radius: 18px;
+  padding: 12px;
+  background: rgba(246, 241, 231, 0.06);
 }
 
 #googleSignInButton {
   width: 100%;
   display: grid;
   justify-items: center;
+}
+
+#googleSignInButton iframe,
+#googleSignInButton > div {
+  max-width: 100%;
+  border-radius: 999px;
 }
 
 #googleAuthHint {
@@ -276,13 +287,13 @@ button {
 
 .hero-board {
   position: relative;
-  min-height: 430px;
+  min-height: 260px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 410px;
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 18px;
   overflow: hidden;
   border-radius: 0;
-  padding: 54px 42px;
+  padding: 30px 34px;
   background:
     linear-gradient(100deg, rgba(4, 31, 29, 0.98) 0%, rgba(4, 31, 29, 0.94) 52%, rgba(0, 138, 84, 0.94) 52%, rgba(0, 138, 84, 0.98) 100%),
     url("https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1500&q=80") center / cover;
@@ -292,9 +303,9 @@ button {
 .hero-board::before {
   content: "";
   position: absolute;
-  inset: auto auto 38px -28px;
-  width: 55%;
-  height: 60px;
+  inset: auto auto 26px -28px;
+  width: 52%;
+  height: 42px;
   transform: rotate(-3deg);
   background: var(--green);
   box-shadow: 0 18px 0 rgba(0, 0, 0, 0.22);
@@ -306,7 +317,7 @@ button {
   align-self: center;
   display: grid;
   justify-items: start;
-  gap: 15px;
+  gap: 12px;
 }
 
 .hero-copy p,
@@ -332,8 +343,8 @@ h3 {
 }
 
 .hero-copy h1 {
-  max-width: 560px;
-  font-size: clamp(3rem, 8vw, 6.6rem);
+  max-width: 480px;
+  font-size: clamp(2.6rem, 6vw, 4.6rem);
   font-weight: 800;
   line-height: 0.9;
   text-transform: uppercase;
@@ -347,13 +358,13 @@ h3 {
 .hero-visual {
   position: relative;
   z-index: 1;
-  min-height: 320px;
+  min-height: 210px;
   display: grid;
   place-items: center;
 }
 
 .hero-visual img {
-  width: min(330px, 80%);
+  width: min(210px, 74%);
   aspect-ratio: 1;
   object-fit: cover;
   border: 14px solid var(--cream);
@@ -366,14 +377,14 @@ h3 {
   right: -18px;
   color: rgba(255, 255, 255, 0.9);
   font-family: Outfit, Inter, sans-serif;
-  font-size: clamp(2.4rem, 5vw, 4.3rem);
+  font-size: clamp(2rem, 4vw, 3.3rem);
   font-weight: 800;
   letter-spacing: 0.04em;
   writing-mode: vertical-rl;
 }
 
 .brand-ribbon {
-  height: 54px;
+  height: 42px;
   display: flex;
   align-items: center;
   gap: 26px;
@@ -397,7 +408,7 @@ h3 {
   display: grid;
   grid-template-columns: 310px minmax(0, 1fr);
   gap: 22px;
-  margin-top: 52px;
+  margin-top: 28px;
 }
 
 .filter-panel,
@@ -695,6 +706,13 @@ input[type="range"] {
   background: var(--green);
 }
 
+.secondary-button.active,
+.secondary-button[aria-pressed="true"] {
+  color: var(--ink);
+  background: var(--cream);
+  box-shadow: inset 0 -4px 0 rgba(0, 138, 84, 0.24), 0 0 0 2px var(--green-2);
+}
+
 .secondary-button:hover,
 .icon-button:hover,
 .primary-button:hover {
@@ -720,6 +738,7 @@ input[type="range"] {
 .results-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: start;
   gap: 42px 16px;
 }
 
@@ -791,7 +810,7 @@ input[type="range"] {
   display: grid;
   grid-template-rows: 108px 1fr;
   overflow: hidden;
-  border-radius: 28px 28px 10px 10px;
+  border-radius: 18px 18px 8px 8px;
   color: var(--ink);
   background: var(--cream);
   box-shadow: 0 22px 45px rgba(0, 0, 0, 0.28);
@@ -803,6 +822,11 @@ input[type="range"] {
 .food-card.map-selected-card {
   outline: 4px solid var(--green-2);
   transform: translateY(-2px);
+}
+
+.store-card.open {
+  outline: 4px solid var(--green-2);
+  box-shadow: 0 28px 58px rgba(0, 0, 0, 0.34);
 }
 
 .skeleton-card {
@@ -944,10 +968,6 @@ input[type="range"] {
   font-size: 0.68rem;
 }
 
-.store-card.open {
-  min-height: 0;
-}
-
 .store-menu {
   display: grid;
   gap: 8px;
@@ -962,12 +982,16 @@ input[type="range"] {
 
 .menu-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto;
-  align-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
   gap: 8px;
   border-radius: 12px;
   padding: 9px;
   background: rgba(0, 138, 84, 0.1);
+}
+
+.menu-copy {
+  min-width: 0;
 }
 
 .menu-item strong {
@@ -990,7 +1014,15 @@ input[type="range"] {
   -webkit-line-clamp: 2;
 }
 
-.menu-item > span {
+.menu-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.menu-controls > span {
+  margin-right: auto;
   color: var(--green);
   font-size: 0.68rem;
   font-weight: 900;
@@ -1016,6 +1048,7 @@ input[type="range"] {
 .store-save-dot.active {
   color: var(--white);
   background: var(--green);
+  box-shadow: 0 0 0 3px rgba(0, 166, 100, 0.28);
 }
 
 .store-save-dot svg {
@@ -1038,6 +1071,12 @@ input[type="range"] {
 .bookmark.active {
   color: var(--white);
   background: var(--green);
+  box-shadow: 0 0 0 3px rgba(0, 166, 100, 0.28);
+}
+
+.bookmark.active svg,
+.store-save-dot.active svg {
+  fill: currentColor;
 }
 
 .map-wrap {

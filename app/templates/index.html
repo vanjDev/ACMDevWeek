@@ -240,8 +240,8 @@
       <section class="shops-panel">
         <div class="shops-heading">
           <div>
-            <span>Shops Available</span>
-            <strong>Matches From Your Filters</strong>
+            <span>Stores Available</span>
+            <strong>Click a Store to View Menu</strong>
           </div>
           <button id="scrollToMap" class="secondary-button compact-button" type="button">
             <i data-lucide="map"></i>
@@ -275,7 +275,7 @@
 <script>
   window.SAAN_CAMPUSES = {{ campuses | tojson }};
 </script>
-<script src="{{ url_for('static', path='/js/map.js') }}?v=layoutfix-20260506"></script>
-<script src="{{ url_for('static', path='/js/app.js') }}?v=layoutfix-20260506"></script>
-<script src="{{ url_for('static', path='/js/pickforme.js') }}?v=layoutfix-20260506"></script>
+<script src="{{ url_for('static', path='/js/map.js') }}?v=storemenu-polish-20260506"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}?v=storemenu-polish-20260506"></script>
+<script src="{{ url_for('static', path='/js/pickforme.js') }}?v=storemenu-polish-20260506"></script>
 {% endblock %}

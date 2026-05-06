@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}?v=layoutfix-20260506">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/style.css') }}?v=storemenu-polish-20260506">
   </head>
   <body>
     <header class="site-header">
@@ -70,14 +70,14 @@
           <input id="authPassword" name="password" type="password" autocomplete="current-password" minlength="6" required>
         </label>
         <p id="authMessage" class="auth-message">Continue as guest anytime. Login only if you want bookmarks saved across devices.</p>
-        <div class="auth-divider"><span>or</span></div>
+        <div class="auth-divider"><span>or sign in faster</span></div>
         <div class="google-auth-wrap">
           <div id="googleSignInButton"></div>
           <p id="googleAuthHint">Google sign in is unavailable right now.</p>
         </div>
         <button id="authSubmit" class="primary-button" type="submit">
           <i data-lucide="save"></i>
-          Login and save
+          Sign in and save
         </button>
       </form>
     </dialog>
@@ -92,7 +92,7 @@
       window.SAAN_GOOGLE_CLIENT_ID = {{ google_client_id | tojson }};
     </script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="{{ url_for('static', path='/js/auth.js') }}?v=bookmarkfix-20260506"></script>
+    <script src="{{ url_for('static', path='/js/auth.js') }}?v=googlecopy-20260506"></script>
     {% block scripts %}{% endblock %}
     <script>
       if (window.lucide) window.lucide.createIcons();

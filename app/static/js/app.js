@@ -71,6 +71,36 @@ function updateSaveStatus(label = null) {
   status.textContent = label || (window.SaanAuth?.user ? "Syncing saves to your account" : "Guest saves stay on this device");
 }
 
+function updateBookmarkToggle() {
+  const button = document.getElementById("showBookmarks");
+  if (!button) return;
+  button.classList.toggle("active", state.showingBookmarks);
+  button.setAttribute("aria-pressed", String(state.showingBookmarks));
+  button.innerHTML = state.showingBookmarks
+    ? `<i data-lucide="list"></i> All Stores`
+    : `<i data-lucide="heart"></i> Bookmarks`;
+}
+
+function toggleBookmarksView() {
+  state.showingBookmarks = !state.showingBookmarks;
+  state.visibleLimit = 12;
+  updateBookmarkToggle();
+  renderFoods(state.foods);
+}
+
+document.addEventListener("pointerdown", (event) => {
+  const button = event.target.closest("#showBookmarks");
+  if (!button) return;
+  event.preventDefault();
+  toggleBookmarksView();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (!event.target.closest("#showBookmarks") || !["Enter", " "].includes(event.key)) return;
+  event.preventDefault();
+  toggleBookmarksView();
+});
+
 function getHistory() {
   return getJson(HISTORY_KEY, []);
 }
@@ -271,17 +301,19 @@ function menuItemTemplate(food) {
   const active = getBookmarks().includes(food.id);
   return `
     <li class="menu-item" data-menu-food-id="${food.id}">
-      <div>
+      <div class="menu-copy">
         <strong>${food.name}</strong>
         <p>${food.description}</p>
       </div>
-      <span>PHP ${food.price_min}-${food.price_max}</span>
-      <button class="icon-button ate-button" type="button" data-ate="${food.id}" aria-label="Log ${food.name}" title="Log eaten">
-        <i data-lucide="utensils"></i>
-      </button>
-      <button class="icon-button bookmark ${active ? "active" : ""}" type="button" data-bookmark="${food.id}" aria-label="Bookmark ${food.name}" title="Bookmark">
-        <i data-lucide="heart"></i>
-      </button>
+      <div class="menu-controls">
+        <span>PHP ${food.price_min}-${food.price_max}</span>
+        <button class="icon-button ate-button" type="button" data-ate="${food.id}" aria-label="Log ${food.name}" title="Log eaten">
+          <i data-lucide="utensils"></i>
+        </button>
+        <button class="icon-button bookmark ${active ? "active" : ""}" type="button" data-bookmark="${food.id}" aria-label="${active ? "Remove bookmark for" : "Bookmark"} ${food.name}" aria-pressed="${active}" title="${active ? "Saved" : "Bookmark"}">
+          <i data-lucide="heart"></i>
+        </button>
+      </div>
     </li>
   `;
 }
@@ -313,11 +345,11 @@ function storeCardTemplate(store) {
         </div>
         <div class="card-actions">
           <span class="pill">PHP ${store.price_min}-${store.price_max}</span>
-          <button class="secondary-button compact-button" type="button" data-store-toggle="${store.id}">
+          <button class="secondary-button compact-button" type="button" data-store-toggle="${store.id}" aria-expanded="${isOpen}" aria-label="${isOpen ? "Hide menu for" : "View menu for"} ${store.name}">
             <i data-lucide="${isOpen ? "chevron-up" : "utensils"}"></i>
             ${isOpen ? "Hide menu" : "View menu"}
           </button>
-          <span class="store-save-dot ${active ? "active" : ""}" title="${active ? "Has saved menu item" : "No saved menu items"}">
+          <span class="store-save-dot ${active ? "active" : ""}" title="${active ? "Has saved menu item" : "No saved menu items"}" aria-label="${active ? "Has saved menu item" : "No saved menu items"}">
             <i data-lucide="heart"></i>
           </span>
         </div>
@@ -370,11 +402,15 @@ function renderFoods(foods) {
     ? paged.map(storeCardTemplate).join("")
     : `<div class="pick-result"><h2>No matches yet</h2><p>Adjust the filters, time window, budget, or anti-repeat setting.</p></div>`;
 
-  document.getElementById("resultCount").textContent = `${Math.min(state.visibleLimit, stores.length)} of ${stores.length} store${stores.length === 1 ? "" : "s"}`;
+  document.getElementById("resultCount").textContent = state.showingBookmarks
+    ? `${Math.min(state.visibleLimit, stores.length)} of ${stores.length} saved store${stores.length === 1 ? "" : "s"}`
+    : `${Math.min(state.visibleLimit, stores.length)} of ${stores.length} store${stores.length === 1 ? "" : "s"}`;
+  updateBookmarkToggle();
   const loadMore = document.getElementById("loadMore");
   loadMore.hidden = state.visibleLimit >= stores.length;
   if (window.lucide) window.lucide.createIcons();
   updateMap(paged, document.getElementById("campus").value, DEFAULT_RADIUS);
+  if (state.selectedStoreId) window.selectFoodOnMap?.(state.selectedStoreId, false);
   updateBudgetInsight(paged[0]?.menu?.[0]);
 }
 
@@ -520,12 +556,6 @@ function setupFilters() {
 
   document.getElementById("saveFavoriteTypes").addEventListener("click", () => {
     setJson(FAVORITES_KEY, selectedValues("category"));
-    renderFoods(state.foods);
-  });
-
-  document.getElementById("showBookmarks").addEventListener("click", () => {
-    state.showingBookmarks = !state.showingBookmarks;
-    state.visibleLimit = 12;
     renderFoods(state.foods);
   });
 

@@ -147,8 +147,9 @@ async function renderGoogleButton() {
     size: "large",
     type: "standard",
     shape: "pill",
-    text: "continue_with",
-    width: Math.min(360, button.clientWidth || 360),
+    text: "signin_with",
+    locale: "en",
+    width: Math.min(380, button.clientWidth || 380),
   });
   button.dataset.rendered = "true";
 }
@@ -180,7 +181,7 @@ function setAuthMode(mode) {
     button.classList.toggle("active", button.dataset.authMode === mode);
   });
   document.getElementById("authNameField").hidden = !isRegister;
-  document.getElementById("authSubmit").lastChild.textContent = isRegister ? " Sign up and save" : " Login and save";
+  document.getElementById("authSubmit").lastChild.textContent = isRegister ? " Sign up and save" : " Sign in and save";
   document.getElementById("authPassword").autocomplete = isRegister ? "new-password" : "current-password";
   document.getElementById("authForm").dataset.mode = mode;
 }
@@ -191,7 +192,7 @@ function setupAuthControls() {
   const message = document.getElementById("authMessage");
 
   document.getElementById("openAuth")?.addEventListener("click", () => {
-    message.textContent = "Continue as guest anytime. Login only if you want bookmarks saved across devices.";
+    message.textContent = "Continue as guest anytime. Sign in only if you want bookmarks saved across devices.";
     dialog.showModal();
     void renderGoogleButton();
   });
