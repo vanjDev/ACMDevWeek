@@ -2,9 +2,13 @@ const state = {
   foods: [],
   showingBookmarks: false,
   visibleLimit: 12,
+  weatherMode: "auto",
 };
 
 const DEFAULT_RADIUS = 1200;
+const HISTORY_KEY = "saanFoodHistory";
+const FAVORITES_KEY = "saanFavoriteTypes";
+const BUDGET_KEY = "saanWeeklyBudget";
 
 const categoryImages = {
   chicken: "https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=900&q=80",
@@ -17,8 +21,48 @@ const categoryImages = {
   snacks: "https://images.unsplash.com/photo-1621939514649-280e2ee25f60?auto=format&fit=crop&w=900&q=80",
 };
 
+const moodAliases = {
+  tipid: { budget: "0-100", moods: ["quick_lunch"], sort: "price" },
+  treat_myself: { budget: "100-500", moods: ["chill_hangout", "group_meal", "study_fuel"], sort: "rating" },
+  nagmamadali: { moods: ["quick_lunch"], sort: "distance" },
+  tambay_vibes: { moods: ["chill_hangout", "group_meal"] },
+};
+
 function selectedValues(filterName) {
   return [...document.querySelectorAll(`[data-filter="${filterName}"] .chip.active`)].map((chip) => chip.dataset.value);
+}
+
+function getJson(key, fallback) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));
+  } catch {
+    return fallback;
+  }
+}
+
+function setJson(key, value) {
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function getHistory() {
+  return getJson(HISTORY_KEY, []);
+}
+
+function saveHistory(history) {
+  setJson(HISTORY_KEY, history.slice(0, 30));
+  renderHabitStrip();
+}
+
+function getBudgetState() {
+  return getJson(BUDGET_KEY, { weekly: "", spent: "" });
+}
+
+function setBudgetState() {
+  setJson(BUDGET_KEY, {
+    weekly: document.getElementById("weeklyBudget").value,
+    spent: document.getElementById("weeklySpent").value,
+  });
+  updateBudgetInsight();
 }
 
 function getBookmarks() {
@@ -33,11 +77,25 @@ async function setBookmarks(ids) {
   localStorage.setItem("saanBookmarks", JSON.stringify(ids));
 }
 
+function antiRepeatIds() {
+  if (!document.getElementById("antiRepeat")?.checked) return [];
+  return getHistory().slice(0, 4).map((item) => item.id);
+}
+
+function effectiveMoodValues() {
+  const selected = selectedValues("mood");
+  const mapped = selected.flatMap((value) => moodAliases[value]?.moods || [value]);
+  return [...new Set(mapped)];
+}
+
 function buildParams() {
   const params = new URLSearchParams();
   const budget = document.getElementById("budget").value;
   const area = document.getElementById("area").value;
   const q = document.getElementById("foodSearch").value.trim();
+  const dining = selectedValues("dining")[0];
+  const weather = state.weatherMode || document.getElementById("weather").value;
+  const antiRepeat = antiRepeatIds();
 
   params.set("campus", document.getElementById("campus").value);
   params.set("radius", String(DEFAULT_RADIUS));
@@ -51,11 +109,16 @@ function buildParams() {
     params.set("budget_max", max);
   }
   if (area && area !== "all") params.set("area", area);
+  if (dining) params.set("dining", dining);
+  if (weather && weather !== "any") params.set("weather", weather);
+  if (antiRepeat.length) params.set("avoid_ids", antiRepeat.join(","));
 
   const categories = selectedValues("category");
-  const moods = selectedValues("mood");
+  const moods = effectiveMoodValues();
+  const dishes = selectedValues("dish");
   if (categories.length) params.set("category", categories.join(","));
   if (moods.length) params.set("mood", moods.join(","));
+  if (dishes.length) params.set("dish", dishes.join(","));
 
   return params;
 }
@@ -78,10 +141,36 @@ function categoryLabel(value) {
   return labels[value] || formatLabel(value);
 }
 
+function averagePrice(food) {
+  return Math.round((food.price_min + food.price_max) / 2);
+}
+
+function budgetNote(food) {
+  const weekly = Number(document.getElementById("weeklyBudget")?.value || 0);
+  const spent = Number(document.getElementById("weeklySpent")?.value || 0);
+  if (!weekly) return "";
+  const remaining = Math.max(0, weekly - spent);
+  const after = remaining - averagePrice(food);
+  if (after < 0) return "Over weekly budget";
+  if (after < 100) return `PHP ${after} left after this`;
+  return `Leaves PHP ${after}`;
+}
+
+function foodFrames(food) {
+  const frames = [...(food.frames || [])];
+  if (getBookmarks().includes(food.id)) frames.unshift("Favorite");
+  if (antiRepeatIds().includes(food.id)) frames.unshift("Recent");
+  const note = budgetNote(food);
+  if (note) frames.push(note);
+  return [...new Set(frames)].slice(0, 5);
+}
+
 function cardTemplate(food) {
   const bookmarks = getBookmarks();
   const active = bookmarks.includes(food.id);
   const image = food.image_url || categoryImages[food.category] || categoryImages.snacks;
+  const frames = foodFrames(food);
+  const dietTags = food.diet_tags || [];
   return `
     <article class="food-card" data-food-id="${food.id}">
       <div class="food-image">
@@ -93,6 +182,11 @@ function cardTemplate(food) {
           <h3>${food.name}</h3>
           <p>${food.restaurant}</p>
         </div>
+        <div class="food-frames">
+          ${frames.map((frame) => `<span>${frame}</span>`).join("")}
+          ${dietTags.includes("pork") ? `<span class="warning-frame">Pork</span>` : ""}
+          ${dietTags.includes("halal_friendly") ? `<span class="halal-frame">Halal-friendly</span>` : ""}
+        </div>
         <div class="food-meta">
           <span><small>Price</small>PHP ${food.price_min}-${food.price_max}</span>
           <span><small>Walk</small>${food.walking_minutes} min</span>
@@ -100,6 +194,9 @@ function cardTemplate(food) {
         </div>
         <div class="card-actions">
           <span class="pill">${Math.round(food.distance_m)}m - ${formatLabel(food.area)}</span>
+          <button class="icon-button ate-button" type="button" data-ate="${food.id}" aria-label="Log ${food.name}" title="Log eaten">
+            <i data-lucide="utensils"></i>
+          </button>
           <button class="icon-button bookmark ${active ? "active" : ""}" type="button" data-bookmark="${food.id}" aria-label="Bookmark ${food.name}" title="Bookmark">
             <i data-lucide="heart"></i>
           </button>
@@ -109,22 +206,47 @@ function cardTemplate(food) {
   `;
 }
 
+function applyClientRanking(foods) {
+  const favorites = getJson(FAVORITES_KEY, []);
+  const selectedMoods = selectedValues("mood");
+  const hotMood = selectedMoods.includes("tipid");
+  const treatMood = selectedMoods.includes("treat_myself");
+  const rushMood = selectedMoods.includes("nagmamadali");
+  const historyIds = antiRepeatIds();
+
+  return [...foods].sort((a, b) => {
+    const score = (food) => {
+      let total = food.rating * 8 - (food.walking_minutes || 0);
+      if (favorites.includes(food.category)) total += 12;
+      if (getBookmarks().includes(food.id)) total += 8;
+      if (hotMood) total -= food.price_max / 16;
+      if (treatMood) total += food.price_min >= 100 ? 8 : 0;
+      if (rushMood) total -= (food.walking_minutes || 0) * 2;
+      if (historyIds.includes(food.id)) total -= 100;
+      return total;
+    };
+    return score(b) - score(a);
+  });
+}
+
 function renderFoods(foods) {
   const results = document.getElementById("results");
+  const ranked = applyClientRanking(foods);
   const visible = state.showingBookmarks
-    ? foods.filter((food) => getBookmarks().includes(food.id))
-    : foods;
+    ? ranked.filter((food) => getBookmarks().includes(food.id))
+    : ranked;
   const paged = visible.slice(0, state.visibleLimit);
 
   results.innerHTML = paged.length
     ? paged.map(cardTemplate).join("")
-    : `<div class="pick-result"><h2>No matches yet</h2><p>Adjust the filters or clear bookmarks.</p></div>`;
+    : `<div class="pick-result"><h2>No matches yet</h2><p>Adjust the filters, budget, or anti-repeat setting.</p></div>`;
 
   document.getElementById("resultCount").textContent = `${Math.min(state.visibleLimit, visible.length)} of ${visible.length} spot${visible.length === 1 ? "" : "s"}`;
   const loadMore = document.getElementById("loadMore");
   loadMore.hidden = state.visibleLimit >= visible.length;
   if (window.lucide) window.lucide.createIcons();
   updateMap(paged, document.getElementById("campus").value, DEFAULT_RADIUS);
+  updateBudgetInsight(paged[0]);
 }
 
 async function loadFoods() {
@@ -134,22 +256,104 @@ async function loadFoods() {
   renderFoods(state.foods);
 }
 
+function logFood(food) {
+  const today = new Date().toISOString().slice(0, 10);
+  const entry = {
+    id: food.id,
+    name: food.name,
+    restaurant: food.restaurant,
+    price: averagePrice(food),
+    date: today,
+  };
+  const history = [entry, ...getHistory().filter((item) => item.id !== food.id || item.date !== today)];
+  saveHistory(history);
+
+  const spentInput = document.getElementById("weeklySpent");
+  if (spentInput) {
+    spentInput.value = String(Number(spentInput.value || 0) + entry.price);
+    setBudgetState();
+  }
+  renderFoods(state.foods);
+}
+
+function streakDays() {
+  const dates = [...new Set(getHistory().map((item) => item.date))].sort().reverse();
+  let streak = 0;
+  const cursor = new Date();
+  for (const date of dates) {
+    const expected = cursor.toISOString().slice(0, 10);
+    if (date !== expected) break;
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+function renderHabitStrip() {
+  const history = getHistory();
+  document.getElementById("streakCount").textContent = `${streakDays()} day${streakDays() === 1 ? "" : "s"}`;
+  document.getElementById("lastAte").textContent = history[0] ? `${history[0].name} at ${history[0].restaurant}` : "Nothing logged yet";
+}
+
+function updateBudgetInsight(food = null) {
+  const insight = document.getElementById("budgetInsight");
+  if (!insight) return;
+  const weekly = Number(document.getElementById("weeklyBudget").value || 0);
+  const spent = Number(document.getElementById("weeklySpent").value || 0);
+  if (!weekly) {
+    insight.textContent = "Set a weekly budget to see smarter spending notes.";
+    return;
+  }
+  const remaining = Math.max(0, weekly - spent);
+  if (!food) {
+    insight.textContent = `You have PHP ${remaining} left this week.`;
+    return;
+  }
+  const after = remaining - averagePrice(food);
+  insight.textContent = after < 0
+    ? `${food.name} would put you over budget. Try Tipid or under PHP 100.`
+    : `${food.name} leaves about PHP ${after} for the rest of the week.`;
+}
+
+function restorePreferences() {
+  const budget = getBudgetState();
+  document.getElementById("weeklyBudget").value = budget.weekly || "";
+  document.getElementById("weeklySpent").value = budget.spent || "";
+  getJson(FAVORITES_KEY, []).forEach((category) => {
+    document.querySelector(`[data-filter="category"] [data-value="${category}"]`)?.classList.add("active");
+  });
+}
+
 function setupFilters() {
   document.querySelectorAll(".chip").forEach((chip) => {
     chip.addEventListener("click", () => {
+      const group = chip.closest("[data-filter]");
+      if (group?.dataset.filter === "dining") {
+        group.querySelectorAll(".chip.active").forEach((item) => item.classList.remove("active"));
+      }
       chip.classList.toggle("active");
+
+      const alias = moodAliases[chip.dataset.value];
+      if (alias?.budget) document.getElementById("budget").value = alias.budget;
+      if (alias?.sort) document.getElementById("sort").value = alias.sort;
+
       state.showingBookmarks = false;
       state.visibleLimit = 12;
       loadFoods();
     });
   });
 
-  ["campus", "budget", "area", "sort"].forEach((id) => {
+  ["campus", "budget", "area", "sort", "weather", "antiRepeat"].forEach((id) => {
     document.getElementById(id).addEventListener("change", () => {
+      state.weatherMode = document.getElementById("weather").value;
       state.showingBookmarks = false;
       state.visibleLimit = 12;
       loadFoods();
     });
+  });
+
+  ["weeklyBudget", "weeklySpent"].forEach((id) => {
+    document.getElementById(id).addEventListener("input", setBudgetState);
   });
 
   let searchTimer;
@@ -165,9 +369,15 @@ function setupFilters() {
   document.getElementById("resetFilters").addEventListener("click", () => {
     document.getElementById("filters").reset();
     document.querySelectorAll(".chip.active").forEach((chip) => chip.classList.remove("active"));
+    state.weatherMode = "auto";
     state.showingBookmarks = false;
     state.visibleLimit = 12;
     loadFoods();
+  });
+
+  document.getElementById("saveFavoriteTypes").addEventListener("click", () => {
+    setJson(FAVORITES_KEY, selectedValues("category"));
+    renderFoods(state.foods);
   });
 
   document.getElementById("showBookmarks").addEventListener("click", () => {
@@ -181,26 +391,60 @@ function setupFilters() {
     renderFoods(state.foods);
   });
 
+  document.getElementById("clearHistory").addEventListener("click", () => {
+    saveHistory([]);
+    renderFoods(state.foods);
+  });
+
   document.getElementById("heroPickForMe")?.addEventListener("click", () => {
     document.getElementById("pickForMe")?.click();
     document.getElementById("pickResult")?.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 
-  document.getElementById("results").addEventListener("click", (event) => {
-    const button = event.target.closest("[data-bookmark]");
-    if (!button) return;
-    const id = Number(button.dataset.bookmark);
-    const bookmarks = getBookmarks();
-    const next = bookmarks.includes(id) ? bookmarks.filter((item) => item !== id) : [...bookmarks, id];
-    await setBookmarks(next);
-    renderFoods(state.foods);
+  document.getElementById("results").addEventListener("click", async (event) => {
+    const bookmarkButton = event.target.closest("[data-bookmark]");
+    const ateButton = event.target.closest("[data-ate]");
+    if (bookmarkButton) {
+      const id = Number(bookmarkButton.dataset.bookmark);
+      const bookmarks = getBookmarks();
+      const next = bookmarks.includes(id) ? bookmarks.filter((item) => item !== id) : [...bookmarks, id];
+      await setBookmarks(next);
+      renderFoods(state.foods);
+    }
+    if (ateButton) {
+      const food = state.foods.find((item) => item.id === Number(ateButton.dataset.ate));
+      if (food) logFood(food);
+    }
   });
+}
+
+async function detectWeather() {
+  const select = document.getElementById("weather");
+  if (!select || select.value !== "auto") return;
+  try {
+    const response = await fetch("https://api.open-meteo.com/v1/forecast?latitude=14.6042&longitude=120.9882&current=temperature_2m,precipitation,weather_code");
+    const data = await response.json();
+    const current = data.current || {};
+    if (Number(current.precipitation || 0) > 0 || Number(current.weather_code || 0) >= 51) {
+      state.weatherMode = "rainy";
+    } else if (Number(current.temperature_2m || 0) >= 30) {
+      state.weatherMode = "hot";
+    } else {
+      state.weatherMode = "cool";
+    }
+  } catch {
+    state.weatherMode = "any";
+  }
 }
 
 window.addEventListener("saan:auth-changed", () => renderFoods(state.foods));
 
 document.addEventListener("DOMContentLoaded", async () => {
   await window.SaanAuth?.ready;
+  restorePreferences();
+  renderHabitStrip();
+  updateBudgetInsight();
   setupFilters();
+  await detectWeather();
   loadFoods();
 });

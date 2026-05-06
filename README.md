@@ -25,6 +25,12 @@ uvicorn app.main:app --reload --port 8042
 
 Open `http://localhost:8042`.
 
+## Google Sign In
+
+Create a Google OAuth web client ID in Google Cloud Console, add `http://localhost:8042` to its authorized JavaScript origins, then set `GOOGLE_CLIENT_ID` in `.env`.
+
+Google sign in is optional. If `GOOGLE_CLIENT_ID` is empty, email/password login and guest bookmarks still work.
+
 ## API
 
 - `GET /api/foods`

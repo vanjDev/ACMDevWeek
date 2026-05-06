@@ -59,6 +59,20 @@
         </select>
       </label>
 
+      <div class="budget-coach">
+        <div class="budget-row">
+          <label>
+            Weekly budget
+            <input type="number" id="weeklyBudget" min="0" step="10" placeholder="PHP">
+          </label>
+          <label>
+            Spent
+            <input type="number" id="weeklySpent" min="0" step="10" placeholder="PHP">
+          </label>
+        </div>
+        <p id="budgetInsight">Set a weekly budget to see smarter spending notes.</p>
+      </div>
+
       <label>
         Area
         <select name="area" id="area">
@@ -93,11 +107,30 @@
           <button type="button" class="chip" data-value="unli_rice">Unli-Rice</button>
           <button type="button" class="chip" data-value="snacks">Snacks</button>
         </div>
+        <button id="saveFavoriteTypes" class="mini-action" type="button">
+          <i data-lucide="star"></i>
+          Save favorite types
+        </button>
+      </div>
+
+      <div>
+        <span class="field-label">Preferred dish</span>
+        <div class="chip-grid" data-filter="dish">
+          <button type="button" class="chip" data-value="pork">Pork</button>
+          <button type="button" class="chip" data-value="beef">Beef</button>
+          <button type="button" class="chip" data-value="chicken">Chicken</button>
+          <button type="button" class="chip" data-value="snacks">Snacks</button>
+          <button type="button" class="chip" data-value="halal">Halal-friendly</button>
+        </div>
       </div>
 
       <div>
         <span class="field-label">Mood</span>
         <div class="chip-grid" data-filter="mood">
+          <button type="button" class="chip mood-chip" data-value="tipid"><i data-lucide="wallet"></i> Tipid</button>
+          <button type="button" class="chip mood-chip" data-value="treat_myself"><i data-lucide="sparkles"></i> Treat</button>
+          <button type="button" class="chip mood-chip" data-value="nagmamadali"><i data-lucide="timer"></i> Nagmamadali</button>
+          <button type="button" class="chip mood-chip" data-value="tambay_vibes"><i data-lucide="sofa"></i> Tambay</button>
           <button type="button" class="chip mood-chip" data-value="quick_lunch"><i data-lucide="zap"></i> Quick</button>
           <button type="button" class="chip mood-chip" data-value="chill_hangout"><i data-lucide="coffee"></i> Chill</button>
           <button type="button" class="chip mood-chip" data-value="study_fuel"><i data-lucide="book-open"></i> Study</button>
@@ -105,6 +138,30 @@
           <button type="button" class="chip mood-chip" data-value="group_meal"><i data-lucide="users"></i> Group</button>
         </div>
       </div>
+
+      <div>
+        <span class="field-label">Solo or barkada?</span>
+        <div class="chip-grid" data-filter="dining">
+          <button type="button" class="chip mood-chip" data-value="solo"><i data-lucide="user"></i> Solo</button>
+          <button type="button" class="chip mood-chip" data-value="barkada"><i data-lucide="users"></i> Barkada</button>
+        </div>
+      </div>
+
+      <label>
+        Weather
+        <select name="weather" id="weather">
+          <option value="auto">Auto weather</option>
+          <option value="any">Any weather</option>
+          <option value="hot">Hot day</option>
+          <option value="rainy">Rainy day</option>
+          <option value="cool">Cool weather</option>
+        </select>
+      </label>
+
+      <label class="toggle-row">
+        <input type="checkbox" id="antiRepeat" checked>
+        Anti-repeat
+      </label>
 
     </form>
   </aside>
@@ -116,18 +173,35 @@
     </div>
 
     <div class="action-strip">
-      <button id="pickForMe" class="primary-button" type="button">
-        <i data-lucide="dice-5"></i>
-        Pick for Me
-      </button>
-      <button id="showBookmarks" class="secondary-button" type="button">
-        <i data-lucide="heart"></i>
-        Bookmarks
-      </button>
+      <div class="action-buttons">
+        <button id="pickForMe" class="primary-button" type="button">
+          <i data-lucide="dice-5"></i>
+          Pick for Me
+        </button>
+        <button id="showBookmarks" class="secondary-button" type="button">
+          <i data-lucide="heart"></i>
+          Bookmarks
+        </button>
+      </div>
       <div id="resultCount" class="result-count">Loading...</div>
     </div>
 
     <section id="pickResult" class="pick-result" hidden></section>
+
+    <section class="habit-strip" aria-label="Food history and streaks">
+      <div>
+        <span>Streak</span>
+        <strong id="streakCount">0 days</strong>
+      </div>
+      <div>
+        <span>Last ate</span>
+        <strong id="lastAte">Nothing logged yet</strong>
+      </div>
+      <button id="clearHistory" class="secondary-button compact-button" type="button">
+        <i data-lucide="history"></i>
+        Clear history
+      </button>
+    </section>
 
     <div class="content-grid">
       <section>
@@ -139,8 +213,8 @@
       </section>
       <section class="map-wrap" aria-label="Food map">
         <div class="map-heading">
-          <span>FEU Map</span>
-          <strong>Campus Walk Check</strong>
+          <span>FEU Area</span>
+          <strong>Campus Food Map</strong>
         </div>
         <div id="map"></div>
       </section>
@@ -163,7 +237,7 @@
 <script>
   window.SAAN_CAMPUSES = {{ campuses | tojson }};
 </script>
-<script src="{{ url_for('static', path='/js/map.js') }}?v=no-radius-20260506"></script>
-<script src="{{ url_for('static', path='/js/app.js') }}?v=no-radius-20260506"></script>
-<script src="{{ url_for('static', path='/js/pickforme.js') }}?v=no-radius-20260506"></script>
+<script src="{{ url_for('static', path='/js/map.js') }}?v=campusmap-20260506"></script>
+<script src="{{ url_for('static', path='/js/app.js') }}?v=campusmap-20260506"></script>
+<script src="{{ url_for('static', path='/js/pickforme.js') }}?v=campusmap-20260506"></script>
 {% endblock %}

@@ -14,6 +14,7 @@ def context(request: Request, title: str) -> dict[str, object]:
         "title": title,
         "app_name": settings.app_name,
         "campuses": settings.campuses,
+        "google_client_id": settings.google_client_id,
     }
 
 

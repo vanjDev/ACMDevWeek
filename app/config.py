@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     port: int = 8042
     database_url: str = "sqlite:///./saan.db"
     secret_key: str = "change-me-for-production"
+    google_client_id: str = ""
     walking_speed_kmh: float = 5.0
 
     feu_tech_lat: float = 14.6042

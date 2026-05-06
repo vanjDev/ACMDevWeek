@@ -19,12 +19,105 @@ def _base_query() -> Select[tuple[FoodSpot]]:
     return select(FoodSpot).where(FoodSpot.is_active.is_(True))
 
 
+PORK_TERMS = ("pork", "sisig", "bacon", "bacsilog", "longsilog")
+BEEF_TERMS = ("beef", "pares", "tapa", "tapsilog", "burger steak", "shawarma")
+HOT_WEATHER_TERMS = ("iced", "milk tea", "soda", "fruit", "fries", "takoyaki", "corn dog")
+RAINY_WEATHER_TERMS = ("mami", "pares", "coffee", "americano", "rice", "lugaw", "noodles", "canton")
+SHAREABLE_TERMS = ("unli", "wings", "nachos", "takoyaki", "fries", "balls")
+
+
+def _haystack(food: FoodSpot | FoodSpotResponse) -> str:
+    return " ".join(
+        [
+            food.name,
+            food.restaurant,
+            food.category,
+            food.mood,
+            food.area,
+            food.description,
+        ]
+    ).lower()
+
+
+def _matches_any(food: FoodSpot | FoodSpotResponse, terms: tuple[str, ...]) -> bool:
+    text = _haystack(food)
+    return any(term in text for term in terms)
+
+
+def _dish_matches(food: FoodSpotResponse, dishes: list[str]) -> bool:
+    if not dishes:
+        return True
+    checks = {
+        "pork": _matches_any(food, PORK_TERMS),
+        "beef": _matches_any(food, BEEF_TERMS),
+        "chicken": food.category == "chicken" or "chicken" in _haystack(food),
+        "snacks": food.category in {"snacks", "street_food", "dimsum", "coffee_drinks", "burgers"},
+        "halal": "pork" not in food.diet_tags,
+    }
+    return any(checks.get(dish, False) for dish in dishes)
+
+
+def _weather_matches(food: FoodSpotResponse, weather: str | None) -> bool:
+    if not weather or weather in {"auto", "any"}:
+        return True
+    if weather == "hot":
+        return "hot_day" in food.weather_tags or food.category in {"coffee_drinks", "snacks"}
+    if weather in {"rainy", "cool"}:
+        return "rainy_day" in food.weather_tags or food.category in {"rice_meals", "coffee_drinks"}
+    return True
+
+
+def _dining_matches(food: FoodSpotResponse, dining: str | None) -> bool:
+    if dining == "solo":
+        return not (food.shareable and food.price_min >= 130)
+    if dining == "barkada":
+        return food.shareable or food.mood in {"group_meal", "chill_hangout"}
+    return True
+
+
 def serialize_food(food: FoodSpot, campus: str = "feu_tech") -> FoodSpotResponse:
     lat, lng = campus_coordinates(campus)
     distance = haversine_meters(lat, lng, food.latitude, food.longitude)
     data = FoodSpotResponse.model_validate(food)
     data.distance_m = round(distance, 1)
     data.walking_minutes = walking_minutes(distance)
+    text = _haystack(food)
+
+    diet_tags: list[str] = []
+    if _matches_any(food, PORK_TERMS):
+        diet_tags.append("pork")
+    if _matches_any(food, BEEF_TERMS):
+        diet_tags.append("beef")
+    if food.category == "chicken" or "chicken" in text:
+        diet_tags.append("chicken")
+    if "pork" not in diet_tags:
+        diet_tags.append("halal_friendly")
+    data.diet_tags = diet_tags
+
+    frames: list[str] = []
+    if food.rating >= 4.4 or food.area == "inside_campus":
+        frames.append("Safe choice")
+    if food.price_max <= 80:
+        frames.append("Budget-friendly")
+    if food.mood == "quick_lunch" or (data.walking_minutes or 0) <= 4:
+        frames.append("Quick bite")
+    if food.mood == "group_meal" or _matches_any(food, SHAREABLE_TERMS):
+        frames.append("Barkada pick")
+    if food.rating >= 4.4 and food.price_min >= 120:
+        frames.append("Treat myself")
+    if food.category in {"street_food", "dimsum"}:
+        frames.append("Adventurous")
+    if "halal_friendly" in diet_tags:
+        frames.append("Halal-friendly")
+    data.frames = frames[:4]
+
+    weather_tags: list[str] = []
+    if food.category == "coffee_drinks" or _matches_any(food, HOT_WEATHER_TERMS):
+        weather_tags.append("hot_day")
+    if _matches_any(food, RAINY_WEATHER_TERMS):
+        weather_tags.append("rainy_day")
+    data.weather_tags = weather_tags
+    data.shareable = food.mood == "group_meal" or _matches_any(food, SHAREABLE_TERMS)
     return data
 
 
@@ -36,6 +129,10 @@ def filter_foods(
     mood: str | None = None,
     area: str | None = None,
     q: str | None = None,
+    dish: str | None = None,
+    dining: str | None = None,
+    weather: str | None = None,
+    avoid_ids: str | None = None,
     campus: str = "feu_tech",
     radius: int | None = None,
     sort: str = "distance",
@@ -76,6 +173,20 @@ def filter_foods(
 
     if radius:
         foods = [food for food in foods if (food.distance_m or 0) <= radius]
+
+    avoid = {int(item) for item in _split_csv(avoid_ids) if item.isdigit()}
+    if avoid:
+        foods = [food for food in foods if food.id not in avoid]
+
+    dishes = _split_csv(dish)
+    if dishes:
+        foods = [food for food in foods if _dish_matches(food, dishes)]
+
+    if dining:
+        foods = [food for food in foods if _dining_matches(food, dining)]
+
+    if weather:
+        foods = [food for food in foods if _weather_matches(food, weather)]
 
     if sort == "price":
         foods.sort(key=lambda food: (food.price_min, food.price_max))

@@ -17,6 +17,10 @@ class FoodSpotResponse(BaseModel):
     description: str
     distance_m: float | None = None
     walking_minutes: int | None = None
+    diet_tags: list[str] = Field(default_factory=list)
+    frames: list[str] = Field(default_factory=list)
+    weather_tags: list[str] = Field(default_factory=list)
+    shareable: bool = False
 
     model_config = {"from_attributes": True}
 
@@ -60,6 +64,10 @@ class UserResponse(BaseModel):
 
 class AuthResponse(BaseModel):
     user: UserResponse
+
+
+class GoogleAuthRequest(BaseModel):
+    credential: str
 
 
 class BookmarkPayload(BaseModel):

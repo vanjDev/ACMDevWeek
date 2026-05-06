@@ -40,6 +40,22 @@ async function saveAccountBookmarks(ids) {
   return data.food_ids;
 }
 
+async function handleGoogleCredential(response) {
+  const message = document.getElementById("authMessage");
+  const dialog = document.getElementById("authDialog");
+  try {
+    message.textContent = "Signing in with Google...";
+    await authFetch("/api/auth/google", {
+      method: "POST",
+      body: JSON.stringify({ credential: response.credential }),
+    });
+    await refreshAuth({ mergeGuest: true });
+    dialog.close();
+  } catch (error) {
+    message.textContent = error.message;
+  }
+}
+
 function updateAuthUi() {
   const status = document.getElementById("authStatus");
   const openButton = document.getElementById("openAuth");
@@ -57,6 +73,37 @@ function updateAuthUi() {
   }
 
   if (window.lucide) window.lucide.createIcons();
+}
+
+function renderGoogleButton() {
+  const button = document.getElementById("googleSignInButton");
+  const hint = document.getElementById("googleAuthHint");
+  if (!button || !hint) return;
+
+  const clientId = window.SAAN_GOOGLE_CLIENT_ID;
+  if (!clientId) {
+    button.hidden = true;
+    hint.hidden = false;
+    return;
+  }
+
+  hint.hidden = true;
+  button.hidden = false;
+  if (!window.google?.accounts?.id || button.dataset.rendered === "true") return;
+
+  window.google.accounts.id.initialize({
+    client_id: clientId,
+    callback: handleGoogleCredential,
+  });
+  window.google.accounts.id.renderButton(button, {
+    theme: "outline",
+    size: "large",
+    type: "standard",
+    shape: "pill",
+    text: "continue_with",
+    width: Math.min(360, button.clientWidth || 360),
+  });
+  button.dataset.rendered = "true";
 }
 
 async function refreshAuth({ mergeGuest = false } = {}) {
@@ -95,7 +142,10 @@ function setupAuthControls() {
   document.getElementById("openAuth")?.addEventListener("click", () => {
     message.textContent = "Continue as guest anytime. Login only if you want bookmarks saved across devices.";
     dialog.showModal();
+    renderGoogleButton();
   });
+
+  document.getElementById("closeAuth")?.addEventListener("click", () => dialog.close());
 
   document.getElementById("logoutAuth")?.addEventListener("click", async () => {
     await authFetch("/api/auth/logout", { method: "POST", body: "{}" });
@@ -130,6 +180,7 @@ function setupAuthControls() {
 
   setAuthMode("login");
   updateAuthUi();
+  renderGoogleButton();
 }
 
 SaanAuth.getBookmarks = () => (SaanAuth.user ? SaanAuth.bookmarks || [] : readGuestBookmarks());
@@ -138,3 +189,4 @@ SaanAuth.ready = refreshAuth();
 window.SaanAuth = SaanAuth;
 
 document.addEventListener("DOMContentLoaded", setupAuthControls);
+window.addEventListener("load", renderGoogleButton);

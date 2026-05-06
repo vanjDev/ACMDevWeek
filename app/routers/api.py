@@ -1,11 +1,21 @@
 from datetime import datetime, timedelta
+import secrets
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import FoodSpot, SavedFood, User
-from app.schemas import AuthRequest, AuthResponse, BookmarkPayload, TimerRecommendation, TimerRequest, TimerResponse, UserResponse
+from app.schemas import (
+    AuthRequest,
+    AuthResponse,
+    BookmarkPayload,
+    GoogleAuthRequest,
+    TimerRecommendation,
+    TimerRequest,
+    TimerResponse,
+    UserResponse,
+)
 from app.services.auth_service import (
     clear_session_cookie,
     hash_password,
@@ -13,6 +23,7 @@ from app.services.auth_service import (
     require_user,
     set_session_cookie,
     verify_password,
+    verify_google_id_token,
 )
 from app.services.distance_service import campus_name
 from app.services.food_service import filter_foods, get_food, random_food, timer_recommendations
@@ -47,6 +58,35 @@ def login(payload: AuthRequest, response: Response, db: Session = Depends(get_db
     if not user or not verify_password(payload.password, user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid email or password.")
 
+    set_session_cookie(response, user.id)
+    return AuthResponse(user=user_response(user))
+
+
+@router.post("/auth/google", response_model=AuthResponse)
+def google_login(payload: GoogleAuthRequest, response: Response, db: Session = Depends(get_db)):
+    profile = verify_google_id_token(payload.credential)
+    google_sub = str(profile["sub"])
+    email = normalize_email(str(profile["email"]))
+    name = str(profile.get("name") or email.split("@", 1)[0])
+
+    user = db.query(User).filter(User.google_sub == google_sub).first()
+    if not user:
+        user = db.query(User).filter(User.email == email).first()
+        if user:
+            user.google_sub = google_sub
+            if user.name == user.email:
+                user.name = name
+        else:
+            user = User(
+                name=name,
+                email=email,
+                google_sub=google_sub,
+                password_hash=hash_password(secrets.token_urlsafe(32)),
+            )
+            db.add(user)
+
+    db.commit()
+    db.refresh(user)
     set_session_cookie(response, user.id)
     return AuthResponse(user=user_response(user))
 
@@ -92,6 +132,10 @@ def list_foods(
     budget_max: int | None = None,
     category: str | None = None,
     mood: str | None = None,
+    dish: str | None = None,
+    dining: str | None = None,
+    weather: str | None = None,
+    avoid_ids: str | None = None,
     area: str | None = None,
     q: str | None = None,
     campus: str = "feu_tech",
@@ -100,7 +144,7 @@ def list_foods(
     limit: int = Query(default=100, ge=1, le=250),
     db: Session = Depends(get_db),
 ):
-    return filter_foods(db, budget_min, budget_max, category, mood, area, q, campus, radius, sort, limit)
+    return filter_foods(db, budget_min, budget_max, category, mood, area, q, dish, dining, weather, avoid_ids, campus, radius, sort, limit)
 
 
 @router.get("/foods/random")
@@ -109,6 +153,10 @@ def pick_random_food(
     budget_max: int | None = None,
     category: str | None = None,
     mood: str | None = None,
+    dish: str | None = None,
+    dining: str | None = None,
+    weather: str | None = None,
+    avoid_ids: str | None = None,
     area: str | None = None,
     q: str | None = None,
     campus: str = "feu_tech",
@@ -122,6 +170,10 @@ def pick_random_food(
         budget_max=budget_max,
         category=category,
         mood=mood,
+        dish=dish,
+        dining=dining,
+        weather=weather,
+        avoid_ids=avoid_ids,
         area=area,
         q=q,
         campus=campus,
