@@ -54,27 +54,42 @@ function formatLabel(value) {
   return value.replaceAll("_", " ").replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function categoryLabel(value) {
+  const labels = {
+    chicken: "Chicken",
+    rice_meals: "Rice Meal",
+    street_food: "Street Food",
+    dimsum: "Dimsum",
+    coffee_drinks: "Drinks",
+    burgers: "Burger",
+    unli_rice: "Unli Rice",
+    snacks: "Snack",
+  };
+  return labels[value] || formatLabel(value);
+}
+
 function cardTemplate(food) {
   const bookmarks = getBookmarks();
   const active = bookmarks.includes(food.id);
   const image = food.image_url || categoryImages[food.category] || categoryImages.snacks;
   return `
     <article class="food-card" data-food-id="${food.id}">
-      <div class="food-image" style="background-image:url('${image}')"></div>
+      <div class="food-image">
+        <img src="${image}" alt="">
+        <span>${categoryLabel(food.category)}</span>
+      </div>
       <div class="food-body">
         <div>
           <h3>${food.name}</h3>
           <p>${food.restaurant}</p>
         </div>
         <div class="food-meta">
-          <span class="pill">PHP ${food.price_min}-${food.price_max}</span>
-          <span class="pill">${Math.round(food.distance_m)}m</span>
-          <span class="pill">${food.walking_minutes} min</span>
-          <span class="pill">${food.rating.toFixed(1)} stars</span>
+          <span><small>Price</small>PHP ${food.price_min}-${food.price_max}</span>
+          <span><small>Walk</small>${food.walking_minutes} min</span>
+          <span><small>Rating</small>${food.rating.toFixed(1)}</span>
         </div>
-        <p>${food.description}</p>
         <div class="card-actions">
-          <span class="pill">${formatLabel(food.area)}</span>
+          <span class="pill">${Math.round(food.distance_m)}m · ${formatLabel(food.area)}</span>
           <button class="icon-button bookmark ${active ? "active" : ""}" type="button" data-bookmark="${food.id}" aria-label="Bookmark ${food.name}" title="Bookmark">
             <i data-lucide="heart"></i>
           </button>
@@ -139,6 +154,11 @@ function setupFilters() {
   document.getElementById("showBookmarks").addEventListener("click", () => {
     state.showingBookmarks = !state.showingBookmarks;
     renderFoods(state.foods);
+  });
+
+  document.getElementById("heroPickForMe")?.addEventListener("click", () => {
+    document.getElementById("pickForMe")?.click();
+    document.getElementById("pickResult")?.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 
   document.getElementById("results").addEventListener("click", (event) => {

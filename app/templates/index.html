@@ -1,6 +1,30 @@
 {% extends "base.html" %}
 
 {% block content %}
+<section class="hero-board">
+  <div class="hero-copy">
+    <p>Where every break tells a story.</p>
+    <h1>What&apos;s yours?</h1>
+    <span>FEU-friendly food picks by budget, mood, walk time, and campus.</span>
+    <button id="heroPickForMe" class="primary-button" type="button">
+      <i data-lucide="sparkles"></i>
+      Pick a Spot
+    </button>
+  </div>
+  <div class="hero-visual" aria-hidden="true">
+    <span class="vertical-word">MORAYTA</span>
+    <img src="https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=900&q=80" alt="">
+  </div>
+</section>
+
+<div class="brand-ribbon">
+  <span>SAAN?</span>
+  <span>FEU TECH</span>
+  <span>MORAYTA</span>
+  <span>FOOD FINDER</span>
+  <span>SAAN?</span>
+</div>
+
 <section class="app-shell">
   <aside class="filter-panel" aria-label="Food filters">
     <div class="panel-title">
@@ -85,6 +109,11 @@
   </aside>
 
   <section class="main-pane">
+    <div class="section-label">
+      <span>Discover</span>
+      <strong>Popular Near Campus</strong>
+    </div>
+
     <div class="action-strip">
       <button id="pickForMe" class="primary-button" type="button">
         <i data-lucide="dice-5"></i>
@@ -102,10 +131,24 @@
     <div class="content-grid">
       <section id="results" class="results-grid" aria-live="polite"></section>
       <section class="map-wrap" aria-label="Food map">
+        <div class="map-heading">
+          <span>Radius Map</span>
+          <strong>Campus Walk Check</strong>
+        </div>
         <div id="map"></div>
       </section>
     </div>
   </section>
+</section>
+
+<section class="contact-band">
+  <div>
+    <h2>Still undecided?</h2>
+    <p>Tap Pick for Me, trust the filters, and let lunch stop being a committee meeting.</p>
+  </div>
+  <a class="round-link" href="/timer" aria-label="Open timer page">
+    <i data-lucide="arrow-right"></i>
+  </a>
 </section>
 {% endblock %}
 
