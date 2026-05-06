@@ -1553,15 +1553,15 @@ input[type="range"] {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: 170px minmax(0, 1fr);
+  grid-template-columns: 150px minmax(0, 1fr) minmax(180px, 0.72fr);
   align-items: center;
   gap: 20px;
 }
 
 .pick-wheel {
   position: relative;
-  width: 160px;
-  height: 160px;
+  width: 142px;
+  height: 142px;
   display: grid;
   place-items: center;
   border: 10px solid var(--cream);
@@ -1579,6 +1579,9 @@ input[type="range"] {
       #dff8ed 87.5% 100%
     );
   box-shadow: 0 22px 42px rgba(0, 0, 0, 0.3);
+}
+
+.pick-wheel.spinning {
   animation: wheelSpin 1.3s cubic-bezier(0.15, 0.8, 0.25, 1) both;
 }
 
@@ -1598,8 +1601,8 @@ input[type="range"] {
 .pick-wheel strong {
   z-index: 2;
   display: grid;
-  width: 72px;
-  height: 72px;
+  width: 68px;
+  height: 68px;
   place-items: center;
   border-radius: 999px;
   color: var(--cream);
@@ -1611,16 +1614,28 @@ input[type="range"] {
 
 .pick-wheel span {
   position: absolute;
-  inset: 12px;
+  inset: 11px;
   display: flex;
   align-items: start;
   justify-content: center;
   color: rgba(4, 31, 29, 0.9);
-  font-size: 0.52rem;
+  font-size: 0.62rem;
   font-weight: 900;
   text-align: center;
   text-transform: uppercase;
   transform: rotate(calc(360deg / var(--total) * var(--i)));
+}
+
+.pick-wheel span em {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--ink);
+  background: rgba(246, 241, 231, 0.88);
+  font-style: normal;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.18);
 }
 
 .pick-wheel.landed {
@@ -1636,6 +1651,31 @@ input[type="range"] {
   color: var(--mint);
   font-size: 0.72rem;
   font-weight: 900;
+  text-transform: uppercase;
+}
+
+.wheel-copy h2 {
+  font-size: clamp(1.55rem, 3vw, 2.1rem);
+  line-height: 1;
+}
+
+.wheel-store-list {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 6px;
+}
+
+.wheel-store-list span {
+  overflow: hidden;
+  border-radius: 999px;
+  padding: 7px 10px;
+  color: var(--ink);
+  background: rgba(246, 241, 231, 0.86);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   text-transform: uppercase;
 }
 
