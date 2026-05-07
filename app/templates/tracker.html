@@ -84,19 +84,25 @@
           <span>Meal logs</span>
           <strong>This week in Manila time</strong>
         </div>
-        <div class="history-sort" aria-label="Sort meal logs">
-          <button class="active" type="button" data-history-sort="latest" title="Sort by latest">
-            <i data-lucide="clock-3"></i>
-            Latest
+        <div class="history-toolbar">
+          <button id="addMealLog" class="primary-button compact-button" type="button">
+            <i data-lucide="plus"></i>
+            Add log
           </button>
-          <button type="button" data-history-sort="price" title="Sort by highest spend">
-            <i data-lucide="arrow-down-up"></i>
-            Spend
-          </button>
-          <button type="button" data-history-sort="day" title="Group by day">
-            <i data-lucide="calendar-days"></i>
-            Day
-          </button>
+          <div class="history-sort" aria-label="Sort meal logs">
+            <button class="active" type="button" data-history-sort="latest" title="Sort by latest">
+              <i data-lucide="clock-3"></i>
+              Latest
+            </button>
+            <button type="button" data-history-sort="price" title="Sort by highest spend">
+              <i data-lucide="arrow-down-up"></i>
+              Spend
+            </button>
+            <button type="button" data-history-sort="day" title="Group by day">
+              <i data-lucide="calendar-days"></i>
+              Day
+            </button>
+          </div>
         </div>
       </div>
       <div id="weekStrip" class="week-strip" aria-label="Week spending by day"></div>
@@ -124,6 +130,24 @@
       <span id="mealLogRestaurant">Store</span>
       <p id="mealLogSuggestion">Saved meal log</p>
     </div>
+    <div class="meal-log-grid">
+      <label>
+        Food
+        <input id="mealLogName" type="text" maxlength="120" placeholder="What did you eat?" required>
+      </label>
+      <label>
+        Store
+        <input id="mealLogStore" type="text" maxlength="120" placeholder="Where from?" required>
+      </label>
+      <label>
+        Date
+        <input id="mealLogDate" type="date" required>
+      </label>
+      <label>
+        Time
+        <input id="mealLogTime" type="time" required>
+      </label>
+    </div>
     <label>
       How much did you spend?
       <input id="mealLogPrice" type="number" min="0" step="1" placeholder="₱" required>
@@ -148,5 +172,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', path='/js/tracker.js') }}?v=tracker-dashboard-20260507"></script>
+<script src="{{ url_for('static', path='/js/tracker.js') }}?v=tracker-backdate-20260507"></script>
 {% endblock %}

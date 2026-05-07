@@ -1778,6 +1778,18 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
   gap: 6px;
 }
 
+.history-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.history-toolbar > .primary-button {
+  min-height: 34px;
+  padding-inline: 12px;
+}
+
 .history-sort button {
   min-height: 34px;
   display: inline-flex;
@@ -1877,7 +1889,7 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 .week-strip {
   display: grid;
   grid-template-columns: repeat(7, minmax(62px, 1fr));
-  gap: 6px;
+  gap: 8px;
 }
 
 .week-day-card {
@@ -1885,11 +1897,21 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
   display: grid;
   justify-items: center;
   gap: 3px;
+  min-height: 96px;
   border: 1px solid rgba(246, 241, 231, 0.12);
   border-radius: 12px 12px 6px 6px;
   padding: 8px 6px;
   color: rgba(246, 241, 231, 0.72);
   background: rgba(246, 241, 231, 0.055);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+
+.week-day-card:hover {
+  border-color: rgba(255, 223, 53, 0.45);
+  background: rgba(246, 241, 231, 0.085);
+  transform: translateY(-1px);
 }
 
 .week-day-card svg {
@@ -1996,7 +2018,7 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 }
 
 .tracker-history-card .weekly-history {
-  min-height: 120px;
+  min-height: 0;
   align-content: start;
 }
 
@@ -2077,7 +2099,7 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
   gap: 8px;
   border: 1px dashed rgba(246, 241, 231, 0.18);
   border-radius: 14px 14px 6px 6px;
-  padding: 24px 14px;
+  padding: 18px 14px;
   color: var(--mint);
   text-align: center;
   background: rgba(246, 241, 231, 0.045);
@@ -2116,6 +2138,12 @@ body.suggestion-helper-open .decision-coach:not(:empty) {
 
 .meal-log-card {
   gap: 12px;
+}
+
+.meal-log-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .rating-card {
@@ -5455,7 +5483,8 @@ body.map-helper-open .top-map-wrap {
 }
 
 .tracker-page-panel {
-  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  grid-template-columns: minmax(320px, 0.82fr) minmax(0, 1.18fr);
+  align-items: start;
 }
 
 .tracker-habit-strip {
@@ -6365,7 +6394,7 @@ body.menu-detail-open {
   .filter-panel {
     position: fixed;
     inset: 10px 10px 76px;
-    z-index: 86;
+    z-index: 130;
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
     overflow: hidden;
@@ -6379,10 +6408,17 @@ body.menu-detail-open {
     pointer-events: none;
     transform: translateY(14px);
     transition: opacity 160ms ease, transform 160ms ease;
+    touch-action: manipulation;
   }
 
   body.filter-helper-open {
     overflow: hidden;
+  }
+
+  body.filter-helper-open .floating-tools {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(8px);
   }
 
   body.filter-helper-open .filter-panel {
@@ -6391,10 +6427,15 @@ body.menu-detail-open {
     transform: translateY(0);
   }
 
+  body.filter-helper-open .mobile-filter-close {
+    display: grid;
+  }
+
   .filter-panel .filters {
     min-height: 0;
     overflow: auto;
     padding-right: 2px;
+    -webkit-overflow-scrolling: touch;
   }
 
   .mobile-filter-close {

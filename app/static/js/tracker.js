@@ -166,6 +166,12 @@ function dateTextFromDate(date) {
   return date.toISOString().slice(0, 10);
 }
 
+function isoFromManilaFields(dateText, timeText) {
+  const date = dateText || manilaParts().date;
+  const time = timeText || manilaParts().time;
+  return `${date}T${time}:00+08:00`;
+}
+
 function currentWeekDates() {
   const start = dateFromText(manilaWeekKey());
   if (!start) return [];
@@ -476,12 +482,12 @@ function renderWeekStrip() {
       meals.length ? "has-log" : "",
     ].filter(Boolean).join(" ");
     return `
-      <article class="${classes}">
+      <button class="${classes}" type="button" data-add-log-date="${dateText}" aria-label="Add meal log for ${dateText}">
         <span>${labels[index]}</span>
         <i data-lucide="${meals.length ? "check" : "plus"}"></i>
         <strong>${spent ? formatPeso(spent) : "₱0"}</strong>
         <small>${meals.length} meal${meals.length === 1 ? "" : "s"}</small>
-      </article>
+      </button>
     `;
   }).join("");
 }
@@ -584,18 +590,31 @@ function closeMealLogDialog() {
   document.getElementById("mealLogDialog")?.close();
 }
 
-function openMealLogDialog(entry) {
+function openMealLogDialog(entry = null, options = {}) {
   const dialog = document.getElementById("mealLogDialog");
-  if (!dialog || !entry) return;
-  document.getElementById("mealLogEntryId").value = entry.entryId;
-  document.getElementById("mealLogFoodName").textContent = entry.name;
-  document.getElementById("mealLogRestaurant").textContent = entry.restaurant;
-  document.getElementById("mealLogSuggestion").textContent = mealTimeLabel(entry);
-  document.getElementById("mealLogPrice").value = String(entry.price || "");
-  document.getElementById("mealLogNote").value = entry.note || "";
-  document.getElementById("mealLogBudgetHint").textContent = "Update the amount or note for this meal log.";
-  document.getElementById("mealLogRemove").hidden = false;
-  document.getElementById("mealLogRemove").dataset.entryId = entry.entryId;
+  if (!dialog) return;
+  const manila = manilaParts();
+  const date = entry?.phDate || options.date || manila.date;
+  const time = entry?.phTime || options.time || manila.time;
+  document.getElementById("mealLogTitle").textContent = entry ? "Edit meal" : "Add meal";
+  document.getElementById("mealLogEntryId").value = entry?.entryId || "";
+  document.getElementById("mealLogFoodName").textContent = entry?.name || "New meal log";
+  document.getElementById("mealLogRestaurant").textContent = entry?.restaurant || "Manual entry";
+  document.getElementById("mealLogSuggestion").textContent = entry ? mealTimeLabel(entry) : "Add any day and time in Manila time";
+  document.getElementById("mealLogName").value = entry?.name || "";
+  document.getElementById("mealLogStore").value = entry?.restaurant || "";
+  document.getElementById("mealLogDate").value = date;
+  document.getElementById("mealLogTime").value = time;
+  document.getElementById("mealLogPrice").value = String(entry?.price || "");
+  document.getElementById("mealLogNote").value = entry?.note || "";
+  document.getElementById("mealLogBudgetHint").textContent = entry
+    ? "Update the date, time, amount, or note for this meal log."
+    : "This creates a manual history item and uses Manila time.";
+  document.getElementById("mealLogRemove").hidden = !entry;
+  document.getElementById("mealLogRemove").dataset.entryId = entry?.entryId || "";
+  document.getElementById("mealLogSubmit").innerHTML = entry
+    ? `<i data-lucide="save"></i> Update meal`
+    : `<i data-lucide="plus"></i> Add meal`;
   dialog.showModal();
   if (window.lucide) window.lucide.createIcons();
 }
@@ -610,6 +629,16 @@ function setupTrackerPage() {
   document.getElementById("weeklyBudget")?.addEventListener("input", () => {
     updateBudgetState();
     updateBudgetInsight();
+  });
+
+  document.getElementById("addMealLog")?.addEventListener("click", () => {
+    openMealLogDialog(null, { date: manilaParts().date, time: manilaParts().time });
+  });
+
+  document.getElementById("weekStrip")?.addEventListener("click", (event) => {
+    const dayButton = event.target.closest("[data-add-log-date]");
+    if (!dayButton) return;
+    openMealLogDialog(null, { date: dayButton.dataset.addLogDate, time: manilaParts().time });
   });
 
   document.querySelectorAll("[data-history-sort]").forEach((button) => {
@@ -661,18 +690,37 @@ function setupTrackerPage() {
   document.getElementById("mealLogForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
     const entryId = document.getElementById("mealLogEntryId").value;
+    const name = document.getElementById("mealLogName").value.trim();
+    const restaurant = document.getElementById("mealLogStore").value.trim();
+    const phDate = document.getElementById("mealLogDate").value;
+    const phTime = document.getElementById("mealLogTime").value;
     const price = Number(document.getElementById("mealLogPrice").value || 0);
-    if (!entryId || !price) {
-      showToast("Add the amount you spent first.");
+    if (!name || !restaurant || !phDate || !phTime || !price) {
+      showToast("Complete food, store, date, time, and amount first.");
       return;
     }
     const note = document.getElementById("mealLogNote").value.trim();
-    const next = getHistory().map(normalizeHistoryEntry).map((item) => (
-      item.entryId === entryId ? { ...item, price, note } : item
-    ));
+    const normalizedId = entryId || `manual-${Date.now()}`;
+    const updatedEntry = normalizeHistoryEntry({
+      entryId: normalizedId,
+      id: normalizedId,
+      name,
+      restaurant,
+      price,
+      note,
+      date: phDate,
+      phDate,
+      phTime,
+      weekKey: manilaWeekKey(phDate),
+      loggedAt: isoFromManilaFields(phDate, phTime),
+    });
+    const current = getHistory().map(normalizeHistoryEntry);
+    const next = entryId
+      ? current.map((item) => (item.entryId === entryId ? { ...item, ...updatedEntry } : item))
+      : [updatedEntry, ...current];
     saveHistory(next);
     closeMealLogDialog();
-    showToast(`Updated meal to ${formatPeso(price)}.`);
+    showToast(`${entryId ? "Updated" : "Added"} ${name} for ${formatPeso(price)}.`);
   });
 }
 

@@ -1047,6 +1047,10 @@ function setFilterPanelOpen(open) {
   if (open) {
     setFloatingMapOpen(false);
     setSuggestionOpen(false);
+    state.selectedStoreId = null;
+    document.getElementById("menuDetailBackdrop")?.setAttribute("hidden", "");
+    document.getElementById("menuDetail")?.setAttribute("hidden", "");
+    document.body.classList.remove("menu-detail-open");
   }
   document.body.classList.toggle("filter-helper-open", open);
   const button = document.getElementById("toggleFilters");
@@ -2260,6 +2264,7 @@ function setupFilters() {
     document.querySelectorAll(".chip").forEach((chip) => setChipActive(chip, false));
     state.weatherMode = "auto";
     updateWeatherTiles("auto");
+    updateCategoryResetState();
     state.showingBookmarks = false;
     state.visibleLimit = 12;
     loadFoods();
@@ -2302,11 +2307,15 @@ function setupFilters() {
     setSuggestionOpen(!document.body.classList.contains("suggestion-helper-open"));
   });
 
-  document.getElementById("toggleFilters")?.addEventListener("click", () => {
+  document.getElementById("toggleFilters")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
     setFilterPanelOpen(!document.body.classList.contains("filter-helper-open"));
   });
 
-  document.getElementById("closeFilters")?.addEventListener("click", () => {
+  document.getElementById("closeFilters")?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
     setFilterPanelOpen(false);
   });
 
