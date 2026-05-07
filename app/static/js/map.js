@@ -21,51 +21,6 @@ const routeCache = new Map();
 
 const WALK_ROUTE_COLOR = "#ef233c";
 
-const PEDESTRIAN_NODES = {
-  feu_tech: [14.6042, 120.9882],
-  feu_sidewalk: [14.60384, 120.98795],
-  paredes_corner: [14.60366, 120.98778],
-  crossing_east: [14.60347, 120.98765],
-  crossing_west: [14.60343, 120.98751],
-  nicanor_south: [14.60322, 120.98749],
-  nicanor_mid: [14.60385, 120.98734],
-  nicanor_lerma: [14.60445, 120.98716],
-  lerma_west: [14.60472, 120.98694],
-  lerma_east: [14.60476, 120.98750],
-  campus_east: [14.6039, 120.9886],
-};
-
-const PEDESTRIAN_EDGES = [
-  ["feu_tech", "feu_sidewalk"],
-  ["feu_sidewalk", "paredes_corner"],
-  ["paredes_corner", "crossing_east"],
-  ["crossing_east", "crossing_west"],
-  ["crossing_west", "nicanor_south"],
-  ["crossing_west", "nicanor_mid"],
-  ["nicanor_mid", "nicanor_lerma"],
-  ["nicanor_lerma", "lerma_west"],
-  ["nicanor_lerma", "lerma_east"],
-  ["feu_tech", "campus_east"],
-];
-
-const PEDESTRIAN_CORRIDORS = {
-  west: [
-    "feu_tech",
-    "feu_sidewalk",
-    "paredes_corner",
-    "crossing_east",
-    "crossing_west",
-    "nicanor_south",
-    "nicanor_mid",
-    "nicanor_lerma",
-    "lerma_west",
-  ],
-  east: [
-    "feu_tech",
-    "campus_east",
-  ],
-};
-
 let saanLeafletMap = null;
 let foodLayer = null;
 let campusLayer = null;
@@ -91,72 +46,6 @@ function currentStartCoordinates() {
   return window.SaanUserLocation
     ? { lat: window.SaanUserLocation.lat, lng: window.SaanUserLocation.lng }
     : { lat: campus.lat, lng: campus.lng };
-}
-
-function distanceBetweenPoints(a, b) {
-  const latMeters = (a[0] - b[0]) * 111_320;
-  const lngMeters = (a[1] - b[1]) * 111_320 * Math.cos(((a[0] + b[0]) / 2) * Math.PI / 180);
-  return Math.sqrt((latMeters * latMeters) + (lngMeters * lngMeters));
-}
-
-function pedestrianNeighbors(nodeKey) {
-  return PEDESTRIAN_EDGES
-    .filter(([a, b]) => a === nodeKey || b === nodeKey)
-    .map(([a, b]) => (a === nodeKey ? b : a));
-}
-
-function nearestPedestrianNode(target) {
-  return Object.entries(PEDESTRIAN_NODES).reduce((best, [key, point]) => {
-    const distance = distanceBetweenPoints(point, target);
-    return distance < best.distance ? { key, point, distance } : best;
-  }, { key: "", point: null, distance: Infinity });
-}
-
-function shortestPedestrianPath(startKey, endKey) {
-  const distances = Object.fromEntries(Object.keys(PEDESTRIAN_NODES).map((key) => [key, Infinity]));
-  const previous = {};
-  const queue = new Set(Object.keys(PEDESTRIAN_NODES));
-  distances[startKey] = 0;
-
-  while (queue.size) {
-    const current = [...queue].sort((a, b) => distances[a] - distances[b])[0];
-    queue.delete(current);
-    if (current === endKey) break;
-
-    pedestrianNeighbors(current).forEach((neighbor) => {
-      if (!queue.has(neighbor)) return;
-      const distance = distanceBetweenPoints(PEDESTRIAN_NODES[current], PEDESTRIAN_NODES[neighbor]);
-      const nextDistance = distances[current] + distance;
-      if (nextDistance < distances[neighbor]) {
-        distances[neighbor] = nextDistance;
-        previous[neighbor] = current;
-      }
-    });
-  }
-
-  const path = [];
-  let cursor = endKey;
-  while (cursor) {
-    path.unshift(PEDESTRIAN_NODES[cursor]);
-    if (cursor === startKey) break;
-    cursor = previous[cursor];
-  }
-  return path[0] === PEDESTRIAN_NODES[startKey] ? path : [];
-}
-
-function customPedestrianRoute(food) {
-  if (window.SaanUserLocation || window.SaanMapCampus !== "feu_tech") return null;
-  const destination = [food.latitude, food.longitude];
-  const nearest = nearestPedestrianNode(destination);
-  if (!nearest.key || nearest.distance > 95) return null;
-  const isWestSide = destination[1] < 120.98815;
-  const corridor = isWestSide ? PEDESTRIAN_CORRIDORS.west : PEDESTRIAN_CORRIDORS.east;
-  const graphPath = corridor.map((key) => PEDESTRIAN_NODES[key]).filter(Boolean);
-  if (graphPath.length < 2) return null;
-  if (destination[0] !== graphPath.at(-1)[0] || destination[1] !== graphPath.at(-1)[1]) {
-    graphPath.push(destination);
-  }
-  return graphPath;
 }
 
 function mapIconForFood(food) {
@@ -277,12 +166,6 @@ async function fetchWalkingRoute(food) {
   const start = currentStartCoordinates();
   const cacheKey = `${start.lat.toFixed(6)},${start.lng.toFixed(6)}:${food.latitude.toFixed(6)},${food.longitude.toFixed(6)}`;
   if (routeCache.has(cacheKey)) return routeCache.get(cacheKey);
-
-  const localRoute = customPedestrianRoute(food);
-  if (localRoute) {
-    routeCache.set(cacheKey, localRoute);
-    return localRoute;
-  }
 
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 3500);
