@@ -17,7 +17,7 @@ Instead of making students scroll through endless choices, Saan? filters nearby 
 - **Budget, mood, weather, and time-aware filtering** for real student break decisions.
 - **Food history and streak tracking** for simple eating logs.
 
-## Preview
+## Product Surface
 
 Saan? is designed around a bold FEU-inspired green and cream visual style, with food cards, a custom campus map, a randomizer wheel, and a large restaurant menu panel.
 
@@ -29,6 +29,20 @@ Core screens:
 - Pick for Me randomizer
 - Login and Google Sign-In modal
 - Timer/checker for class breaks
+
+## Repository Metadata
+
+Suggested GitHub description:
+
+```text
+FEU-area food finder that filters nearby meals by budget, mood, walk time, campus, and location.
+```
+
+Suggested topics:
+
+```text
+food-finder fastapi student-app feu-morayta sqlite geolocation python javascript
+```
 
 ## Tech Stack
 
@@ -106,7 +120,7 @@ Example origins:
 
 ```text
 http://localhost:8042
-https://saan.tambytes.com
+<your private HTTPS origin>
 ```
 
 ## API Overview
@@ -181,6 +195,25 @@ uvicorn app.main:app --host 127.0.0.1 --port 8042
 
 Browser geolocation requires HTTPS in production, so use the secure domain when testing precise location.
 
+## Verification
+
+Run basic Python checks before deploying or handing off changes:
+
+```powershell
+python -m compileall app
+python -m app.seed
+uvicorn app.main:app --reload --port 8042
+```
+
+Manual smoke flow:
+
+- load the home page
+- filter by campus and budget
+- open a restaurant menu
+- use Pick for Me
+- check guest saves
+- test Google Sign-In only when a private OAuth client is configured
+
 ## Data
 
 Starter food data lives in [`app/seed.py`](app/seed.py). Coordinates are focused on the FEU/Morayta area and can be improved as more real food spot data becomes available.
@@ -198,3 +231,7 @@ That command copies the images into `app/static/uploads/foods/data-bundle/` and 
 Saan? is built for a very specific student problem: deciding where to eat during short breaks around FEU. The goal is not just to list food places, but to make the decision faster, more visual, and more fun.
 
 For FEU students, "Saan?" is the whole question. This app tries to answer it.
+
+## Private Data
+
+Do not commit private deployment values, OAuth client secrets, production databases, or private food-photo bundles. Keep those in `.env`, local SQLite files, server environment variables, or ignored data folders.
