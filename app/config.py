@@ -9,7 +9,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 class Settings(BaseSettings):
     app_name: str = "Saan?"
     debug: bool = True
-    port: int = 8042
+    port: int = 7272
     database_url: str = "sqlite:///./saan.db"
     secret_key: str = "change-me-for-production"
     google_client_id: str = ""
