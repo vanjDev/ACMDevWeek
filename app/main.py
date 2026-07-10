@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 import os
+from pathlib import Path
 import sys
 
 # Allow running as: python3 app/main.py
@@ -23,7 +24,9 @@ async def lifespan(app: FastAPI):
 
 settings = get_settings()
 app = FastAPI(title=settings.app_name, debug=settings.debug, lifespan=lifespan)
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
+static_directory = Path(__file__).resolve().parent / "static"
+if static_directory.is_dir():
+    app.mount("/static", StaticFiles(directory=static_directory), name="static")
 app.include_router(pages.router)
 app.include_router(api.router)
 
